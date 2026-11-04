@@ -1,43 +1,110 @@
-/* "Pocket hermit" design tokens (plan.md 3.6).
-   Taken from the mascot art in map/public/pocket-hermit/ — soft, rounded,
-   pastel. Not pixel art: no hard edges, no image-rendering: pixelated. */
+/* Cozy pixel RPG tokens (plan.md §3.6). Palette: Sweetie 16 (Lospec).
+   Owner: C. Every hex below is checked against the Sweetie 16 palette file.
+
+   Theme: light by default; `prefers-color-scheme: dark` unless the page sets
+   data-theme="light"; data-theme="dark" forces dark. */
 @import 'tailwindcss';
+@import './components.css';
 
 @theme {
-  --color-cream: #f5e9c8;
-  --color-sage: #a8b88a;
-  --color-deep-sage: #7e9065;
-  --color-blush: #f2b5a0;
-  --color-warm-brown: #8a6a4f;
-  --color-off-white: #fdfbf5;
-  --color-ink: #4a3a2c;
+  --color-ink: #1a1c2c;
+  --color-dream: #5d275d;
+  --color-berry: #b13e53;
+  --color-ember: #ef7d57;
+  --color-sun: #ffcd75;
+  --color-lime: #a7f070;
+  --color-leaf: #38b764;
+  --color-teal: #257179;
+  --color-navy: #29366f;
+  --color-blue: #3b5dc9;
+  --color-sea: #41a6f6;
+  --color-cyan: #73eff7;
+  --color-paper: #f4f4f4;
+  --color-mist: #94b0c2;
+  --color-dusk: #566c86;
+  --color-night: #333c57;
 
-  --radius-soft: 16px;
+  --font-display: 'Press Start 2P', ui-monospace, monospace;
+  --font-ui: 'Pixelify Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --radius-pixel: 0px;
+  --spacing-px4: 4px;
+}
+
+/* Semantic colours that follow the theme: bg-surface, text-muted, … */
+@theme inline {
+  --color-bg: var(--hm-bg);
+  --color-surface: var(--hm-surface);
+  --color-surface-2: var(--hm-surface-2);
+  --color-fg: var(--hm-fg);
+  --color-muted: var(--hm-muted);
+  --color-edge: var(--hm-edge);
+  --color-link: var(--hm-link);
 }
 
 :root {
-  --color-cream: #f5e9c8;
-  --color-sage: #a8b88a;
-  --color-deep-sage: #7e9065;
-  --color-blush: #f2b5a0;
-  --color-warm-brown: #8a6a4f;
-  --color-off-white: #fdfbf5;
-  --shadow-soft: 0 4px 16px rgb(138 106 79 / 0.12);
+  --px: 4px;
+  --hm-bg: #94b0c2;
+  --hm-dot: #566c86;
+  --hm-surface: #f4f4f4;
+  --hm-surface-2: color-mix(in srgb, #f4f4f4 80%, #94b0c2);
+  --hm-fg: #1a1c2c;
+  --hm-muted: #566c86;
+  --hm-edge: #1a1c2c;
+  --hm-shadow: #1a1c2c;
+  --hm-link: #3b5dc9;
+  --hm-focus: #1a1c2c;
+  --hm-quest: color-mix(in srgb, #ffcd75 38%, #f4f4f4);
+  --shadow-pixel: 4px 4px 0 var(--hm-shadow);
   color-scheme: light;
 }
 
-body {
-  background: var(--color-off-white);
-  color: var(--color-warm-brown);
-  font-family: var(--font-body, system-ui, sans-serif);
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --hm-bg: #1a1c2c;
+    --hm-dot: #333c57;
+    --hm-surface: #333c57;
+    --hm-surface-2: color-mix(in srgb, #333c57 62%, #1a1c2c);
+    --hm-fg: #f4f4f4;
+    --hm-muted: #94b0c2;
+    --hm-edge: #1a1c2c;
+    --hm-shadow: color-mix(in srgb, #1a1c2c 45%, #000);
+    --hm-link: #41a6f6;
+    --hm-focus: #ffcd75;
+    --hm-quest: color-mix(in srgb, #ffcd75 16%, #333c57);
+    color-scheme: dark;
+  }
 }
 
-/* Motion only on real events, and never for anyone who asked us not to. */
+:root[data-theme='dark'] {
+  --hm-bg: #1a1c2c;
+  --hm-dot: #333c57;
+  --hm-surface: #333c57;
+  --hm-surface-2: color-mix(in srgb, #333c57 62%, #1a1c2c);
+  --hm-fg: #f4f4f4;
+  --hm-muted: #94b0c2;
+  --hm-edge: #1a1c2c;
+  --hm-shadow: color-mix(in srgb, #1a1c2c 45%, #000);
+  --hm-link: #41a6f6;
+  --hm-focus: #ffcd75;
+  --hm-quest: color-mix(in srgb, #ffcd75 16%, #333c57);
+  color-scheme: dark;
+}
+
+/* Pixels stay crisp, always. Integer scaling only. */
+img[data-pixel],
+canvas[data-pixel],
+svg[shape-rendering='crispEdges'] {
+  image-rendering: pixelated;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
 }

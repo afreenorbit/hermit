@@ -1,41 +1,67 @@
-/** Fetch + validate journey.json. Owner: C. Swap the cast for a zod schema in Phase 1.2. */
+/**
+ * Fetch + zod-validate journey.json. Owner: C. plan.md §7.0.
+ *
+ * Order: `?data=wide` → the wide sample; otherwise the real export
+ * (`data/journey.json`), falling back to the committed Bengaluru sample with a
+ * SAMPLE DATA ribbon so nobody mistakes it for a pilot.
+ */
+import { Journey, type JourneyT } from '@hermit/ui/contracts';
 import { useEffect, useState } from 'react';
 
-export interface Journey {
-  v: 1;
-  generated_at: string;
-  hermit: { current_host: string | null; current_city: string | null; since: string | null };
-  hosts: Array<{ host_id: string; display_name: string; city: string; lat: number; lon: number }>;
-  stops: Array<Record<string, unknown>>;
-  shell: Array<Record<string, unknown>>;
-  stats: { handoffs: number; favors_done: number; favors_left: number };
+export type JourneySource = 'live' | 'sample' | 'wide';
+
+export interface JourneyState {
+  journey: JourneyT | null;
+  source: JourneySource | null;
+  error: string | null;
 }
 
-export function useJourney() {
-  const [journey, setJourney] = useState<Journey | null>(null);
-  const [error, setError] = useState<string | null>(null);
+const FILES: Record<JourneySource, string> = {
+  live: 'data/journey.json',
+  sample: 'data/journey.sample.json',
+  wide: 'data/journey.wide.sample.json',
+};
+
+export function requestedSource(
+  search = typeof location === 'undefined' ? '' : location.search,
+): JourneySource | null {
+  const v = new URLSearchParams(search).get('data');
+  return v === 'wide' || v === 'sample' || v === 'live' ? v : null;
+}
+
+export function useJourney(want: JourneySource | null = requestedSource()): JourneyState {
+  const [state, setState] = useState<JourneyState>({ journey: null, source: null, error: null });
 
   useEffect(() => {
     let cancelled = false;
-    const load = async () => {
-      for (const url of ['/data/journey.json', '/data/journey.sample.json']) {
+    const order: JourneySource[] = want && want !== 'live' ? [want] : ['live', 'sample'];
+    const load = async (): Promise<void> => {
+      let lastError = 'no journey data found';
+      for (const source of order) {
         try {
-          const res = await fetch(url);
+          const res = await fetch(`${import.meta.env.BASE_URL}${FILES[source]}`, {
+            cache: 'no-store',
+          });
           if (!res.ok) continue;
-          const data = (await res.json()) as Journey;
-          if (!cancelled) setJourney(data);
+          const parsed = Journey.safeParse(await res.json());
+          if (!parsed.success) {
+            const issue = parsed.error.issues[0];
+            lastError = `${FILES[source]} does not match the schema: ${issue?.path.join('.') ?? ''} ${issue?.message ?? ''}`;
+            continue;
+          }
+          if (!cancelled) setState({ journey: parsed.data, source, error: null });
           return;
         } catch {
-          /* try the next one */
+          /* not there or not JSON — try the next one */
         }
       }
-      if (!cancelled) setError('no journey data found');
+      if (!cancelled) setState({ journey: null, source: null, error: lastError });
     };
     void load();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [want]);
 
-  return { journey, error };
+  return state;
 }

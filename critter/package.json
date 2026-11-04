@@ -2,16 +2,16 @@
   "name": "@hermit/critter",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
+    "dev:web": "vite --config vite.web.config.mts",
     "build": "tsc --noEmit && electron-vite build",
     "start": "electron-vite preview",
     "mock": "tsx mock/mock-keeper.ts",
     "lint": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --config vite.web.config.mts"
   },
   "dependencies": {
     "@hermit/ui": "workspace:*",
@@ -20,12 +20,13 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
     "electron": "^33.3.1",
     "electron-vite": "^4.0.0",
     "tailwindcss": "^4.0.0",
-    "@tailwindcss/vite": "^4.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vite": "^6.0.5",

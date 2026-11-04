@@ -1,5 +1,6 @@
 import '@hermit/ui/styles/fonts.css';
 import '@hermit/ui/styles/theme.css';
+import './styles.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hermit critter — browser preview</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        gap: 32px;
+        align-items: flex-end;
+        justify-content: center;
+        padding: 32px;
+        box-sizing: border-box;
+        flex-wrap: wrap;
+        background: #29366f
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect x='11' y='11' width='2' height='2' fill='%233b5dc9'/%3E%3C/svg%3E");
+        font:
+          14px/1.4 system-ui,
+          sans-serif;
+        color: #f4f4f4;
+      }
+      figure {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      iframe {
+        border: 0;
+        background: transparent;
+      }
+      figcaption {
+        opacity: 0.8;
+      }
+      code {
+        color: #ffcd75;
+      }
+    </style>
+  </head>
+  <body>
+    <figure>
+      <iframe
+        src="./critter/index.html"
+        width="320"
+        height="300"
+        title="Critter window"
+        allowtransparency="true"
+      ></iframe>
+      <figcaption>Critter window (320×300, transparent in Electron)</figcaption>
+    </figure>
+    <figure>
+      <iframe src="./panel/index.html" width="360" height="520" title="Hermit's menu"></iframe>
+      <figcaption>
+        Panel window (360×520). Needs <code>pnpm --filter @hermit/critter mock</code>.
+      </figcaption>
+    </figure>
+  </body>
+</html>

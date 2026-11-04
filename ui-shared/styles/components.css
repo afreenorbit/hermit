@@ -1,0 +1,680 @@
+/* Pixel components (plan.md §3.6). Owner: C.
+   Borders are stepped box-shadows — 4px edges on each side leave the corners
+   notched, and a two-part hard shadow keeps the notch. No border-radius, no
+   blur, anywhere. */
+
+/* ---------- helpers ---------- */
+.hm-sr {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.hm-icon {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+
+:where(
+  .hm-btn,
+  .hm-toggle,
+  .hm-tabs__tab,
+  .hm-dialog,
+  .hm-shellview canvas,
+  .hm-focusable
+):focus-visible {
+  outline: 4px solid var(--hm-focus);
+  outline-offset: 6px;
+}
+
+@keyframes hm-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes hm-bob {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+@keyframes hm-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes hm-flash {
+  0%,
+  50% {
+    background: var(--color-sun);
+  }
+}
+
+/* ---------- PixelBox ---------- */
+.hm-box {
+  --face: var(--hm-surface);
+  --text: var(--hm-fg);
+  --edge: var(--hm-edge);
+  --shade: var(--hm-shadow);
+  position: relative;
+  margin: 4px 12px 12px 4px;
+  padding: 16px;
+  background: var(--face);
+  color: var(--text);
+  box-shadow:
+    0 -4px 0 0 var(--edge),
+    0 4px 0 0 var(--edge),
+    -4px 0 0 0 var(--edge),
+    4px 0 0 0 var(--edge),
+    4px 8px 0 0 var(--shade),
+    8px 4px 0 0 var(--shade);
+}
+.hm-box--flat {
+  margin: 4px;
+  box-shadow:
+    0 -4px 0 0 var(--edge),
+    0 4px 0 0 var(--edge),
+    -4px 0 0 0 var(--edge),
+    4px 0 0 0 var(--edge);
+}
+.hm-box--night {
+  --face: var(--color-night);
+  --text: var(--color-paper);
+}
+.hm-box--ink {
+  --face: var(--color-ink);
+  --text: var(--color-paper);
+  --edge: var(--color-night);
+}
+.hm-box--quest {
+  --face: var(--hm-quest);
+  box-shadow:
+    0 -4px 0 0 var(--edge),
+    0 4px 0 0 var(--edge),
+    -4px 0 0 0 var(--edge),
+    4px 0 0 0 var(--edge),
+    inset 0 0 0 4px var(--color-sun),
+    4px 8px 0 0 var(--shade),
+    8px 4px 0 0 var(--shade);
+}
+.hm-box--inset {
+  --face: var(--hm-surface-2);
+  margin: 4px;
+  box-shadow:
+    0 -4px 0 0 var(--edge),
+    0 4px 0 0 var(--edge),
+    -4px 0 0 0 var(--edge),
+    4px 0 0 0 var(--edge),
+    inset 4px 4px 0 0 color-mix(in srgb, var(--hm-edge) 22%, transparent);
+}
+.hm-box--tabbed {
+  padding-top: 24px;
+}
+.hm-box__tab {
+  position: absolute;
+  top: -16px;
+  left: 12px;
+  z-index: 1;
+  padding: 3px 10px 2px;
+  background: var(--color-ink);
+  color: var(--color-sun);
+  font: 600 14px/20px var(--font-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow:
+    0 -2px 0 0 var(--color-ink),
+    0 2px 0 0 var(--color-ink),
+    -2px 0 0 0 var(--color-ink),
+    2px 0 0 0 var(--color-ink);
+}
+
+/* ---------- PixelButton ---------- */
+.hm-btn {
+  --face: var(--color-ember);
+  --hi: var(--color-sun);
+  --lo: var(--color-berry);
+  --fg: var(--color-ink);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 4px 8px 8px 4px;
+  padding: 8px 16px;
+  border: 0;
+  background: var(--face);
+  color: var(--fg);
+  font: 700 16px/1 var(--font-ui);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+  box-shadow:
+    0 -4px 0 0 var(--color-ink),
+    0 4px 0 0 var(--color-ink),
+    -4px 0 0 0 var(--color-ink),
+    4px 0 0 0 var(--color-ink),
+    inset -4px -4px 0 0 var(--lo),
+    inset 4px 4px 0 0 var(--hi),
+    4px 8px 0 0 var(--hm-shadow),
+    8px 4px 0 0 var(--hm-shadow);
+}
+.hm-btn:hover {
+  --hi: var(--color-paper);
+}
+.hm-btn:active:not(:disabled),
+.hm-btn[data-pressed='true'] {
+  transform: translate(4px, 4px);
+  box-shadow:
+    0 -4px 0 0 var(--color-ink),
+    0 4px 0 0 var(--color-ink),
+    -4px 0 0 0 var(--color-ink),
+    4px 0 0 0 var(--color-ink),
+    inset 4px 4px 0 0 var(--lo);
+}
+.hm-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.hm-btn--ghost {
+  --face: var(--hm-surface);
+  --hi: color-mix(in srgb, var(--hm-surface) 60%, #f4f4f4);
+  --lo: color-mix(in srgb, var(--hm-surface) 70%, #1a1c2c);
+  --fg: var(--hm-fg);
+}
+.hm-btn--ghost:hover {
+  --hi: var(--color-sun);
+}
+.hm-btn--danger {
+  --face: var(--color-berry);
+  --hi: var(--color-ember);
+  --lo: var(--color-dream);
+  --fg: var(--color-paper);
+}
+.hm-btn--quest {
+  --face: var(--color-sun);
+  --hi: var(--color-paper);
+  --lo: var(--color-ember);
+}
+.hm-btn--sm {
+  min-height: 36px;
+  padding: 4px 10px;
+  font-size: 14px;
+}
+.hm-btn--lg {
+  min-height: 56px;
+  padding: 12px 22px;
+  font-size: 18px;
+}
+.hm-btn--icon {
+  min-width: 44px;
+  padding: 8px;
+}
+.hm-btn--sm.hm-btn--icon {
+  min-width: 36px;
+}
+
+/* ---------- chips ---------- */
+.hm-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  margin: 2px;
+  padding: 1px 8px 0;
+  background: var(--chip, var(--color-mist));
+  color: var(--chip-fg, var(--color-ink));
+  font: 600 13px/20px var(--font-ui);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow:
+    0 -2px 0 0 var(--color-ink),
+    0 2px 0 0 var(--color-ink),
+    -2px 0 0 0 var(--color-ink),
+    2px 0 0 0 var(--color-ink);
+}
+.hm-brain--claude-code {
+  --chip: var(--color-ember);
+}
+.hm-brain--codex {
+  --chip: var(--color-sea);
+}
+.hm-brain--opencode {
+  --chip: var(--color-leaf);
+}
+.hm-brain--other {
+  --chip: var(--color-dusk);
+  --chip-fg: var(--color-paper);
+}
+.hm-dep--graceful {
+  --chip: var(--color-leaf);
+}
+.hm-dep--bedtime {
+  --chip: var(--color-dream);
+  --chip-fg: var(--color-paper);
+}
+.hm-dep--abrupt {
+  --chip: var(--color-berry);
+  --chip-fg: var(--color-paper);
+}
+.hm-dep--manual {
+  --chip: var(--color-dusk);
+  --chip-fg: var(--color-paper);
+}
+.hm-dep--present {
+  --chip: var(--color-sun);
+}
+.hm-dep__pulse {
+  width: 8px;
+  height: 8px;
+  background: var(--color-berry);
+  animation: hm-blink 1s steps(1) infinite;
+}
+.hm-status--open {
+  --chip: var(--color-sun);
+}
+.hm-status--assigned {
+  --chip: var(--color-sea);
+}
+.hm-status--done {
+  --chip: var(--color-leaf);
+}
+.hm-status--expired {
+  --chip: var(--color-mist);
+}
+
+/* ---------- PixelAvatar ---------- */
+.hm-avatar {
+  display: inline-flex;
+  flex: none;
+  line-height: 0;
+}
+.hm-avatar--framed {
+  margin: 2px;
+  box-shadow:
+    0 -2px 0 0 var(--color-ink),
+    0 2px 0 0 var(--color-ink),
+    -2px 0 0 0 var(--color-ink),
+    2px 0 0 0 var(--color-ink);
+}
+
+/* ---------- DialogBox ---------- */
+.hm-dialog {
+  --face: var(--color-paper);
+  --text: var(--color-ink);
+  position: relative;
+  margin: 18px 4px 4px;
+  padding: 14px 16px 18px;
+  background: var(--face);
+  color: var(--text);
+  cursor: pointer;
+  box-shadow:
+    0 -4px 0 0 var(--color-ink),
+    0 4px 0 0 var(--color-ink),
+    -4px 0 0 0 var(--color-ink),
+    4px 0 0 0 var(--color-ink),
+    inset 0 -4px 0 0 color-mix(in srgb, var(--face) 80%, #1a1c2c);
+}
+.hm-dialog--night {
+  --face: var(--color-night);
+  --text: var(--color-paper);
+}
+.hm-dialog--dream {
+  --face: var(--color-dream);
+  --text: var(--color-paper);
+}
+.hm-dialog__head {
+  position: absolute;
+  top: -16px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hm-dialog__name {
+  padding: 3px 8px 2px;
+  background: var(--color-ink);
+  color: var(--color-sun);
+  font: 700 13px/18px var(--font-ui);
+  letter-spacing: 0.1em;
+  box-shadow:
+    0 -2px 0 0 var(--color-ink),
+    0 2px 0 0 var(--color-ink),
+    -2px 0 0 0 var(--color-ink),
+    2px 0 0 0 var(--color-ink);
+}
+.hm-dialog__text {
+  margin: 4px 0 0;
+  font: 400 15px/1.5 var(--font-body);
+}
+.hm-dialog__ghost {
+  visibility: hidden;
+}
+.hm-dialog__more {
+  position: absolute;
+  right: 10px;
+  bottom: 2px;
+  color: var(--color-ember);
+  font: 12px/1 var(--font-display);
+  animation: hm-blink 0.8s steps(1) infinite;
+}
+.hm-dialog--compact {
+  padding: 12px 12px 14px;
+}
+.hm-dialog--compact .hm-dialog__text {
+  font-size: 14px;
+}
+
+/* ---------- StatTile: arcade score panel ---------- */
+.hm-stat {
+  --tone: var(--color-sun);
+  position: relative;
+  margin: 4px;
+  padding: 12px 14px 14px;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 2px, transparent 2px 4px),
+    var(--color-ink);
+  color: var(--color-paper);
+  box-shadow:
+    0 -4px 0 0 var(--color-night),
+    0 4px 0 0 var(--color-night),
+    -4px 0 0 0 var(--color-night),
+    4px 0 0 0 var(--color-night);
+}
+.hm-stat--ember {
+  --tone: var(--color-ember);
+}
+.hm-stat--leaf {
+  --tone: var(--color-lime);
+}
+.hm-stat--sea {
+  --tone: var(--color-cyan);
+}
+.hm-stat--berry {
+  --tone: var(--color-ember);
+}
+.hm-stat--dream {
+  --tone: var(--color-mist);
+}
+.hm-stat__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-mist);
+  font: 600 13px/16px var(--font-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.hm-stat__label .hm-icon {
+  color: var(--tone);
+}
+.hm-stat__value {
+  margin-top: 10px;
+  color: var(--tone);
+  font: 22px/1.1 var(--font-display);
+  text-shadow: 2px 2px 0 var(--color-night);
+  font-variant-numeric: tabular-nums;
+}
+.hm-stat__hint {
+  margin-top: 6px;
+  color: var(--color-mist);
+  font: 400 13px/1.35 var(--font-body);
+}
+
+/* ---------- Ticker ---------- */
+.hm-ticker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 4px;
+  padding: 8px 12px;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 2px, transparent 2px 4px),
+    var(--color-ink);
+  color: var(--color-sun);
+  box-shadow:
+    0 -4px 0 0 var(--color-night),
+    0 4px 0 0 var(--color-night),
+    -4px 0 0 0 var(--color-night),
+    4px 0 0 0 var(--color-night);
+}
+.hm-ticker__led {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  background: var(--color-dusk);
+}
+.hm-ticker--live .hm-ticker__led {
+  background: var(--color-lime);
+  animation: hm-blink 1.2s steps(1) infinite;
+}
+.hm-ticker__text {
+  min-width: 0;
+  overflow: hidden;
+  font: 11px/16px var(--font-display);
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 0 6px color-mix(in srgb, var(--color-sun) 45%, transparent);
+}
+
+/* ---------- QuestCard ---------- */
+.hm-quest {
+  position: relative;
+  margin: 4px;
+  padding: 14px 16px;
+  background: var(--hm-quest);
+  color: var(--hm-fg);
+  box-shadow:
+    0 -4px 0 0 var(--hm-edge),
+    0 4px 0 0 var(--hm-edge),
+    -4px 0 0 0 var(--hm-edge),
+    4px 0 0 0 var(--hm-edge),
+    inset 0 0 0 4px var(--color-sun);
+}
+.hm-quest--done {
+  box-shadow:
+    0 -4px 0 0 var(--hm-edge),
+    0 4px 0 0 var(--hm-edge),
+    -4px 0 0 0 var(--hm-edge),
+    4px 0 0 0 var(--hm-edge),
+    inset 0 0 0 4px var(--color-leaf);
+}
+.hm-quest--expired {
+  opacity: 0.72;
+  box-shadow:
+    0 -4px 0 0 var(--hm-edge),
+    0 4px 0 0 var(--hm-edge),
+    -4px 0 0 0 var(--hm-edge),
+    4px 0 0 0 var(--hm-edge),
+    inset 0 0 0 4px var(--color-mist);
+}
+.hm-quest__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hm-quest__mark {
+  color: var(--color-ember);
+}
+.hm-quest__from {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font: 700 13px/20px var(--font-ui);
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hm-quest__text {
+  margin: 8px 0 0;
+  font: 500 15px/1.45 var(--font-body);
+}
+.hm-quest__reward {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  color: var(--hm-muted);
+  font: 600 12px/1 var(--font-ui);
+  letter-spacing: 0.1em;
+}
+.hm-quest--compact {
+  padding: 10px 12px;
+}
+.hm-quest--compact .hm-quest__text {
+  font-size: 14px;
+}
+
+/* ---------- Tabs ---------- */
+.hm-tabs__list {
+  display: flex;
+  gap: 4px;
+  padding: 4px 4px 8px;
+}
+.hm-tabs__tab {
+  flex: 1;
+  min-height: 40px;
+  margin: 4px;
+  padding: 6px 8px;
+  border: 0;
+  background: var(--hm-surface-2);
+  color: var(--hm-muted);
+  font: 700 14px/1 var(--font-ui);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  box-shadow:
+    0 -4px 0 0 var(--color-ink),
+    0 4px 0 0 var(--color-ink),
+    -4px 0 0 0 var(--color-ink),
+    4px 0 0 0 var(--color-ink),
+    4px 4px 0 4px var(--hm-shadow);
+}
+.hm-tabs__tab:hover {
+  color: var(--hm-fg);
+}
+.hm-tabs__tab[data-state='active'] {
+  background: var(--color-sun);
+  color: var(--color-ink);
+  transform: translate(2px, 2px);
+  box-shadow:
+    0 -4px 0 0 var(--color-ink),
+    0 4px 0 0 var(--color-ink),
+    -4px 0 0 0 var(--color-ink),
+    4px 0 0 0 var(--color-ink),
+    inset 0 -4px 0 0 var(--color-ember);
+}
+.hm-tabs__panel {
+  padding: 8px 4px 4px;
+  outline: none;
+}
+
+/* ---------- Toggle group ---------- */
+.hm-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.hm-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  margin: 2px;
+  padding: 4px 10px;
+  border: 0;
+  background: var(--hm-surface-2);
+  color: var(--hm-fg);
+  font: 600 14px/1 var(--font-ui);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow:
+    0 -2px 0 0 var(--color-ink),
+    0 2px 0 0 var(--color-ink),
+    -2px 0 0 0 var(--color-ink),
+    2px 0 0 0 var(--color-ink),
+    2px 4px 0 0 var(--hm-shadow),
+    4px 2px 0 0 var(--hm-shadow);
+}
+.hm-toggle:hover {
+  background: color-mix(in srgb, var(--color-sun) 30%, var(--hm-surface-2));
+}
+.hm-toggle[data-state='on'] {
+  background: var(--color-sun);
+  color: var(--color-ink);
+  transform: translate(2px, 2px);
+  box-shadow:
+    0 -2px 0 0 var(--color-ink),
+    0 2px 0 0 var(--color-ink),
+    -2px 0 0 0 var(--color-ink),
+    2px 0 0 0 var(--color-ink);
+}
+
+/* ---------- Tooltip ---------- */
+.hm-tip {
+  position: absolute;
+  z-index: 30;
+  width: max-content;
+  max-width: 240px;
+  padding: 8px 10px;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font: 400 13px/1.4 var(--font-body);
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 14px));
+  box-shadow:
+    0 -2px 0 0 var(--color-ink),
+    0 2px 0 0 var(--color-ink),
+    -2px 0 0 0 var(--color-ink),
+    2px 0 0 0 var(--color-ink),
+    4px 4px 0 0 color-mix(in srgb, #1a1c2c 40%, transparent);
+}
+.hm-tip::after,
+.hm-tip::before {
+  position: absolute;
+  left: 50%;
+  background: var(--color-ink);
+  content: '';
+  transform: translateX(-50%);
+}
+.hm-tip::after {
+  bottom: -6px;
+  width: 12px;
+  height: 4px;
+}
+.hm-tip::before {
+  bottom: -10px;
+  width: 4px;
+  height: 4px;
+}
+.hm-tip strong {
+  color: var(--color-sun);
+  font: 600 14px/1.3 var(--font-ui);
+  letter-spacing: 0.04em;
+}
+
+/* ---------- ShellView ---------- */
+.hm-shellview {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+.hm-shellview canvas {
+  display: block;
+  cursor: crosshair;
+}
+.hm-shellview__tip {
+  line-height: 1.4;
+}

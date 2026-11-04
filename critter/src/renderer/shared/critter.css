@@ -1,0 +1,267 @@
+/* Critter + panel windows. Owner: C. Components come from @hermit/ui. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ---------- creature window: fully transparent ---------- */
+html.critter-root,
+html.critter-root body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+}
+/* match any embedder so a browser never paints an opaque backdrop behind us */
+html.critter-root {
+  color-scheme: normal !important;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  transition: opacity 0.4s steps(4);
+}
+.stage.is-faded {
+  opacity: 0;
+}
+
+.creature {
+  position: absolute;
+  right: 24px;
+  bottom: 8px;
+  cursor: grab;
+  touch-action: none;
+}
+.creature:active {
+  cursor: grabbing;
+}
+
+.bubble {
+  position: absolute;
+  right: 8px;
+  bottom: 140px;
+  left: 8px;
+  animation: hm-in 240ms steps(3) both;
+}
+.bubble .hm-dialog {
+  margin: 18px 4px 4px;
+  box-shadow:
+    0 -4px 0 0 var(--color-ink),
+    0 4px 0 0 var(--color-ink),
+    -4px 0 0 0 var(--color-ink),
+    4px 0 0 0 var(--color-ink),
+    4px 8px 0 0 rgba(26, 28, 44, 0.55),
+    8px 4px 0 0 rgba(26, 28, 44, 0.55);
+}
+/* the little tail pointing at Hermit */
+.bubble::after {
+  position: absolute;
+  right: 72px;
+  bottom: -10px;
+  width: 8px;
+  height: 8px;
+  background: var(--color-ink);
+  box-shadow:
+    4px 4px 0 0 var(--color-ink),
+    -4px 0 0 0 var(--color-ink);
+  content: '';
+}
+
+.quest-mark {
+  position: absolute;
+  top: -10px;
+  left: 44px;
+  z-index: 2;
+  color: var(--color-sun);
+  filter: drop-shadow(2px 0 0 var(--color-ink)) drop-shadow(-2px 0 0 var(--color-ink))
+    drop-shadow(0 2px 0 var(--color-ink)) drop-shadow(0 -2px 0 var(--color-ink));
+  animation: hm-bob 0.8s steps(2) infinite;
+}
+
+.fx {
+  position: absolute;
+  pointer-events: none;
+}
+.fx--dust {
+  bottom: -4px;
+  left: 24px;
+}
+.fx--sparkle {
+  top: 14px;
+  left: 30px;
+}
+.fx--zzz {
+  top: -20px;
+  right: -8px;
+}
+
+.web-hint {
+  position: fixed;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  padding: 10px 12px;
+  background: rgba(26, 28, 44, 0.85);
+  color: var(--color-mist);
+  font: 500 13px/1.4 var(--font-body);
+}
+
+/* ---------- panel window: "Hermit's menu" ---------- */
+html.panel-root,
+html.panel-root body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-body);
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 100vh;
+  padding: 0 12px 12px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect x='7' y='7' width='2' height='2' fill='%23333c57'/%3E%3C/svg%3E"),
+    var(--color-ink);
+}
+
+.menu__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 -12px;
+  padding: 6px 4px 2px 16px;
+  background: var(--color-night);
+  -webkit-app-region: drag;
+  box-shadow: 0 4px 0 0 var(--color-dusk);
+}
+.menu__bar button {
+  -webkit-app-region: no-drag;
+}
+.menu__title {
+  color: var(--color-sun);
+  font: 12px/1 var(--font-display);
+  letter-spacing: 0.04em;
+}
+.menu__tools {
+  display: flex;
+}
+.menu__tools .hm-btn {
+  margin: 4px 6px 8px 4px;
+}
+
+.menu__hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.menu__shell {
+  display: grid;
+  place-items: center;
+  width: 160px;
+  height: 160px;
+  flex: none;
+  background: var(--color-night);
+  box-shadow:
+    0 -4px 0 0 #0f1018,
+    0 4px 0 0 #0f1018,
+    -4px 0 0 0 #0f1018,
+    4px 0 0 0 #0f1018,
+    inset 4px 4px 0 0 rgba(0, 0, 0, 0.25);
+  margin: 4px;
+}
+.menu__facts {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+.menu__facts dt {
+  color: var(--color-mist);
+  font: 700 11px/1 var(--font-ui);
+  letter-spacing: 0.12em;
+}
+.menu__facts dd {
+  margin: 4px 0 0;
+  font: 600 15px/1.2 var(--font-ui);
+}
+.menu__big {
+  color: var(--color-sun);
+  font: 20px/1 var(--font-display) !important;
+}
+
+.menu .hm-tabs__list {
+  padding: 0;
+}
+.menu .hm-tabs__panel {
+  min-height: 168px;
+}
+.menu__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 6px;
+  vertical-align: 2px;
+  background: var(--color-berry);
+  animation: hm-blink 1s steps(1) infinite;
+}
+.menu__empty {
+  margin: 0;
+  padding: 20px 8px;
+  color: var(--color-mist);
+  font: 400 14px/1.5 var(--font-body);
+  text-align: center;
+}
+.menu__log {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  margin: 0;
+  padding: 0 4px 0 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.menu__friends {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.menu__friends li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.menu__friend {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.menu__friend strong {
+  font: 700 15px/1.1 var(--font-ui);
+}
+.menu__friend span {
+  color: var(--color-mist);
+  font: 400 13px/1.3 var(--font-body);
+}
+
+.menu__actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 4px;
+}
+.menu__actions .hm-btn {
+  font-size: 14px;
+}
