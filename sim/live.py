@@ -23,6 +23,15 @@ Each keeper serves its own API, so a critter can be pointed at any of them:
 Drive presence by hand — this is the knob the demo uses:
 
     curl -X POST .../v1/presence/override -d '{"mode":"asleep"}'
+
+**`--switch standin`** runs the *real* Switch code path instead: three keepers
+built exactly as `hermit-keeper run` builds them for `agent_instructed`, three
+stand-in brains following stage-directions.md, all talking over real loopback
+HTTP to `sim/switch_standin.py` — a STAND-IN for Switch, not Switch. A control
+port (base port + number of hosts) can slam a lid or take the server down:
+
+    curl -X POST http://127.0.0.1:47804/lid-slam/afreen
+    curl -X POST http://127.0.0.1:47804/switch/down     # and /switch/up
 """
 
 from __future__ import annotations
@@ -228,6 +237,112 @@ async def serve(hosts: list[str], base_port: int, real_presence: bool) -> None:
             await runtime.stop()
 
 
+async def serve_standin_switch(
+    hosts: list[str], base_port: int, real_presence: bool, switch_port: int
+) -> None:
+    """The real keeper code path, over HTTP, against the Switch STAND-IN."""
+    from fastapi import FastAPI
+
+    from sim.standin_group import build_group, fast_timings
+    from sim.switch_standin import StandinSwitch, serve_standin
+
+    # Demo pacing: quick enough to watch, slow enough to read.
+    timings = fast_timings(
+        tick_s=0.5,
+        heartbeat_s=1.0,
+        group_refresh_s=0.5,
+        ack_timeout_s=10.0,
+        settle_s=0.4,
+        favor_wait_s=10.0,
+        favor_poll_s=0.25,
+        machine={"claim_jitter_s": 1.0, "backoff_s": 5.0},
+    )
+    switch = StandinSwitch(long_poll_s=10.0, role_expiry_s=3.0)
+    async with serve_standin(switch, port=switch_port) as base_url:
+        group = await build_group(
+            switch,
+            base_url,
+            hosts,
+            timings=timings,
+            lease_expiry_s=3.0,
+            humans=[f"friend-{h}" for h in hosts],
+            api_port_base=base_port,
+            demo_presence=True,
+            presence_source=for_this_platform() if real_presence else None,
+        )
+
+        control = FastAPI(title="stand-in demo control")
+
+        @control.post("/lid-slam/{host}")
+        async def lid_slam(host: str) -> dict[str, Any]:
+            if host not in group.members or not group.members[host].alive:
+                return {"ok": False, "error": f"no live host {host}"}
+            await group.lid_slam(host)
+            return {"ok": True, "slammed": host}
+
+        @control.post("/switch/{mode}")
+        async def outage(mode: str) -> dict[str, Any]:
+            switch.set_down(mode == "down")
+            return {"ok": True, "switch": "down" if switch.down else "up"}
+
+        @control.post("/favor/{host}")
+        async def favor(host: str, body: dict[str, str]) -> dict[str, Any]:
+            await group.say_in_den(f"friend-{host}", body.get("text", "say hello to the next one"))
+            return {"ok": True}
+
+        @control.get("/")
+        async def overview() -> dict[str, Any]:
+            return {
+                "role_holders_in_standin": group.role_holders(),
+                "keepers_holding": group.holding(),
+                "brains_said": {h: m.brain.said[-3:] for h, m in group.members.items()},
+            }
+
+        control_port = base_port + len(hosts)
+        servers = [
+            uvicorn.Server(
+                uvicorn.Config(
+                    create_app(member.keeper.runtime),
+                    host="127.0.0.1",
+                    port=member.keeper.runtime.config.api.port,
+                    log_level="warning",
+                )
+            )
+            for member in group.members.values()
+        ]
+        servers.append(
+            uvicorn.Server(
+                uvicorn.Config(control, host="127.0.0.1", port=control_port, log_level="warning")
+            )
+        )
+
+        print("\n  Hermit live harness — REAL keeper code path, STAND-IN Switch\n")
+        print(f"    Switch STAND-IN (not Switch)  {base_url}")
+        for member in group.members.values():
+            port = member.keeper.runtime.config.api.port
+            print(f"    {member.host:<9} http://127.0.0.1:{port}   (keeper-{member.host})")
+        print(f"    control   http://127.0.0.1:{control_port}   GET / for who holds what\n")
+        print(f"  presence: {'real keyboard' if real_presence else 'forced awake; use overrides'}")
+        print(
+            "  try:  curl -X POST http://127.0.0.1:"
+            f"{base_port}/v1/presence/override -H 'content-type: application/json'"
+            ' -d \'{"mode":"asleep"}\''
+        )
+        print(f"        curl -X POST http://127.0.0.1:{control_port}/lid-slam/{hosts[0]}")
+        print(f"        curl -X POST http://127.0.0.1:{control_port}/switch/down   (then /up)\n")
+
+        group.start()
+        tasks = [asyncio.create_task(server.serve()) for server in servers]
+        try:
+            await asyncio.gather(*tasks)
+        except asyncio.CancelledError:
+            pass
+        finally:
+            for server in servers:
+                server.should_exit = True
+            await group.aclose()
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--hosts", default="afreen,abhishek,akshay")
@@ -237,9 +352,24 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="use this machine's real idle time for every keeper (they all move together)",
     )
+    parser.add_argument(
+        "--switch",
+        choices=["fake", "standin"],
+        default="fake",
+        help="fake: one shared in-memory lease. standin: the real Switch code path "
+        "over HTTP against sim/switch_standin.py (a stand-in, not Switch)",
+    )
+    parser.add_argument(
+        "--switch-port", type=int, default=0, help="stand-in port (0 = any free port)"
+    )
     args = parser.parse_args(argv)
     hosts = [h.strip() for h in args.hosts.split(",") if h.strip()]
 
     with contextlib.suppress(KeyboardInterrupt):
-        asyncio.run(serve(hosts, args.base_port, args.real_presence))
+        if args.switch == "standin":
+            asyncio.run(
+                serve_standin_switch(hosts, args.base_port, args.real_presence, args.switch_port)
+            )
+        else:
+            asyncio.run(serve(hosts, args.base_port, args.real_presence))
     return 0
