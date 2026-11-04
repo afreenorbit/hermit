@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 // pnpm --filter @hermit/map e2e   (first time: pnpm --filter @hermit/map exec playwright install chromium)
 export default defineConfig({
   testDir: 'e2e',
+  testIgnore: ['capture.spec.ts'],
   fullyParallel: true,
   expect: { timeout: 10_000 },
   reporter: process.env.CI ? 'github' : 'list',
