@@ -109,6 +109,6 @@
     "favors_left": 1,
     "overlaps_suggested": 0,
     "overlaps_taken": 0,
-    "median_handoff_ms": null
+    "median_handoff_ms": 60000
   }
 }
