@@ -43,3 +43,30 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r typecheck
       - run: pnpm -r test
+
+  map-e2e:
+    name: map e2e (playwright)
+    runs-on: ubuntu-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter @hermit/map...
+      - run: pnpm --filter @hermit/map exec playwright install --with-deps chromium
+      # builds the static site (relative base) and serves it the way a host would
+      - run: pnpm --filter @hermit/map e2e
+        env:
+          CI: "1"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: map-e2e-traces
+          path: map/test-results
+          retention-days: 7

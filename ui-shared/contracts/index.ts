@@ -123,10 +123,21 @@ export const Stop = z
   })
   .strict();
 
+/** Where a journey came from. Optional and additive: absent means a real export. */
+export const JourneySourceKind = z.enum(['real', 'simulation', 'sample']);
+export const JourneySource = z
+  .object({
+    kind: JourneySourceKind,
+    scenario: z.string().optional(),
+    note: z.string().optional(),
+  })
+  .strict();
+
 export const Journey = z
   .object({
     v: z.literal(1),
     generated_at: isoDate,
+    source: JourneySource.nullable().optional(),
     hermit: z
       .object({
         current_host: z.string().nullable(),
@@ -150,14 +161,41 @@ export const Journey = z
   })
   .strict();
 
-/** GET /v1/status — keeper-api.openapi.yaml */
+/**
+ * GET /v1/status — keeper-api.openapi.yaml.
+ *
+ * `state` and `mood` accept the keeper's real values (the OpenAPI enums) plus
+ * the older ones the mock keeper still sends. Accepting only the old ones made
+ * the critter reject every real status and draw `offline`.
+ */
 export const KeeperStatus = z.object({
   host: z.string(),
-  state: z.enum(['IDLE_AWAY', 'WAITING', 'CLAIMING', 'HOLDING', 'DEPARTING', 'ASLEEP']),
+  state: z.enum([
+    'ASLEEP',
+    'AWAKE_WAITING',
+    'CLAIMING',
+    'HOLDING',
+    'DEPARTING',
+    'BEDTIME_LOCK',
+    // legacy: mock keeper only
+    'IDLE_AWAY',
+    'WAITING',
+  ]),
   present: z.boolean(),
   soul_holder: z.string().nullable(),
   since: isoDate.nullable().optional(),
-  mood: z.enum(['arriving', 'curious', 'sleepy', 'leaving', 'away']),
+  mood: z.enum([
+    'arriving',
+    'visiting',
+    'away',
+    'sleeping',
+    'waiting',
+    'offline',
+    // legacy: mock keeper only
+    'curious',
+    'sleepy',
+    'leaving',
+  ]),
   favor_pending: z.record(z.unknown()).nullable().optional(),
   last_line: z.string().nullable().optional(),
 });
@@ -172,4 +210,6 @@ export type FavorRefT = NonNullable<z.infer<typeof FavorRef>>;
 export type JourneyHostT = z.infer<typeof JourneyHost>;
 export type StopT = z.infer<typeof Stop>;
 export type JourneyT = z.infer<typeof Journey>;
+export type JourneySourceT = z.infer<typeof JourneySource>;
+export type JourneySourceKindT = z.infer<typeof JourneySourceKind>;
 export type KeeperStatusT = z.infer<typeof KeeperStatus>;
