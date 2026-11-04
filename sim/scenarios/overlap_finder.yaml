@@ -1,0 +1,40 @@
+# STRETCH S1 — the overlap finder (opt-in; features.overlap).
+#
+# Three days of three Bengaluru routines. Once a day of history exists, the
+# keeper holding Hermit looks for the rare half-hours when it and one friend
+# are usually both around, and suggests a call. Never inside anyone's bedtime,
+# never the same pair twice in three days.
+#
+#   afreen + abhishek  usually overlap 22:30-23:30 IST (one hour a day: rare)
+#   afreen + akshay    usually overlap 09:00-10:00 IST
+#   abhishek + akshay  overlap 15:00-18:00 and 00:00-02:30 IST, but 01:00-06:00
+#                      is bedtime, so only 00:00-01:00 of the late one counts
+#
+# SIMULATION: scripted presence, not real people.
+name: overlap_finder
+duration_s: 259200
+lease_expiry_s: 8
+features: { overlap: true }
+hosts:
+  - host_id: afreen
+    brain_provider: claude-code
+    city: Indiranagar
+    timezone: Asia/Kolkata
+    presence_daily: [["09:00", "12:00"], ["21:00", "23:30"]]
+  - host_id: abhishek
+    brain_provider: opencode
+    city: Kengeri
+    timezone: Asia/Kolkata
+    presence_daily: [["13:00", "18:00"], ["22:30", "02:30"]]
+  - host_id: akshay
+    brain_provider: codex
+    city: Koramangala
+    timezone: Asia/Kolkata
+    presence_daily: [["07:00", "10:00"], ["15:00", "19:00"], ["00:00", "02:30"]]
+assertions:
+  - never_two_holders
+  - min_handoffs: 6
+  - overlaps_suggested_at_least: 2
+  - no_overlap_in_bedtime
+  - overlap_pair_cooldown_respected
+  - overlap_only_from_a_holder_in_the_pair

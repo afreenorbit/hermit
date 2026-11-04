@@ -1,0 +1,37 @@
+# STRETCH S2 — the quiet-friend nudge (opt-in; features.nudge).
+#
+# Akshay hosts once on the first afternoon and then disappears for four days.
+# Seventy-two hours after his last visit, whoever has Hermit asks the *group*
+# to leave him a favor. Akshay is never messaged, and the nudge is not
+# repeated: one quiet spell, one nudge.
+#
+# SIMULATION: scripted presence, not real people.
+name: quiet_friend
+duration_s: 345600
+lease_expiry_s: 8
+features: { nudge: true }
+nudge: { quiet_after_h: 72, min_gap_h: 12 }
+hosts:
+  - host_id: afreen
+    brain_provider: claude-code
+    city: Indiranagar
+    timezone: Asia/Kolkata
+    presence_daily: [["08:00", "12:00"], ["20:00", "23:00"]]
+  - host_id: abhishek
+    brain_provider: opencode
+    city: Kengeri
+    timezone: Asia/Kolkata
+    presence_daily: [["12:30", "19:00"]]
+  - host_id: akshay
+    brain_provider: codex
+    city: Koramangala
+    timezone: Asia/Kolkata
+    # 18:50-19:50 IST on day one only, the hour nobody else is around.
+    presence: [[48000, true], [51600, false]]
+assertions:
+  - never_two_holders
+  - min_handoffs: 6
+  - nudges_at_least: 1
+  - nudges_at_most: 1
+  - nudge_once_per_quiet_spell
+  - nudge_never_about_the_holder
