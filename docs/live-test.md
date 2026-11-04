@@ -98,7 +98,9 @@ from our code — the strongest thing in the project.
 
 # Step 3 — one server everyone can reach
 
-**Owner: Afreen.**
+**Owner: Afreen.** **Decided: the server runs on Afreen's laptop**, kept awake and
+plugged in for the test. The click-by-click version of Steps 3 and 4, checked
+against Switch's own docs, is [`switch-setup.md`](switch-setup.md).
 
 The server must **not** be on a laptop that sleeps. If the machine hosting
 Switch closes its lid, Hermit stops for everyone — which is the one failure
@@ -140,6 +142,20 @@ Then Tailscale, which is free for our size:
 | Akshay | Codex | Claude Code |
 
 Installed and logged in. One each, all different — that is the demo.
+
+Then connect it to Switch with **Switch Console**
+([releases](https://github.com/sandbox-quantum/switch/releases)). Choose *Add a server →
+Connect to an existing server* with Gateway `http://100.x.y.z:3000` and API
+`http://100.x.y.z:8000`, link your Mattermost account, and onboard your brain as
+`hermit-<you>` with working directory `~/HermitWindow`.
+
+> ⚠ Set **Who can talk to your agent → Anyone.** The default, *Only me*, makes
+> the brain refuse cues from your keeper and messages from friends in the den, so
+> Hermit goes silent with no error. Details in
+> [`switch-setup.md`](switch-setup.md) B3.
+
+`python scripts/hermit_setup.py <you> --server 100.x.y.z` writes your config and
+checks everything in this step.
 
 ### 4.2 The repo
 

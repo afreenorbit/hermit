@@ -32,6 +32,8 @@ Use this runbook for the three-laptop live test. The local simulation can rehear
 
 ## Step 3 — put Switch on a reachable, awake host (Afreen)
 
+**Decided: Afreen's laptop hosts the server**, plugged in with sleep disabled. Click-by-click: [`switch-setup.md`](switch-setup.md) Part A.
+
 Use an always-on computer or VPS. If Afreen's laptop hosts Switch and sleeps, the test stops for everyone.
 
 1. Create one Tailscale tailnet and invite Abhishek and Akshay with their own accounts. Install Tailscale on the Switch host and all three laptops. Sign in, connect, and approve devices as needed.
@@ -42,6 +44,8 @@ Use an always-on computer or VPS. If Afreen's laptop hosts Switch and sleeps, th
 Record the actual Tailscale IP privately. It can change if the server machine is replaced.
 
 ## Step 4 — prepare each laptop (everyone)
+
+`python scripts/hermit_setup.py <you> --server 100.x.y.z` writes the config and checks Tailscale, the server, your brain CLI and your token. Each brain is onboarded through **Switch Console**, with *Who can talk to your agent* set to **Anyone**. The default, *Only me*, silently blocks keeper cues and friends. See [`switch-setup.md`](switch-setup.md) Part B.
 
 | Person | `host_id` | Intended brain | Responsibility |
 |---|---|---|---|
