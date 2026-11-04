@@ -9,6 +9,7 @@ import {
   hostAccent,
   P,
   PixelCanvas,
+  useMediaQuery,
   pixelAvatar,
   type PixelGrid,
 } from '@hermit/ui';
@@ -18,7 +19,6 @@ import { nameOf, type Derived } from '../lib/derive';
 
 const W = 84;
 const H = 60;
-const SCALE = 4;
 
 interface Edge {
   a: string;
@@ -53,6 +53,8 @@ function line(g: PixelGrid, x0: number, y0: number, x1: number, y1: number, c: n
 }
 
 export function FriendshipWeb({ derived }: { derived: Derived }) {
+  // 84 art px wide: 4x is 336px, too wide for a 375px phone once padded.
+  const SCALE = useMediaQuery('(max-width: 420px)') ? 3 : 4;
   const [focus, setFocus] = useState<string | null>(null);
   const ids = derived.hostIds;
 

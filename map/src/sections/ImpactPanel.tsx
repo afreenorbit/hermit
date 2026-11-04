@@ -41,7 +41,7 @@ export function ImpactPanel({ journey, derived }: { journey: JourneyT; derived: 
           <StatTile
             label="Median handoff"
             value={s.median_handoff_ms ?? '—'}
-            format={(n) => formatHandoffMs(n)}
+            format={(n) => formatHandoffMs(n).toLowerCase()}
             icon="clock"
             tone="sea"
             hint={`${s.handoffs ?? 0} handoffs`}

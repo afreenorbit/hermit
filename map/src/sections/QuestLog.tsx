@@ -1,13 +1,11 @@
 /** One card per stop, newest first, with filters. Owner: C. plan.md §7.5. */
 import {
   BrainBadge,
-  BRAIN_LABEL,
   DepartureChip,
   formatClock,
   formatDay,
   formatSpan,
   formatTemp,
-  HermitSprite,
   PixelAvatar,
   PixelBox,
   PixelCanvas,
@@ -15,6 +13,7 @@ import {
   PixelToggleGroup,
   QuestCard,
   renderShellGrid,
+  Tilli,
   weatherInfo,
   type BrainProvider,
 } from '@hermit/ui';
@@ -22,6 +21,13 @@ import type { StopT } from '@hermit/ui/contracts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { nameOf, type Derived } from '../lib/derive';
+
+const BRAIN_SHORT: Record<BrainProvider, string> = {
+  'claude-code': 'Claude',
+  codex: 'Codex',
+  opencode: 'OpenCode',
+  other: 'Other',
+};
 
 interface Props {
   derived: Derived;
@@ -71,19 +77,19 @@ export function QuestLog({
       </h2>
       <div className="filters">
         <div className="filters__group">
-          <span className="filters__label">FRIEND</span>
+          <span className="filters__label">Friend</span>
           <PixelToggleGroup
             label="Filter by friend"
             value={friend ?? 'all'}
             onValueChange={(v) => onFriend(v === 'all' ? null : v)}
             items={[
-              { value: 'all', label: 'ALL' },
+              { value: 'all', label: 'All' },
               ...derived.hostIds.map((id) => ({
                 value: id,
                 label: (
                   <>
                     <PixelAvatar hostId={id} scale={2} framed={false} />
-                    {nameOf(derived, id).toUpperCase()}
+                    {nameOf(derived, id)}
                   </>
                 ),
               })),
@@ -91,14 +97,14 @@ export function QuestLog({
           />
         </div>
         <div className="filters__group">
-          <span className="filters__label">BRAIN</span>
+          <span className="filters__label">Brain</span>
           <PixelToggleGroup
             label="Filter by brain"
             value={brain}
             onValueChange={setBrain}
             items={[
-              { value: 'all', label: 'ALL' },
-              ...brains.map((b) => ({ value: b, label: BRAIN_LABEL[b].split(' ')[0]! })),
+              { value: 'all', label: 'All' },
+              ...brains.map((b) => ({ value: b, label: BRAIN_SHORT[b] })),
             ]}
           />
         </div>
@@ -108,12 +114,12 @@ export function QuestLog({
             value={doneOnly ? 'done' : 'any'}
             onValueChange={(v) => setDoneOnly(v === 'done')}
             items={[
-              { value: 'any', label: 'EVERY STOP' },
+              { value: 'any', label: 'Every stop' },
               {
                 value: 'done',
                 label: (
                   <>
-                    <PixelIcon name="check" /> FAVOR DONE
+                    <PixelIcon name="check" /> Favor done
                   </>
                 ),
               },
@@ -121,14 +127,14 @@ export function QuestLog({
           />
         </div>
         <span className="filters__count" aria-live="polite">
-          {stops.length} OF {derived.stopsNewestFirst.length} STOPS
+          {stops.length} of {derived.stopsNewestFirst.length} stops
         </span>
       </div>
 
       {derived.stopsNewestFirst.length === 0 ? (
         <div className="empty empty--big">
-          <HermitSprite animation="sleepy" scale={3} />
-          <p>Hermit hasn’t left its first laptop yet.</p>
+          <Tilli mood="sleeping" size={150} label="" />
+          <p>Tilli hasn’t left its first laptop yet.</p>
         </div>
       ) : stops.length === 0 ? (
         <div className="empty">
@@ -203,7 +209,7 @@ function StopCard({
 
       <dl className="stop__meta">
         <div>
-          <dt>ARRIVED</dt>
+          <dt>Arrived</dt>
           <dd>
             <time dateTime={stop.arrived_at}>
               {formatDay(stop.arrived_at)} · {formatClock(stop.arrived_at)}
@@ -211,11 +217,11 @@ function StopCard({
           </dd>
         </div>
         <div>
-          <dt>STAYED</dt>
+          <dt>Stayed</dt>
           <dd>{formatSpan(stop.arrived_at, stop.left_at ?? generatedAt)}</dd>
         </div>
         <div>
-          <dt>WEATHER</dt>
+          <dt>Weather</dt>
           <dd className="stop__weather">
             <PixelIcon name={w.icon} label={w.label.toLowerCase()} />
             {formatTemp(stop.weather?.temp_c)}
@@ -240,11 +246,11 @@ function StopCard({
 
       {left?.text ? (
         <p className="stop__left">
-          <span>LEFT FOR NEXT</span> “{left.text}”
+          <span>Left for the next friend</span> “{left.text}”
         </p>
       ) : stop.departure === 'abrupt' ? (
         <p className="stop__left stop__left--abrupt">
-          <span>LEFT IN A HURRY</span> no time to leave a favor
+          <span>Left in a hurry</span> no time to leave a favor
         </p>
       ) : null}
     </li>

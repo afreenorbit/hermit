@@ -1,13 +1,5 @@
 /** Logo, live ticker, data switch, sound and theme toggles. Owner: C. */
-import {
-  formatDwell,
-  HermitSprite,
-  PixelButton,
-  PixelToggleGroup,
-  sound,
-  Ticker,
-  type ShellPieceInput,
-} from '@hermit/ui';
+import { formatDwell, PixelButton, PixelToggleGroup, sound, Ticker, Tilli } from '@hermit/ui';
 import { useEffect, useState } from 'react';
 
 import type { Derived } from '../lib/derive';
@@ -15,28 +7,27 @@ import type { JourneySource } from '../hooks/useJourney';
 
 interface Props {
   derived: Derived | null;
-  pieces: ShellPieceInput[];
   source: JourneySource | null;
   dark: boolean;
   onTheme: () => void;
   onSource: (s: JourneySource) => void;
 }
 
-export function Header({ derived, pieces, source, dark, onTheme, onSource }: Props) {
+export function Header({ derived, source, dark, onTheme, onSource }: Props) {
   const [on, setOn] = useState(sound.isEnabled());
   useEffect(() => sound.subscribe(setOn), []);
 
   const cur = derived?.current;
   const ticker = cur?.host
-    ? `NOW: WITH ${cur.host.display_name.toUpperCase()} · ${cur.host.city.toUpperCase()}${cur.dwellS != null ? ` · ${formatDwell(cur.dwellS)}` : ''}`
-    : 'NOW: ASLEEP · NOBODY IS AROUND';
+    ? `Now with ${cur.host.display_name} · ${cur.host.city}${cur.dwellS != null ? ` · ${formatDwell(cur.dwellS).toLowerCase()}` : ''}`
+    : 'Asleep · nobody is around';
   const sample = source === 'sample' || source === 'wide';
 
   return (
     <header className="masthead">
       {sample && (
         <div className="ribbon" role="note">
-          <strong>SAMPLE DATA</strong>
+          <strong>Sample data</strong>
           <span>
             {source === 'wide'
               ? 'A simulated three-timezone journey — not a real run.'
@@ -46,10 +37,12 @@ export function Header({ derived, pieces, source, dark, onTheme, onSource }: Pro
       )}
       <div className="masthead__row">
         <a className="logo" href="./" aria-label="Hermit — home">
-          <HermitSprite pieces={pieces} scale={2} label="" animation="idle" />
+          <span className="logo__mark">
+            <Tilli mood="happy" size={58} marks={false} label="" />
+          </span>
           <span className="logo__text">
-            <span className="logo__word">HERMIT</span>
-            <span className="logo__sub">a creature with no home</span>
+            <span className="logo__word">Hermit</span>
+            <span className="logo__sub">with Tilli, a creature with no home</span>
           </span>
         </a>
         <div className="masthead__ticker">
@@ -64,10 +57,10 @@ export function Header({ derived, pieces, source, dark, onTheme, onSource }: Pro
               items={[
                 {
                   value: 'sample',
-                  label: 'CITY',
+                  label: 'City',
                   title: 'Three areas of Bengaluru (our pilot shape)',
                 },
-                { value: 'wide', label: 'WORLD', title: 'Three timezones (simulation)' },
+                { value: 'wide', label: 'World', title: 'Three timezones (simulation)' },
               ]}
             />
           )}

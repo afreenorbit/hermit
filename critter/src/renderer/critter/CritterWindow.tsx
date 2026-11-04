@@ -1,26 +1,23 @@
 /**
- * The creature on the desktop. Owner: C. plan.md §6.3.
+ * Tilli on the desktop. Owner: C. plan.md §6.3, moves from the mascot demo.
  *
- *   SOUL_CLAIMED (me)      walk in from the edge → dust → idle (surprised if abrupt)
- *   idle                   idle loop, blinks, eyes follow the cursor
- *   new den line           talk while the dialog types, stays 7s
- *   FAVOR_ASSIGNED (me)    "!" bobbing above the shell
- *   SHELL_PIECE_ADDED      happy + sparkle; the shell on its back grows
- *   after 00:30            sleepy + zzz, dream-coloured dialog
- *   DEPARTURE / RELEASED   wave → walk off the other edge → window hides
- *   reduced motion         fades only, static frames, instant text
+ *   SOUL_CLAIMED (me)      waddle in from the edge → wave with a letter (curious if abrupt)
+ *   idle                   visiting: breathes, blinks, eyes follow the cursor
+ *   new den line           chatter while the bubble types, stays 7s
+ *   FAVOR_ASSIGNED (me)    a little letter badge bobbing by Tilli
+ *   SHELL_PIECE_ADDED      celebrate with sparkles; the shell badge grows
+ *   after 00:30            tucked into the shell asleep, zzz, lilac bubble
+ *   DEPARTURE / RELEASED   wave → turn around → walk off the other edge → hide
+ *   reduced motion         fades only, still poses, instant text
  */
 import {
   DialogBox,
-  DUST,
-  HermitSprite,
-  PixelIcon,
-  SPARKLE,
-  SpriteAnimator,
+  PixelCanvas,
+  renderShellGrid,
   sound,
+  Tilli,
   useReducedMotion,
-  ZZZ,
-  type AnimationName,
+  type TilliMood,
 } from '@hermit/ui';
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 
@@ -30,7 +27,7 @@ import { isSleepyHour } from '../shared/reduce';
 import { useKeeper } from '../shared/store';
 
 const WALK_PX = 220;
-const SPRITE = 128;
+const SPRITE = 150;
 
 type Look = readonly [number, number];
 
@@ -38,12 +35,13 @@ export function CritterWindow() {
   const k = useKeeper();
   const reduced = useReducedMotion();
   const pieces = useMemo(() => toPieceInputs(k.shell), [k.shell]);
+  const shellGrid = useMemo(() => renderShellGrid(pieces, { size: 24 }), [pieces]);
   const [x, setX] = useState(0);
-  const [act, setAct] = useState<{ anim: AnimationName; flip: boolean }>({
-    anim: 'idle',
+  const [act, setAct] = useState<{ mood: TilliMood | null; flip: boolean }>({
+    mood: null,
     flip: false,
   });
-  const [effect, setEffect] = useState<'dust' | 'sparkle' | null>(null);
+  const [effect, setEffect] = useState<'dust' | null>(null);
   const [line, setLine] = useState<string | null>(null);
   const [typing, setTyping] = useState(false);
   const [look, setLook] = useState<Look>([1, 0]);
@@ -108,16 +106,16 @@ export function CritterWindow() {
       later(30, () => setFaded(false));
       later(450, arrived);
     } else {
-      setAct({ anim: 'walk', flip: true });
+      setAct({ mood: 'walk', flip: true });
       setX(WALK_PX);
       for (let i = 1; i <= 16; i++) later(i * 100, () => setX(Math.round(WALK_PX * (1 - i / 16))));
       later(1650, () => {
-        setAct({ anim: 'idle', flip: false });
+        setAct({ mood: k.abrupt ? 'curious' : 'arriving', flip: false });
         setEffect('dust');
       });
-      if (k.abrupt) later(2150, () => setAct({ anim: 'surprised', flip: false }));
-      later(k.abrupt ? 3000 : 2200, () => {
+      later(k.abrupt ? 3400 : 3200, () => {
         setEffect(null);
+        setAct({ mood: null, flip: false });
         arrived();
       });
     }
@@ -137,13 +135,13 @@ export function CritterWindow() {
         left();
       });
     } else {
-      setAct({ anim: 'wave', flip: false });
-      later(1400, () => setAct({ anim: 'walk', flip: true }));
+      setAct({ mood: 'wave', flip: false });
+      later(1400, () => setAct({ mood: 'away', flip: true }));
       for (let i = 1; i <= 18; i++)
         later(1400 + i * 100, () => setX(-Math.round((WALK_PX * i) / 18)));
       later(3300, () => {
         setX(0);
-        setAct({ anim: 'idle', flip: false });
+        setAct({ mood: null, flip: false });
         left();
       });
     }
@@ -156,12 +154,8 @@ export function CritterWindow() {
     if (k.celebrate === seenCelebrate.current) return;
     seenCelebrate.current = k.celebrate;
     if (k.phase !== 'here') return;
-    setAct({ anim: 'happy', flip: false });
-    setEffect('sparkle');
-    const t = window.setTimeout(() => {
-      setEffect(null);
-      setAct({ anim: 'idle', flip: false });
-    }, 1300);
+    setAct({ mood: 'celebrate', flip: false });
+    const t = window.setTimeout(() => setAct({ mood: null, flip: false }), 1800);
     return () => window.clearTimeout(t);
   }, [k.celebrate, k.phase]);
 
@@ -203,16 +197,16 @@ export function CritterWindow() {
     return inElectron ? null : (
       <div className="web-hint">
         {k.connected
-          ? 'Hermit is with someone else right now.'
+          ? 'Tilli is visiting someone else right now.'
           : 'Waiting for the keeper on 127.0.0.1:47800…'}
       </div>
     );
   }
 
   const here = k.phase === 'here';
-  const base: AnimationName = here && sleepy ? 'sleepy' : here && typing ? 'talk' : 'idle';
-  const anim: AnimationName = act.anim === 'idle' ? base : act.anim;
-  const spriteLook: Look = act.flip ? [-look[0], look[1]] : look;
+  const base: TilliMood = here && sleepy ? 'sleeping' : here && typing ? 'talking' : 'happy';
+  const mood: TilliMood = act.mood ?? base;
+  const eyes: Look = act.flip ? [-look[0], look[1]] : look;
 
   return (
     <div className={`stage${faded ? ' is-faded' : ''}`}>
@@ -220,6 +214,7 @@ export function CritterWindow() {
         <div className="bubble" {...hover}>
           <DialogBox
             text={line}
+            name="TILLI"
             compact
             tone={sleepy ? 'dream' : 'paper'}
             onDone={() => setTyping(false)}
@@ -234,35 +229,35 @@ export function CritterWindow() {
         onPointerDown={onDown}
         onPointerUp={onUp}
         role="button"
-        aria-label="Hermit. Click to open Hermit's menu."
+        aria-label="Tilli. Click to open Tilli's menu."
         {...hover}
       >
         {k.quest && here && (
-          <span className="quest-mark" aria-label="Hermit is carrying a quest for you">
-            <PixelIcon name="quest" scale={4} />
+          <span className="quest-mark" aria-label="Tilli is carrying a favor for you">
+            <span aria-hidden>✉</span>
+            <b aria-hidden>!</b>
           </span>
         )}
-        <HermitSprite
-          animation={anim}
-          pieces={pieces}
-          scale={SPRITE / 32}
+        {pieces.length > 0 && here && !sleepy && (
+          <span className="shell-badge" title={`${pieces.length} shell pieces`}>
+            <PixelCanvas grid={shellGrid} scale={2} label={`Shell: ${pieces.length} pieces`} />
+          </span>
+        )}
+        <Tilli
+          mood={mood}
+          size={SPRITE}
           flip={act.flip}
-          look={anim === 'walk' ? undefined : spriteLook}
-          label="Hermit"
+          look={mood === 'walk' || mood === 'away' ? undefined : eyes}
+          letter={mood === 'arriving' || (k.quest && here && mood === 'happy')}
+          label="Tilli"
         />
         {effect === 'dust' && (
-          <SpriteAnimator className="fx fx--dust" frames={DUST} fps={10} scale={4} loop={false} />
+          <span className="fx fx--dust" aria-hidden>
+            <i />
+            <i />
+            <i />
+          </span>
         )}
-        {effect === 'sparkle' && (
-          <SpriteAnimator
-            className="fx fx--sparkle"
-            frames={SPARKLE}
-            fps={10}
-            scale={4}
-            loop={false}
-          />
-        )}
-        {here && sleepy && <SpriteAnimator className="fx fx--zzz" frames={ZZZ} fps={3} scale={3} />}
       </div>
     </div>
   );

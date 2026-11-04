@@ -4,7 +4,7 @@
  * Where Hermit has been, what friends did for each other, and the shell they
  * built. Reads `data/journey.json` (falls back to the committed sample).
  */
-import { HermitSprite, PixelBox, sound, useMediaQuery, useReducedMotion } from '@hermit/ui';
+import { PixelBox, sound, Tilli, useMediaQuery, useReducedMotion } from '@hermit/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { requestedSource, useJourney, type JourneySource } from './hooks/useJourney';
@@ -12,6 +12,7 @@ import { useTheme } from './hooks/useTheme';
 import { derive } from './lib/derive';
 import { Header } from './sections/Header';
 import { ImpactPanel } from './sections/ImpactPanel';
+import { MascotStage } from './sections/MascotStage';
 import { PostcardButton } from './sections/Postcard';
 import { QuestLog } from './sections/QuestLog';
 import { ShellPanel } from './sections/ShellPanel';
@@ -72,67 +73,44 @@ export function App() {
       </a>
       <Header
         derived={derived}
-        pieces={derived?.pieces ?? []}
         source={source}
         dark={dark}
         onTheme={toggle}
         onSource={chooseSource}
       />
 
-      <section className="welcome" aria-labelledby="welcome-title">
-        <div className="welcome__copy">
-          <span className="welcome__eyebrow">A little creature. A shared adventure.</span>
-          <h1 id="welcome-title">
-            Small favors.
-            <br />A shell full of stories.
-          </h1>
-          <p>
-            Meet Tilli, your wandering companion. One friend at a time, one little kindness after
-            another — every stop becomes part of the journey.
-          </p>
-          <a className="welcome__link" href="#log">
-            Explore the journey <span aria-hidden="true">↗</span>
-          </a>
-          <span className="welcome__note">Made of moments together.</span>
-        </div>
-        <figure className="welcome__portrait">
-          <div className="welcome__art">
-            <img
-              src={`${import.meta.env.BASE_URL}assets/tilli.jpeg`}
-              alt="Tilli, a cheerful yellow creature with leaf ears, nestled in a sage shell with a heart and flower charm"
-              width="1241"
-              height="1268"
-              fetchPriority="high"
-            />
-          </div>
-          <figcaption>Your next little adventure starts with hello.</figcaption>
-        </figure>
-      </section>
+      <MascotStage derived={derived} />
 
       {error && (
         <PixelBox variant="quest" className="notice" role="alert">
-          <HermitSprite animation="surprised" scale={2} />
+          <Tilli mood="curious" size={96} label="" />
           <p>
-            Hermit couldn’t find its journey. <code>{error}</code>
+            Tilli couldn’t find the journey. <code>{error}</code>
           </p>
         </PixelBox>
       )}
 
       {!journey && !error && (
         <div className="loading" role="status">
-          <HermitSprite animation="walk" scale={3} />
-          <span>Following Hermit’s footprints…</span>
+          <Tilli mood="walk" size={140} label="" />
+          <span>Following Tilli’s footprints…</span>
         </div>
       )}
 
       {journey && derived && (
         <main className="layout">
-          <PixelBox as="section" tab="Journey" className="panel panel--world" aria-label="Map">
+          <PixelBox
+            as="section"
+            tab="Journey"
+            id="journey"
+            className="panel panel--world"
+            aria-label="Map"
+          >
             <div className="intro">
               <p>
-                <strong>Hermit has no home.</strong> It lives on one friend’s laptop at a time,
-                borrowing their AI as a brain, and moves on when they go idle. Each friend leaves a
-                favor for the next; each favor done adds a piece to the shell.
+                <strong>Where Tilli has wandered.</strong> Each house is a friend; the dotted trail
+                is every hop between laptops, coloured by how Tilli left. Click a house to see only
+                that friend’s stops.
               </p>
             </div>
             <WorldPanel

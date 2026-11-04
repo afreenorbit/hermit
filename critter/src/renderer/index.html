@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Hermit critter — browser preview</title>
+    <title>Tilli critter — browser preview</title>
     <style>
       body {
         margin: 0;
@@ -15,12 +15,12 @@
         padding: 32px;
         box-sizing: border-box;
         flex-wrap: wrap;
-        background: #29366f
-          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect x='11' y='11' width='2' height='2' fill='%233b5dc9'/%3E%3C/svg%3E");
+        background: linear-gradient(160deg, #cfe8f1, #f8f1e5 60%, #fbe3d7);
         font:
-          14px/1.4 system-ui,
+          14px/1.4 Nunito,
+          system-ui,
           sans-serif;
-        color: #f4f4f4;
+        color: #483424;
       }
       figure {
         margin: 0;
@@ -38,6 +38,11 @@
       code {
         color: #ffcd75;
       }
+      .menu-frame {
+        border: 2.5px solid #5b3d27;
+        border-radius: 18px;
+        box-shadow: 0 6px 0 #e2d0ad;
+      }
     </style>
   </head>
   <body>
@@ -49,12 +54,18 @@
         title="Critter window"
         allowtransparency="true"
       ></iframe>
-      <figcaption>Critter window (320×300, transparent in Electron)</figcaption>
+      <figcaption>Tilli on the desktop (320×300, transparent in Electron)</figcaption>
     </figure>
     <figure>
-      <iframe src="./panel/index.html" width="360" height="520" title="Hermit's menu"></iframe>
+      <iframe
+        src="./panel/index.html"
+        width="360"
+        height="520"
+        title="Tilli's menu"
+        class="menu-frame"
+      ></iframe>
       <figcaption>
-        Panel window (360×520). Needs <code>pnpm --filter @hermit/critter mock</code>.
+        Tilli’s menu (360×520). Needs <code>pnpm --filter @hermit/critter mock</code>.
       </figcaption>
     </figure>
   </body>

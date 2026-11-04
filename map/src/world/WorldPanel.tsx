@@ -1,6 +1,6 @@
 /**
- * The pixel world: ground, dotted route, houses with pixel faces, and a tiny
- * Hermit walking the latest hop. Owner: C. plan.md §7.2.
+ * The world: pastel pixel ground, dotted route, houses with pixel faces, and
+ * Tilli waddling along the latest hop. Owner: C. plan.md §7.2.
  */
 import {
   BrainBadge,
@@ -9,15 +9,14 @@ import {
   formatDwell,
   HOUSE,
   HOUSE_WINDOW,
-  MINI_HERMIT,
   P,
   pixelAvatar,
   PixelButton,
   RGB,
+  Tilli,
   toImageData,
   useDevicePixelRatio,
   useFrame,
-  type PixelGrid,
 } from '@hermit/ui';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 
@@ -48,13 +47,6 @@ interface Props {
 }
 
 const MAX_ZOOM = 16;
-
-function flipGrid(g: PixelGrid): PixelGrid {
-  const cells = new Array<number>(g.cells.length);
-  for (let y = 0; y < g.h; y++)
-    for (let x = 0; x < g.w; x++) cells[y * g.w + x] = g.cells[y * g.w + (g.w - 1 - x)]!;
-  return { ...g, cells };
-}
 
 function putPx(img: ImageData, x: number, y: number, c: number): void {
   if (x < 0 || y < 0 || x >= img.width || y >= img.height) return;
@@ -181,18 +173,6 @@ export function WorldPanel({
       if (av) toImageData(av, img, ox + HOUSE_WINDOW.x, oy + HOUSE_WINDOW.y);
     });
 
-    // tiny Hermit walking the latest hop, then resting at the door
-    const last = route[route.length - 1];
-    if (last && last.points.length > 1) {
-      const n = last.points.length;
-      const step = reduced ? n - 1 : Math.min(n - 1, tick % (n + 18));
-      const p = last.points[step]!;
-      const prev = last.points[Math.max(0, step - 1)]!;
-      const left = last.points[n - 1]!.x - last.points[0]!.x < 0 || p.x < prev.x;
-      const frame = MINI_HERMIT[step < n - 1 ? tick % 2 : 0]!;
-      toImageData(left ? flipGrid(frame) : frame, img, p.x - 4, p.y - 7);
-    }
-
     ctx.putImageData(img, 0, 0);
   }, [
     ground,
@@ -209,6 +189,21 @@ export function WorldPanel({
     selectedHost,
     hover,
   ]);
+
+  // Tilli walks the latest hop, then rests at the door.
+  const walker = useMemo(() => {
+    const last = route[route.length - 1];
+    if (!last || last.points.length < 2) return null;
+    const n = last.points.length;
+    const step = reduced ? n - 1 : Math.min(n - 1, tick % (n + 18));
+    const p = last.points[step]!;
+    return {
+      x: p.x,
+      y: p.y,
+      walking: step < n - 1,
+      left: last.points[n - 1]!.x < last.points[0]!.x,
+    };
+  }, [route, tick, reduced]);
 
   // --- interaction -------------------------------------------------------
   const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
@@ -356,6 +351,22 @@ export function WorldPanel({
           );
         })}
 
+        {walker && (
+          <div
+            className="world__walker"
+            style={{ left: walker.x * css, top: walker.y * css }}
+            aria-hidden
+          >
+            <Tilli
+              mood={walker.walking ? 'walk' : 'happy'}
+              size={css >= 4 ? 52 : 42}
+              flip={walker.left}
+              marks={false}
+              label=""
+            />
+          </div>
+        )}
+
         <span className="world__mode">{mode === 'city' && city ? `${label}` : label}</span>
 
         <div className="world__controls">
@@ -399,7 +410,7 @@ export function WorldPanel({
         ))}
         <li>
           <span className="world__dot world__dot--hermit" aria-hidden />
-          latest hop
+          Tilli’s latest hop
         </li>
       </ul>
 

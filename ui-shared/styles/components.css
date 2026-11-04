@@ -1,7 +1,7 @@
-/* Pixel components (plan.md §3.6). Owner: C.
-   Borders are stepped box-shadows — 4px edges on each side leave the corners
-   notched, and a two-part hard shadow keeps the notch. No border-radius, no
-   blur, anywhere. */
+/* Components in Tilli's storybook style. Owner: C.
+   Soft "sticker" surfaces: rounded corners, a cocoa outline and a solid,
+   unblurred drop shadow below — friendly like the mascot, still crisp.
+   Tap targets are at least 44px; long words wrap instead of overflowing. */
 
 /* ---------- helpers ---------- */
 .hm-sr {
@@ -26,192 +26,160 @@
   .hm-btn,
   .hm-toggle,
   .hm-tabs__tab,
+  .hm-tabs__panel,
   .hm-dialog,
   .hm-shellview canvas,
   .hm-focusable
 ):focus-visible {
-  outline: 4px solid var(--hm-focus);
-  outline-offset: 6px;
+  outline: 3px solid var(--hm-focus);
+  outline-offset: 4px;
 }
 
 @keyframes hm-blink {
   50% {
-    opacity: 0;
+    opacity: 0.25;
   }
 }
 @keyframes hm-bob {
   50% {
-    transform: translateY(-4px);
+    transform: translateY(-5px);
   }
 }
 @keyframes hm-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
 }
 @keyframes hm-flash {
   0%,
+  100% {
+    outline-color: transparent;
+  }
   50% {
-    background: var(--color-sun);
+    outline: 6px solid var(--hm-butter);
+    outline-offset: 2px;
   }
 }
 
-/* ---------- PixelBox ---------- */
+/* ---------- PixelBox (card) ---------- */
 .hm-box {
   --face: var(--hm-surface);
   --text: var(--hm-fg);
-  --edge: var(--hm-edge);
-  --shade: var(--hm-shadow);
   position: relative;
-  margin: 4px 12px 12px 4px;
-  padding: 16px;
+  margin: 0;
+  padding: 22px;
+  border: 2.5px solid var(--hm-edge);
+  border-radius: var(--radius);
   background: var(--face);
   color: var(--text);
-  box-shadow:
-    0 -4px 0 0 var(--edge),
-    0 4px 0 0 var(--edge),
-    -4px 0 0 0 var(--edge),
-    4px 0 0 0 var(--edge),
-    4px 8px 0 0 var(--shade),
-    8px 4px 0 0 var(--shade);
+  box-shadow: 0 6px 0 var(--hm-shadow);
 }
 .hm-box--flat {
-  margin: 4px;
-  box-shadow:
-    0 -4px 0 0 var(--edge),
-    0 4px 0 0 var(--edge),
-    -4px 0 0 0 var(--edge),
-    4px 0 0 0 var(--edge);
+  box-shadow: none;
 }
 .hm-box--night {
-  --face: var(--color-night);
-  --text: var(--color-paper);
+  --face: #3a3144;
+  --text: #f7eddc;
 }
 .hm-box--ink {
-  --face: var(--color-ink);
-  --text: var(--color-paper);
-  --edge: var(--color-night);
+  --face: #2f2736;
+  --text: #f7eddc;
 }
 .hm-box--quest {
   --face: var(--hm-quest);
-  box-shadow:
-    0 -4px 0 0 var(--edge),
-    0 4px 0 0 var(--edge),
-    -4px 0 0 0 var(--edge),
-    4px 0 0 0 var(--edge),
-    inset 0 0 0 4px var(--color-sun),
-    4px 8px 0 0 var(--shade),
-    8px 4px 0 0 var(--shade);
+  border-style: dashed;
 }
 .hm-box--inset {
   --face: var(--hm-surface-2);
-  margin: 4px;
-  box-shadow:
-    0 -4px 0 0 var(--edge),
-    0 4px 0 0 var(--edge),
-    -4px 0 0 0 var(--edge),
-    4px 0 0 0 var(--edge),
-    inset 4px 4px 0 0 color-mix(in srgb, var(--hm-edge) 22%, transparent);
+  border-width: 2px;
+  border-color: var(--hm-line);
+  box-shadow: none;
 }
 .hm-box--tabbed {
-  padding-top: 24px;
+  padding-top: 32px;
 }
 .hm-box__tab {
   position: absolute;
   top: -16px;
-  left: 12px;
+  left: 20px;
   z-index: 1;
-  padding: 3px 10px 2px;
-  background: var(--color-ink);
-  color: var(--color-sun);
-  font: 600 14px/20px var(--font-ui);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  box-shadow:
-    0 -2px 0 0 var(--color-ink),
-    0 2px 0 0 var(--color-ink),
-    -2px 0 0 0 var(--color-ink),
-    2px 0 0 0 var(--color-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 14px 4px;
+  border: 2.5px solid var(--hm-edge);
+  border-radius: 999px;
+  background: var(--hm-butter);
+  color: #3e2a1c;
+  font: 600 15px/20px var(--font-ui);
+  letter-spacing: 0.02em;
 }
 
 /* ---------- PixelButton ---------- */
 .hm-btn {
-  --face: var(--color-ember);
-  --hi: var(--color-sun);
-  --lo: var(--color-berry);
-  --fg: var(--color-ink);
+  --face: var(--hm-peach);
+  --fg: #3e2a1c;
+  --lip: #c97b5c;
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   min-height: 44px;
-  margin: 4px 8px 8px 4px;
-  padding: 8px 16px;
-  border: 0;
+  margin: 0 0 5px;
+  padding: 8px 20px;
+  border: 2.5px solid #5b3d27;
+  border-radius: 999px;
   background: var(--face);
   color: var(--fg);
-  font: 700 16px/1 var(--font-ui);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font: 600 16px/1 var(--font-ui);
+  letter-spacing: 0.01em;
   cursor: pointer;
   user-select: none;
-  box-shadow:
-    0 -4px 0 0 var(--color-ink),
-    0 4px 0 0 var(--color-ink),
-    -4px 0 0 0 var(--color-ink),
-    4px 0 0 0 var(--color-ink),
-    inset -4px -4px 0 0 var(--lo),
-    inset 4px 4px 0 0 var(--hi),
-    4px 8px 0 0 var(--hm-shadow),
-    8px 4px 0 0 var(--hm-shadow);
+  touch-action: manipulation;
+  box-shadow: 0 5px 0 var(--lip);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    filter 0.12s ease;
 }
-.hm-btn:hover {
-  --hi: var(--color-paper);
+.hm-btn:hover:not(:disabled) {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 0 var(--lip);
 }
 .hm-btn:active:not(:disabled),
 .hm-btn[data-pressed='true'] {
-  transform: translate(4px, 4px);
-  box-shadow:
-    0 -4px 0 0 var(--color-ink),
-    0 4px 0 0 var(--color-ink),
-    -4px 0 0 0 var(--color-ink),
-    4px 0 0 0 var(--color-ink),
-    inset 4px 4px 0 0 var(--lo);
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--lip);
 }
 .hm-btn:disabled {
   cursor: not-allowed;
-  opacity: 0.55;
+  opacity: 0.5;
 }
 .hm-btn--ghost {
   --face: var(--hm-surface);
-  --hi: color-mix(in srgb, var(--hm-surface) 60%, #f4f4f4);
-  --lo: color-mix(in srgb, var(--hm-surface) 70%, #1a1c2c);
   --fg: var(--hm-fg);
-}
-.hm-btn--ghost:hover {
-  --hi: var(--color-sun);
+  --lip: var(--hm-shadow);
+  border-color: var(--hm-edge);
 }
 .hm-btn--danger {
-  --face: var(--color-berry);
-  --hi: var(--color-ember);
-  --lo: var(--color-dream);
-  --fg: var(--color-paper);
+  --face: #eba08f;
+  --lip: #b9614f;
 }
 .hm-btn--quest {
-  --face: var(--color-sun);
-  --hi: var(--color-paper);
-  --lo: var(--color-ember);
+  --face: var(--hm-butter);
+  --lip: #d0a650;
 }
 .hm-btn--sm {
-  min-height: 36px;
-  padding: 4px 10px;
+  min-height: 40px;
+  padding: 4px 14px;
   font-size: 14px;
 }
 .hm-btn--lg {
-  min-height: 56px;
-  padding: 12px 22px;
+  min-height: 54px;
+  padding: 12px 26px;
   font-size: 18px;
 }
 .hm-btn--icon {
@@ -219,7 +187,7 @@
   padding: 8px;
 }
 .hm-btn--sm.hm-btn--icon {
-  min-width: 36px;
+  min-width: 40px;
 }
 
 /* ---------- chips ---------- */
@@ -228,68 +196,61 @@
   flex: none;
   align-items: center;
   gap: 6px;
-  margin: 2px;
-  padding: 1px 8px 0;
-  background: var(--chip, var(--color-mist));
-  color: var(--chip-fg, var(--color-ink));
-  font: 600 13px/20px var(--font-ui);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  padding: 2px 10px 3px;
+  border: 2px solid #5b3d27;
+  border-radius: 999px;
+  background: var(--chip, #f6ecda);
+  color: var(--chip-fg, #3e2a1c);
+  font: 600 13px/18px var(--font-ui);
+  letter-spacing: 0.02em;
   white-space: nowrap;
-  box-shadow:
-    0 -2px 0 0 var(--color-ink),
-    0 2px 0 0 var(--color-ink),
-    -2px 0 0 0 var(--color-ink),
-    2px 0 0 0 var(--color-ink);
 }
 .hm-brain--claude-code {
-  --chip: var(--color-ember);
+  --chip: #f6c6ae;
 }
 .hm-brain--codex {
-  --chip: var(--color-sea);
+  --chip: #c6e0eb;
 }
 .hm-brain--opencode {
-  --chip: var(--color-leaf);
+  --chip: #d8e1ad;
 }
 .hm-brain--other {
-  --chip: var(--color-dusk);
-  --chip-fg: var(--color-paper);
+  --chip: #e4d9c7;
 }
 .hm-dep--graceful {
-  --chip: var(--color-leaf);
+  --chip: #d8e1ad;
 }
 .hm-dep--bedtime {
-  --chip: var(--color-dream);
-  --chip-fg: var(--color-paper);
+  --chip: #dccbe5;
 }
 .hm-dep--abrupt {
-  --chip: var(--color-berry);
-  --chip-fg: var(--color-paper);
+  --chip: #f3bcb0;
 }
 .hm-dep--manual {
-  --chip: var(--color-dusk);
-  --chip-fg: var(--color-paper);
+  --chip: #e4d9c7;
 }
 .hm-dep--present {
-  --chip: var(--color-sun);
+  --chip: #f8d98a;
 }
 .hm-dep__pulse {
   width: 8px;
   height: 8px;
-  background: var(--color-berry);
-  animation: hm-blink 1s steps(1) infinite;
+  border-radius: 50%;
+  background: #d97a6c;
+  animation: hm-blink 1.2s ease-in-out infinite;
 }
 .hm-status--open {
-  --chip: var(--color-sun);
+  --chip: #f8d98a;
 }
 .hm-status--assigned {
-  --chip: var(--color-sea);
+  --chip: #c6e0eb;
 }
 .hm-status--done {
-  --chip: var(--color-leaf);
+  --chip: #d8e1ad;
 }
 .hm-status--expired {
-  --chip: var(--color-mist);
+  --chip: #e7ddcd;
+  --chip-fg: #74604a;
 }
 
 /* ---------- PixelAvatar ---------- */
@@ -299,206 +260,179 @@
   line-height: 0;
 }
 .hm-avatar--framed {
-  margin: 2px;
-  box-shadow:
-    0 -2px 0 0 var(--color-ink),
-    0 2px 0 0 var(--color-ink),
-    -2px 0 0 0 var(--color-ink),
-    2px 0 0 0 var(--color-ink);
+  overflow: hidden;
+  border: 2px solid #5b3d27;
+  border-radius: 10px;
 }
 
-/* ---------- DialogBox ---------- */
+/* ---------- DialogBox (speech bubble) ---------- */
 .hm-dialog {
-  --face: var(--color-paper);
-  --text: var(--color-ink);
+  --face: #fffaf1;
+  --text: #483424;
   position: relative;
-  margin: 18px 4px 4px;
-  padding: 14px 16px 18px;
+  margin: 16px 0 12px;
+  padding: 16px 18px 18px;
+  border: 2.5px solid #5b3d27;
+  border-radius: 20px;
   background: var(--face);
   color: var(--text);
   cursor: pointer;
-  box-shadow:
-    0 -4px 0 0 var(--color-ink),
-    0 4px 0 0 var(--color-ink),
-    -4px 0 0 0 var(--color-ink),
-    4px 0 0 0 var(--color-ink),
-    inset 0 -4px 0 0 color-mix(in srgb, var(--face) 80%, #1a1c2c);
+  box-shadow: 0 5px 0 rgba(91, 61, 39, 0.18);
 }
 .hm-dialog--night {
-  --face: var(--color-night);
-  --text: var(--color-paper);
+  --face: #3a3144;
+  --text: #f7eddc;
 }
 .hm-dialog--dream {
-  --face: var(--color-dream);
-  --text: var(--color-paper);
+  --face: #ede3f1;
 }
 .hm-dialog__head {
   position: absolute;
-  top: -16px;
-  left: 10px;
+  top: -14px;
+  left: 14px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .hm-dialog__name {
-  padding: 3px 8px 2px;
-  background: var(--color-ink);
-  color: var(--color-sun);
-  font: 700 13px/18px var(--font-ui);
-  letter-spacing: 0.1em;
-  box-shadow:
-    0 -2px 0 0 var(--color-ink),
-    0 2px 0 0 var(--color-ink),
-    -2px 0 0 0 var(--color-ink),
-    2px 0 0 0 var(--color-ink);
+  padding: 2px 12px 3px;
+  border: 2px solid #5b3d27;
+  border-radius: 999px;
+  background: #f8d98a;
+  color: #3e2a1c;
+  font: 600 13px/18px var(--font-ui);
+  letter-spacing: 0.04em;
 }
 .hm-dialog__text {
   margin: 4px 0 0;
-  font: 400 15px/1.5 var(--font-body);
+  font: 500 15px/1.6 var(--font-body);
+  overflow-wrap: anywhere;
 }
 .hm-dialog__ghost {
   visibility: hidden;
 }
 .hm-dialog__more {
   position: absolute;
-  right: 10px;
-  bottom: 2px;
-  color: var(--color-ember);
-  font: 12px/1 var(--font-display);
-  animation: hm-blink 0.8s steps(1) infinite;
+  right: 14px;
+  bottom: 4px;
+  color: #d97a6c;
+  font: 12px/1 var(--font-ui);
+  animation: hm-bob 1s ease-in-out infinite;
 }
 .hm-dialog--compact {
-  padding: 12px 12px 14px;
+  padding: 12px 14px 14px;
 }
 .hm-dialog--compact .hm-dialog__text {
   font-size: 14px;
 }
 
-/* ---------- StatTile: arcade score panel ---------- */
+/* ---------- StatTile ---------- */
 .hm-stat {
-  --tone: var(--color-sun);
+  --tone: #e48a6c;
+  --tone-soft: var(--hm-peach-soft);
   position: relative;
-  margin: 4px;
-  padding: 12px 14px 14px;
-  background:
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 2px, transparent 2px 4px),
-    var(--color-ink);
-  color: var(--color-paper);
-  box-shadow:
-    0 -4px 0 0 var(--color-night),
-    0 4px 0 0 var(--color-night),
-    -4px 0 0 0 var(--color-night),
-    4px 0 0 0 var(--color-night);
-}
-.hm-stat--ember {
-  --tone: var(--color-ember);
+  padding: 16px 18px 18px;
+  border: 2.5px solid var(--hm-edge);
+  border-radius: 18px;
+  background: var(--hm-surface);
+  color: var(--hm-fg);
+  box-shadow: 0 5px 0 var(--hm-shadow);
 }
 .hm-stat--leaf {
-  --tone: var(--color-lime);
+  --tone: #7f9550;
+  --tone-soft: var(--hm-sage-soft);
+}
+.hm-stat--sun {
+  --tone: #c7962f;
+  --tone-soft: var(--hm-butter-soft);
 }
 .hm-stat--sea {
-  --tone: var(--color-cyan);
-}
-.hm-stat--berry {
-  --tone: var(--color-ember);
+  --tone: #4f8aa6;
+  --tone-soft: var(--hm-sky-soft);
 }
 .hm-stat--dream {
-  --tone: var(--color-mist);
+  --tone: #8a6a9e;
+  --tone-soft: var(--hm-plum-soft);
 }
 .hm-stat__label {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--color-mist);
-  font: 600 13px/16px var(--font-ui);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  color: var(--hm-muted);
+  font: 600 14px/18px var(--font-ui);
 }
 .hm-stat__label .hm-icon {
+  box-sizing: content-box;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--tone-soft);
   color: var(--tone);
 }
 .hm-stat__value {
   margin-top: 10px;
-  color: var(--tone);
-  font: 22px/1.1 var(--font-display);
-  text-shadow: 2px 2px 0 var(--color-night);
+  color: var(--hm-fg);
+  font: 600 34px/1.05 var(--font-display);
   font-variant-numeric: tabular-nums;
 }
 .hm-stat__hint {
-  margin-top: 6px;
-  color: var(--color-mist);
-  font: 400 13px/1.35 var(--font-body);
+  margin-top: 4px;
+  color: var(--hm-muted);
+  font: 500 14px/1.5 var(--font-body);
 }
 
-/* ---------- Ticker ---------- */
+/* ---------- Ticker (status pill) ---------- */
 .hm-ticker {
   position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
-  margin: 4px;
-  padding: 8px 12px;
-  background:
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 2px, transparent 2px 4px),
-    var(--color-ink);
-  color: var(--color-sun);
-  box-shadow:
-    0 -4px 0 0 var(--color-night),
-    0 4px 0 0 var(--color-night),
-    -4px 0 0 0 var(--color-night),
-    4px 0 0 0 var(--color-night);
+  padding: 9px 18px;
+  border: 2.5px solid var(--hm-edge);
+  border-radius: 999px;
+  background: var(--hm-surface);
+  color: var(--hm-fg);
+  box-shadow: 0 4px 0 var(--hm-shadow);
 }
 .hm-ticker__led {
   flex: none;
-  width: 8px;
-  height: 8px;
-  background: var(--color-dusk);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cdbba3;
 }
 .hm-ticker--live .hm-ticker__led {
-  background: var(--color-lime);
-  animation: hm-blink 1.2s steps(1) infinite;
+  background: #8ea35f;
+  box-shadow: 0 0 0 4px rgba(142, 163, 95, 0.25);
+  animation: hm-blink 1.6s ease-in-out infinite;
 }
 .hm-ticker__text {
   min-width: 0;
   overflow: hidden;
-  font: 11px/16px var(--font-display);
-  letter-spacing: 0.04em;
+  font: 600 14px/20px var(--font-ui);
+  letter-spacing: 0.03em;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-shadow: 0 0 6px color-mix(in srgb, var(--color-sun) 45%, transparent);
 }
 
-/* ---------- QuestCard ---------- */
+/* ---------- QuestCard (favor note) ---------- */
 .hm-quest {
   position: relative;
-  margin: 4px;
   padding: 14px 16px;
+  border: 2px dashed #c9a35a;
+  border-radius: 16px;
   background: var(--hm-quest);
   color: var(--hm-fg);
-  box-shadow:
-    0 -4px 0 0 var(--hm-edge),
-    0 4px 0 0 var(--hm-edge),
-    -4px 0 0 0 var(--hm-edge),
-    4px 0 0 0 var(--hm-edge),
-    inset 0 0 0 4px var(--color-sun);
 }
 .hm-quest--done {
-  box-shadow:
-    0 -4px 0 0 var(--hm-edge),
-    0 4px 0 0 var(--hm-edge),
-    -4px 0 0 0 var(--hm-edge),
-    4px 0 0 0 var(--hm-edge),
-    inset 0 0 0 4px var(--color-leaf);
+  border-style: solid;
+  border-color: #a9b97a;
+  background: var(--hm-sage-soft);
 }
 .hm-quest--expired {
-  opacity: 0.72;
-  box-shadow:
-    0 -4px 0 0 var(--hm-edge),
-    0 4px 0 0 var(--hm-edge),
-    -4px 0 0 0 var(--hm-edge),
-    4px 0 0 0 var(--hm-edge),
-    inset 0 0 0 4px var(--color-mist);
+  border-color: var(--hm-line);
+  background: var(--hm-surface-2);
+  opacity: 0.85;
 }
 .hm-quest__head {
   display: flex;
@@ -506,20 +440,21 @@
   gap: 8px;
 }
 .hm-quest__mark {
-  color: var(--color-ember);
+  color: #e48a6c;
 }
 .hm-quest__from {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font: 700 13px/20px var(--font-ui);
-  letter-spacing: 0.08em;
+  font: 600 13px/20px var(--font-ui);
+  letter-spacing: 0.04em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .hm-quest__text {
   margin: 8px 0 0;
-  font: 500 15px/1.45 var(--font-body);
+  font: 600 15px/1.6 var(--font-body);
+  overflow-wrap: anywhere;
 }
 .hm-quest__reward {
   display: flex;
@@ -527,8 +462,7 @@
   gap: 10px;
   margin-top: 10px;
   color: var(--hm-muted);
-  font: 600 12px/1 var(--font-ui);
-  letter-spacing: 0.1em;
+  font: 600 13px/1 var(--font-ui);
 }
 .hm-quest--compact {
   padding: 10px 12px;
@@ -540,44 +474,41 @@
 /* ---------- Tabs ---------- */
 .hm-tabs__list {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
-  padding: 4px 4px 8px;
+  padding: 4px;
+  border: 2px solid var(--hm-line);
+  border-radius: 999px;
+  background: var(--hm-surface-2);
 }
 .hm-tabs__tab {
   flex: 1;
-  min-height: 40px;
-  margin: 4px;
-  padding: 6px 8px;
+  min-height: 44px;
+  padding: 6px 10px;
   border: 0;
-  background: var(--hm-surface-2);
+  border-radius: 999px;
+  background: transparent;
   color: var(--hm-muted);
-  font: 700 14px/1 var(--font-ui);
-  letter-spacing: 0.08em;
+  font: 600 15px/1 var(--font-ui);
+  letter-spacing: 0.02em;
   cursor: pointer;
-  box-shadow:
-    0 -4px 0 0 var(--color-ink),
-    0 4px 0 0 var(--color-ink),
-    -4px 0 0 0 var(--color-ink),
-    4px 0 0 0 var(--color-ink),
-    4px 4px 0 4px var(--hm-shadow);
+  touch-action: manipulation;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 .hm-tabs__tab:hover {
   color: var(--hm-fg);
 }
 .hm-tabs__tab[data-state='active'] {
-  background: var(--color-sun);
-  color: var(--color-ink);
-  transform: translate(2px, 2px);
-  box-shadow:
-    0 -4px 0 0 var(--color-ink),
-    0 4px 0 0 var(--color-ink),
-    -4px 0 0 0 var(--color-ink),
-    4px 0 0 0 var(--color-ink),
-    inset 0 -4px 0 0 var(--color-ember);
+  background: #f8d98a;
+  color: #3e2a1c;
+  box-shadow: inset 0 0 0 2px #5b3d27;
 }
 .hm-tabs__panel {
-  padding: 8px 4px 4px;
-  outline: none;
+  padding: 14px 2px 2px;
+  border-radius: 12px;
+  animation: hm-in 0.25s ease-out;
 }
 
 /* ---------- Toggle group ---------- */
@@ -590,36 +521,27 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 36px;
-  margin: 2px;
-  padding: 4px 10px;
-  border: 0;
-  background: var(--hm-surface-2);
+  min-height: 44px;
+  padding: 4px 16px;
+  border: 2px solid var(--hm-line);
+  border-radius: 999px;
+  background: var(--hm-surface);
   color: var(--hm-fg);
   font: 600 14px/1 var(--font-ui);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   cursor: pointer;
-  box-shadow:
-    0 -2px 0 0 var(--color-ink),
-    0 2px 0 0 var(--color-ink),
-    -2px 0 0 0 var(--color-ink),
-    2px 0 0 0 var(--color-ink),
-    2px 4px 0 0 var(--hm-shadow),
-    4px 2px 0 0 var(--hm-shadow);
+  touch-action: manipulation;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 .hm-toggle:hover {
-  background: color-mix(in srgb, var(--color-sun) 30%, var(--hm-surface-2));
+  border-color: var(--hm-edge);
 }
 .hm-toggle[data-state='on'] {
-  background: var(--color-sun);
-  color: var(--color-ink);
-  transform: translate(2px, 2px);
-  box-shadow:
-    0 -2px 0 0 var(--color-ink),
-    0 2px 0 0 var(--color-ink),
-    -2px 0 0 0 var(--color-ink),
-    2px 0 0 0 var(--color-ink);
+  border-color: #5b3d27;
+  background: #f8d98a;
+  color: #3e2a1c;
+  box-shadow: 0 3px 0 #d0a650;
 }
 
 /* ---------- Tooltip ---------- */
@@ -627,42 +549,34 @@
   position: absolute;
   z-index: 30;
   width: max-content;
-  max-width: 240px;
-  padding: 8px 10px;
-  background: var(--color-ink);
-  color: var(--color-paper);
-  font: 400 13px/1.4 var(--font-body);
+  max-width: 250px;
+  padding: 10px 12px;
+  border: 2px solid #5b3d27;
+  border-radius: 14px;
+  background: #fffaf1;
+  color: #483424;
+  font: 500 13px/1.45 var(--font-body);
   pointer-events: none;
   transform: translate(-50%, calc(-100% - 14px));
-  box-shadow:
-    0 -2px 0 0 var(--color-ink),
-    0 2px 0 0 var(--color-ink),
-    -2px 0 0 0 var(--color-ink),
-    2px 0 0 0 var(--color-ink),
-    4px 4px 0 0 color-mix(in srgb, #1a1c2c 40%, transparent);
-}
-.hm-tip::after,
-.hm-tip::before {
-  position: absolute;
-  left: 50%;
-  background: var(--color-ink);
-  content: '';
-  transform: translateX(-50%);
+  box-shadow: 0 5px 0 rgba(91, 61, 39, 0.2);
 }
 .hm-tip::after {
-  bottom: -6px;
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
   width: 12px;
-  height: 4px;
-}
-.hm-tip::before {
-  bottom: -10px;
-  width: 4px;
-  height: 4px;
+  height: 12px;
+  border-right: 2px solid #5b3d27;
+  border-bottom: 2px solid #5b3d27;
+  background: #fffaf1;
+  content: '';
+  transform: translateX(-50%) rotate(45deg);
 }
 .hm-tip strong {
-  color: var(--color-sun);
-  font: 600 14px/1.3 var(--font-ui);
-  letter-spacing: 0.04em;
+  display: block;
+  margin-bottom: 2px;
+  color: #483424;
+  font: 600 15px/1.3 var(--font-ui);
 }
 
 /* ---------- ShellView ---------- */
@@ -673,52 +587,13 @@
 }
 .hm-shellview canvas {
   display: block;
+  border-radius: 6px;
   cursor: crosshair;
 }
 .hm-shellview__tip {
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
-/* Consistent interaction feedback across the map and desktop companion. */
-.hm-btn,
-.hm-toggle,
-.hm-tabs__tab {
-  transition:
-    background-color 160ms ease,
-    color 160ms ease,
-    transform 120ms ease;
-  touch-action: manipulation;
-}
-.hm-tabs__list {
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.hm-tabs__tab {
-  min-height: 44px;
-}
-.hm-toggle {
-  min-height: 44px;
-}
-.hm-stat {
-  background: var(--color-ink);
-  padding: 18px;
-}
-.hm-stat__hint {
-  font-size: 14px;
-  line-height: 1.5;
-}
-.hm-quest__text {
-  line-height: 1.65;
-  overflow-wrap: anywhere;
-}
-.hm-dialog__text {
-  line-height: 1.65;
-  overflow-wrap: anywhere;
-}
-.hm-tabs__panel:focus-visible {
-  outline: 3px solid var(--hm-focus);
-  outline-offset: 4px;
-}
 @media (prefers-reduced-motion: reduce) {
   .hm-btn,
   .hm-toggle,

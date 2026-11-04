@@ -1,32 +1,40 @@
-/* Cozy pixel RPG tokens (plan.md §3.6). Palette: Sweetie 16 (Lospec).
-   Owner: C. Every hex below is checked against the Sweetie 16 palette file.
-
-   Theme: light by default; `prefers-color-scheme: dark` unless the page sets
-   data-theme="light"; data-theme="dark" forces dark. */
+/* Cozy storybook tokens, in Tilli's colours. Owner: C. plan.md §3.6.
+   Light by default (cream paper); `prefers-color-scheme: dark` unless the page
+   sets data-theme="light"; data-theme="dark" forces the night theme. */
 @import 'tailwindcss';
 @import './components.css';
+@import './tilli.css';
 
 @theme {
-  --color-ink: #1a1c2c;
-  --color-dream: #5d275d;
-  --color-berry: #b13e53;
-  --color-ember: #ef7d57;
-  --color-sun: #ffcd75;
-  --color-lime: #a7f070;
-  --color-leaf: #38b764;
-  --color-teal: #257179;
-  --color-navy: #29366f;
-  --color-blue: #3b5dc9;
-  --color-sea: #41a6f6;
-  --color-cyan: #73eff7;
-  --color-paper: #f4f4f4;
-  --color-mist: #94b0c2;
-  --color-dusk: #566c86;
-  --color-night: #333c57;
+  --color-ink: #5b3d27;
+  --color-dream: #8a6a9e;
+  --color-berry: #d97a6c;
+  --color-ember: #f2a07f;
+  --color-sun: #f8d98a;
+  --color-lime: #e3e9b0;
+  --color-leaf: #a9b97a;
+  --color-teal: #7d9567;
+  --color-navy: #55507a;
+  --color-blue: #8a9fd0;
+  --color-sea: #9fcbe0;
+  --color-cyan: #d3ecf1;
+  --color-paper: #fffaf1;
+  --color-mist: #eadfc8;
+  --color-dusk: #a48f77;
+  --color-night: #6a5878;
 
-  --font-display: 'Press Start 2P', ui-monospace, monospace;
-  --font-ui: 'Pixelify Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  /* Pocket Hermit tokens (Afreen), kept so her mascot pieces keep working. */
+  --color-cream: #f5e9c8;
+  --color-sage: #a8b88a;
+  --color-deep-sage: #7e9065;
+  --color-blush: #f2b5a0;
+  --color-warm-brown: #8a6a4f;
+  --color-off-white: #fdfbf5;
+  --radius-soft: 16px;
+
+  --font-display: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  --font-ui: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  --font-body: 'Nunito', ui-sans-serif, system-ui, sans-serif;
 
   --radius-pixel: 0px;
   --spacing-px4: 4px;
@@ -45,54 +53,83 @@
 
 :root {
   --px: 4px;
+  --radius: 22px;
+  --radius-sm: 14px;
   --hm-bg: #f8f1e5;
-  --hm-dot: #566c86;
+  --hm-bg-2: #f1e6d2;
+  --hm-dot: #e6d7bb;
   --hm-surface: #fffaf1;
-  --hm-surface-2: color-mix(in srgb, #f4f4f4 80%, #94b0c2);
+  --hm-surface-2: #f6ecda;
+  --hm-surface-3: #efe2c8;
   --hm-fg: #483424;
-  --hm-muted: #70634e;
-  --hm-edge: #1a1c2c;
-  --hm-shadow: #c4b38f;
-  --hm-link: #3b5dc9;
-  --hm-focus: #1a1c2c;
-  --hm-quest: color-mix(in srgb, #ffcd75 38%, #f4f4f4);
-  --shadow-pixel: 4px 4px 0 var(--hm-shadow);
+  --hm-muted: #74604a;
+  --hm-edge: #5b3d27;
+  --hm-line: #e1cfae;
+  --hm-shadow: #e2d0ad;
+  --hm-link: #4f6aa8;
+  --hm-focus: #d97a6c;
+  --hm-quest: #fdf1d2;
+  --hm-sage-soft: #e7ecd3;
+  --hm-peach-soft: #fbe3d7;
+  --hm-butter: #f8d98a;
+  --hm-butter-soft: #fdf0c9;
+  --hm-sky-soft: #e2f0f4;
+  --hm-plum-soft: #ede3f1;
+  --hm-peach: #f2a07f;
+  --shadow-pixel: 0 5px 0 var(--hm-shadow);
+  --shadow-soft: 0 4px 16px rgb(138 106 79 / 0.12);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --hm-bg: #1a1c2c;
-    --hm-dot: #333c57;
-    --hm-surface: #333c57;
-    --hm-surface-2: color-mix(in srgb, #333c57 62%, #1a1c2c);
-    --hm-fg: #f4f4f4;
-    --hm-muted: #94b0c2;
-    --hm-edge: #1a1c2c;
-    --hm-shadow: color-mix(in srgb, #1a1c2c 45%, #000);
-    --hm-link: #41a6f6;
-    --hm-focus: #ffcd75;
-    --hm-quest: color-mix(in srgb, #ffcd75 16%, #333c57);
+    --hm-bg: #2a2331;
+    --hm-bg-2: #231d29;
+    --hm-dot: #3a3142;
+    --hm-surface: #382f42;
+    --hm-surface-2: #31293a;
+    --hm-surface-3: #43394e;
+    --hm-fg: #f7eddc;
+    --hm-muted: #d0bfa7;
+    --hm-edge: #14101a;
+    --hm-line: #4c4157;
+    --hm-shadow: #17121c;
+    --hm-link: #9fcbe0;
+    --hm-focus: #f8d98a;
+    --hm-quest: #4a3f38;
+    --hm-sage-soft: #3b4234;
+    --hm-peach-soft: #4b3634;
+    --hm-butter-soft: #4a4130;
+    --hm-sky-soft: #2f3c45;
+    --hm-plum-soft: #3f3348;
     color-scheme: dark;
   }
 }
 
 :root[data-theme='dark'] {
-  --hm-bg: #1a1c2c;
-  --hm-dot: #333c57;
-  --hm-surface: #333c57;
-  --hm-surface-2: color-mix(in srgb, #333c57 62%, #1a1c2c);
-  --hm-fg: #f4f4f4;
-  --hm-muted: #94b0c2;
-  --hm-edge: #1a1c2c;
-  --hm-shadow: color-mix(in srgb, #1a1c2c 45%, #000);
-  --hm-link: #41a6f6;
-  --hm-focus: #ffcd75;
-  --hm-quest: color-mix(in srgb, #ffcd75 16%, #333c57);
+  --hm-bg: #2a2331;
+  --hm-bg-2: #231d29;
+  --hm-dot: #3a3142;
+  --hm-surface: #382f42;
+  --hm-surface-2: #31293a;
+  --hm-surface-3: #43394e;
+  --hm-fg: #f7eddc;
+  --hm-muted: #d0bfa7;
+  --hm-edge: #14101a;
+  --hm-line: #4c4157;
+  --hm-shadow: #17121c;
+  --hm-link: #9fcbe0;
+  --hm-focus: #f8d98a;
+  --hm-quest: #4a3f38;
+  --hm-sage-soft: #3b4234;
+  --hm-peach-soft: #4b3634;
+  --hm-butter-soft: #4a4130;
+  --hm-sky-soft: #2f3c45;
+  --hm-plum-soft: #3f3348;
   color-scheme: dark;
 }
 
-/* Pixels stay crisp, always. Integer scaling only. */
+/* Generated art (shell, map, avatars) stays crisp: integer scaling only. */
 img[data-pixel],
 canvas[data-pixel],
 svg[shape-rendering='crispEdges'] {

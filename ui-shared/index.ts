@@ -40,5 +40,14 @@ export { ShellView } from './components/ShellView';
 export { StatTile } from './components/StatTile';
 export { Ticker } from './components/Ticker';
 
+export { Tilli, type TilliProps } from './components/Tilli';
+export {
+  tilliSvg,
+  TILLI_COLORS,
+  TILLI_MOODS,
+  type TilliMood,
+  type TilliOptions,
+} from './mascot/tilli';
+
 export { PocketHermit, MOOD_LABEL } from './components/PocketHermit';
 export type { Mood, PocketHermitProps } from './components/PocketHermit';

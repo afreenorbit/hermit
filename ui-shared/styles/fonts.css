@@ -1,9 +1,9 @@
-/* Friendly rounded sans throughout. Press Start 2P is gone: it fought the art
-   (plan.md 3.6, changed Nov 4). */
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Inter:wght@400..700&display=swap');
+/* Fredoka: headings, labels, numbers — round and friendly like Tilli.
+   Nunito: body text and anything longer than a few words. Never below 14px. Owner: C. */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400..700&family=Nunito:ital,wght@0,400..800;1,400..600&display=swap');
 
 :root {
-  --font-display: 'Nunito', system-ui, sans-serif;
-  --font-ui: 'Nunito', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
+  --font-display: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  --font-ui: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  --font-body: 'Nunito', ui-sans-serif, system-ui, sans-serif;
 }

@@ -7,9 +7,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('loads the sample journey, clearly labelled', async ({ page }) => {
-  await expect(page.getByRole('note').getByText('SAMPLE DATA')).toBeVisible();
+  await expect(page.getByRole('note').getByText('Sample data')).toBeVisible();
   await expect(page.getByTestId('quest-log').locator('> li')).toHaveCount(8);
-  await expect(page.getByRole('status').first()).toContainText('NOW: WITH ABHISHEK');
+  await expect(page.getByRole('status').first()).toContainText('Now with Abhishek');
 });
 
 test('clicking a house filters the quest log to that friend', async ({ page, isMobile }) => {
@@ -18,27 +18,36 @@ test('clicking a house filters the quest log to that friend', async ({ page, isM
   const cards = page.getByTestId('quest-log').locator('> li');
   await expect(cards).toHaveCount(3);
   await expect(cards.first()).toContainText('Afreen');
-  await expect(page.getByText('3 OF 8 STOPS')).toBeVisible();
+  await expect(page.getByText('3 of 8 stops')).toBeVisible();
 });
 
 test('the completed-favor filter hides stops without a done favor', async ({ page }) => {
-  await page.getByRole('radio', { name: /FAVOR DONE/ }).click();
+  await page
+    .getByRole('radiogroup', { name: 'Completed favors only' })
+    .getByRole('radio', { name: /Favor done/ })
+    .click();
   await expect(page.getByTestId('quest-log').locator('> li')).toHaveCount(6);
 });
 
 test('the world sample switches the map to a world view', async ({ page }) => {
-  await page.getByRole('radio', { name: 'WORLD' }).click();
+  await page.getByRole('radio', { name: 'World' }).click();
   await expect(page).toHaveURL(/data=wide/);
   await expect(page.getByText('WORLD VIEW')).toBeVisible();
-  await expect(page.getByRole('status').first()).toContainText('BERLIN');
+  await expect(page.getByRole('status').first()).toContainText('Berlin');
 });
 
 test('MAKE A POSTCARD downloads a PNG', async ({ page }) => {
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.getByRole('button', { name: /MAKE A POSTCARD/ }).click(),
+    page.getByRole('button', { name: /make a postcard/i }).click(),
   ]);
   expect(download.suggestedFilename()).toMatch(/^hermit-postcard-.*\.png$/);
+});
+
+test('Tilli acts out a movement when one is picked', async ({ page }) => {
+  await page.getByRole('radio', { name: /Sleeping/ }).click();
+  await expect(page.locator('.scene__tilli .tilli--sleeping')).toBeVisible();
+  await expect(page.locator('.scene__bubble')).toContainText('bedtime');
 });
 
 test('no horizontal page scroll', async ({ page }) => {

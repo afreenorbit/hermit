@@ -35,32 +35,32 @@ interface Palette {
 }
 
 const LIGHT: Palette = {
-  grass: [P.leaf, P.leaf, P.leaf, P.teal],
-  tuft: P.lime,
+  grass: [P.lime, P.lime, P.lime, P.leaf],
+  tuft: P.leaf,
   tree: P.teal,
-  road: P.mist,
+  road: P.paper,
   water: P.sea,
   waterHi: P.cyan,
-  shore: P.sun,
-  sea: P.mist,
+  shore: P.mist,
+  sea: P.cyan,
   seaHi: P.paper,
-  land: [P.leaf, P.lime],
-  coast: P.teal,
-  grid: P.dusk,
+  land: [P.lime, P.leaf],
+  coast: P.leaf,
+  grid: P.sea,
 };
 
 const DARK: Palette = {
-  grass: [P.teal, P.teal, P.teal, P.navy],
+  grass: [P.teal, P.teal, P.teal, P.night],
   tuft: P.leaf,
-  tree: P.navy,
+  tree: P.night,
   road: P.dusk,
-  water: P.blue,
-  waterHi: P.sea,
+  water: P.navy,
+  waterHi: P.blue,
   shore: P.dusk,
   sea: P.navy,
   seaHi: P.blue,
   land: [P.teal, P.leaf],
-  coast: P.night,
+  coast: P.leaf,
   grid: P.night,
 };
 

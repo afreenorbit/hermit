@@ -1,26 +1,34 @@
 /**
- * Sweetie 16 (Lospec) — the only art palette. Every sprite, shell, avatar and
- * map tile is a grid of indices into this array. Owner: C. plan.md §3.6.
+ * The art palette: 16 roles, coloured to match Tilli (cream paper, sage shell,
+ * butter skin, peach heart, cocoa ink). Every sprite, shell, avatar and map
+ * tile is a grid of indices into this array, so recolouring here restyles all
+ * generated art at once. Owner: C. plan.md §3.6.
+ *
+ * Index roles are unchanged from the original Sweetie 16 layout; the export
+ * name is kept so callers and contracts did not have to move.
  */
 
 export const SWEETIE16 = [
-  '#1a1c2c', // 0 ink
-  '#5d275d', // 1 dream
-  '#b13e53', // 2 berry
-  '#ef7d57', // 3 ember
-  '#ffcd75', // 4 sun
-  '#a7f070', // 5 lime
-  '#38b764', // 6 leaf
-  '#257179', // 7 teal
-  '#29366f', // 8 navy
-  '#3b5dc9', // 9 blue
-  '#41a6f6', // 10 sea
-  '#73eff7', // 11 cyan
-  '#f4f4f4', // 12 paper
-  '#94b0c2', // 13 mist
-  '#566c86', // 14 dusk
-  '#333c57', // 15 night
+  '#5b3d27', // 0 ink — cocoa outline
+  '#8a6a9e', // 1 dream — plum night
+  '#d97a6c', // 2 berry — rose
+  '#f2a07f', // 3 ember — peach
+  '#f8d98a', // 4 sun — butter
+  '#e3e9b0', // 5 lime — pale sage
+  '#a9b97a', // 6 leaf — sage
+  '#7d9567', // 7 teal — deep sage
+  '#55507a', // 8 navy — dusk indigo
+  '#8a9fd0', // 9 blue — periwinkle
+  '#9fcbe0', // 10 sea — sky
+  '#d3ecf1', // 11 cyan — pale sky
+  '#fffaf1', // 12 paper — cream
+  '#eadfc8', // 13 mist — oat
+  '#a48f77', // 14 dusk — cocoa grey
+  '#6a5878', // 15 night — dusky plum
 ] as const;
+
+/** Same array, by its new name. */
+export const PALETTE = SWEETIE16;
 
 export const P = {
   ink: 0,

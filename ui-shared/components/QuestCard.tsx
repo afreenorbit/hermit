@@ -25,7 +25,7 @@ export function QuestCard({ text, from, status = 'open', reward, compact }: Ques
     <article className={`hm-quest hm-quest--${status}${compact ? ' hm-quest--compact' : ''}`}>
       <header className="hm-quest__head">
         <PixelIcon name="quest" className="hm-quest__mark" />
-        <span className="hm-quest__from">QUEST FROM {from.toUpperCase()}</span>
+        <span className="hm-quest__from">Favor from {from}</span>
         <StatusChip status={status} />
       </header>
       <p className="hm-quest__text">“{text}”</p>

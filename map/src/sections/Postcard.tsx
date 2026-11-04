@@ -1,50 +1,63 @@
 /**
- * "MAKE A POSTCARD": a 1200×630 PNG of the shell, Hermit and the top stats,
+ * "Make a postcard": a 1200×630 PNG of Tilli, the shell and the top stats,
  * for the README header and the #HowISwitch post. Owner: C. plan.md §7.6.
  *
- * Drawn straight onto one canvas instead of screenshotting the DOM — every
- * pixel lands on an integer grid, so the PNG is as crisp as the page.
+ * Drawn straight onto one canvas instead of screenshotting the DOM: the shell
+ * keeps whole pixels, and Tilli is the same SVG the page animates.
  */
 import {
-  composeFrame,
   formatDay,
   formatHandoffMs,
   PixelButton,
   renderShellGrid,
   sound,
-  SWEETIE16,
+  tilliSvg,
   toCanvas,
-  ANIMATIONS,
 } from '@hermit/ui';
 import type { JourneyT } from '@hermit/ui/contracts';
 import { useState } from 'react';
 
 import type { Derived } from '../lib/derive';
 
-const C = (i: number): string => SWEETIE16[i] ?? '#000';
-const INK = C(0);
-const EMBER = C(3);
-const SUN = C(4);
-const LIME = C(5);
-const PAPER = C(12);
-const MIST = C(13);
-const DUSK = C(14);
-const NIGHT = C(15);
+const CREAM = '#f8f1e5';
+const PAPER = '#fffaf1';
+const INK = '#5b3d27';
+const TEXT = '#483424';
+const MUTED = '#74604a';
+const BUTTER = '#f8d98a';
+const SAGE_SOFT = '#e7ecd3';
+const PEACH_SOFT = '#fbe3d7';
+const SKY_SOFT = '#e2f0f4';
 
-function box(
+function sticker(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   w: number,
   h: number,
+  r: number,
   face: string,
-  edge: string,
 ): void {
-  ctx.fillStyle = edge;
-  ctx.fillRect(x, y - 4, w, h + 8);
-  ctx.fillRect(x - 4, y, w + 8, h);
+  ctx.fillStyle = '#e2d0ad';
+  ctx.beginPath();
+  ctx.roundRect(x, y + 7, w, h, r);
+  ctx.fill();
   ctx.fillStyle = face;
-  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+  ctx.fill();
+  ctx.stroke();
+}
+
+function loadSvg(markup: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+  });
 }
 
 export async function drawPostcard(
@@ -58,98 +71,108 @@ export async function drawPostcard(
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
-  ctx.imageSmoothingEnabled = false;
   try {
     await Promise.all([
-      document.fonts.load('48px "Press Start 2P"'),
-      document.fonts.load('600 24px "Pixelify Sans"'),
+      document.fonts.load('600 64px "Fredoka"'),
+      document.fonts.load('600 24px "Nunito"'),
     ]);
   } catch {
-    /* fall back to monospace */
+    /* system fonts are fine */
+  }
+  const fredoka = (size: number, weight = 600): string =>
+    `${weight} ${size}px "Fredoka", ui-rounded, system-ui, sans-serif`;
+  const nunito = (size: number, weight = 600): string =>
+    `${weight} ${size}px "Nunito", system-ui, sans-serif`;
+
+  // paper card with a soft dotted ground
+  ctx.fillStyle = CREAM;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#ecdfc6';
+  for (let y = 18; y < H; y += 28) for (let x = 18; x < W; x += 28) ctx.fillRect(x, y, 3, 3);
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.roundRect(22, 22, W - 44, H - 44, 34);
+  ctx.stroke();
+
+  // the shell in a little frame
+  sticker(ctx, 64, 300, 240, 240, 26, PAPER);
+  ctx.save();
+  ctx.translate(88, 324);
+  ctx.imageSmoothingEnabled = false;
+  toCanvas(renderShellGrid(d.pieces, { size: 48 }), ctx, 4);
+  ctx.restore();
+  ctx.fillStyle = MUTED;
+  ctx.font = fredoka(18, 500);
+  ctx.fillText('the shell we built', 112, 572);
+
+  // Tilli, celebrating, big
+  ctx.fillStyle = '#fdf0c9';
+  ctx.beginPath();
+  ctx.ellipse(420, 360, 200, 200, 0, 0, Math.PI * 2);
+  ctx.fill();
+  try {
+    const tilli = await loadSvg(tilliSvg({ mood: 'celebrate', title: '' }));
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(tilli, 238, 150, 400, 400);
+  } catch {
+    /* the card still works without the mascot */
   }
 
-  // ground: ink with a night pixel dot grid, stepped frame
-  ctx.fillStyle = INK;
-  ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = NIGHT;
-  for (let y = 12; y < H; y += 24) for (let x = 12; x < W; x += 24) ctx.fillRect(x, y, 4, 4);
-  ctx.fillStyle = SUN;
-  ctx.fillRect(24, 24, W - 48, 4);
-  ctx.fillRect(24, H - 28, W - 48, 4);
-  ctx.fillRect(24, 28, 4, H - 56);
-  ctx.fillRect(W - 28, 28, 4, H - 56);
-
-  // the shell, big, with Hermit wearing it
-  const shell = renderShellGrid(d.pieces, { size: 48 });
-  box(ctx, 72, 88, 456, 456, NIGHT, INK);
-  ctx.save();
-  ctx.translate(84, 100);
-  toCanvas(shell, ctx, 9);
-  ctx.restore();
-  const small = renderShellGrid(d.pieces, { size: 24 });
-  const hermit = composeFrame(
-    ANIMATIONS.happy.poses[0]!,
-    small.cells.some((c) => c >= 0) ? small : null,
-  );
-  ctx.save();
-  ctx.translate(400, 372);
-  toCanvas(hermit, ctx, 6);
-  ctx.restore();
-
-  // title
-  const pf = (size: number, weight = 600): string =>
-    `${weight} ${size}px "Pixelify Sans", ui-sans-serif, sans-serif`;
+  // words
   ctx.textBaseline = 'alphabetic';
-  ctx.font = '56px "Press Start 2P", monospace';
-  ctx.fillStyle = INK;
-  ctx.fillText('HERMIT', 612, 168);
-  ctx.fillStyle = SUN;
-  ctx.fillText('HERMIT', 608, 164);
-
-  ctx.font = pf(30);
-  ctx.fillStyle = PAPER;
+  ctx.fillStyle = TEXT;
+  ctx.font = fredoka(72, 600);
+  ctx.fillText('Hermit', 64, 132);
+  ctx.font = fredoka(30, 500);
+  ctx.fillStyle = MUTED;
+  ctx.fillText('with Tilli, a creature with no home', 66, 178);
+  ctx.font = nunito(26, 700);
+  ctx.fillStyle = TEXT;
   const friends = d.hostIds.length;
   ctx.fillText(
-    `visited ${friends} friend${friends === 1 ? '' : 's'} in ${d.places} place${d.places === 1 ? '' : 's'}`,
-    608,
-    224,
+    `Visited ${friends} friend${friends === 1 ? '' : 's'} in ${d.places} place${d.places === 1 ? '' : 's'}`,
+    66,
+    232,
   );
-  ctx.font = pf(22, 500);
-  ctx.fillStyle = MIST;
-  if (d.range) ctx.fillText(`${formatDay(d.range.from)} → ${formatDay(d.range.to)}`, 608, 260);
+  if (d.range) {
+    ctx.font = nunito(20, 600);
+    ctx.fillStyle = MUTED;
+    ctx.fillText(`${formatDay(d.range.from)} → ${formatDay(d.range.to)}`, 66, 264);
+  }
 
-  // three stats
+  // three stat stickers
   const stats: Array<[string, string, string]> = [
-    ['FAVORS DONE', String(journey.stats.favors_done ?? d.favorsDone), EMBER],
-    ['SHELL PIECES', String(d.pieces.length), SUN],
-    ['MEDIAN HANDOFF', formatHandoffMs(journey.stats.median_handoff_ms), LIME],
+    ['Favors done', String(journey.stats.favors_done ?? d.favorsDone), PEACH_SOFT],
+    ['Shell pieces', String(d.pieces.length), SAGE_SOFT],
+    ['Median handoff', formatHandoffMs(journey.stats.median_handoff_ms).toLowerCase(), SKY_SOFT],
   ];
-  stats.forEach(([label, value, color], i) => {
-    const x = 612 + i * 180;
-    box(ctx, x, 304, 160, 128, NIGHT, INK);
-    ctx.font = pf(16);
-    ctx.fillStyle = MIST;
-    ctx.fillText(label, x + 14, 336);
-    ctx.font = '30px "Press Start 2P", monospace';
-    ctx.fillStyle = INK;
-    ctx.fillText(value, x + 17, 403);
-    ctx.fillStyle = color;
-    ctx.fillText(value, x + 14, 400);
+  stats.forEach(([label, value, face], i) => {
+    const y = 120 + i * 140;
+    sticker(ctx, 860, y, 276, 112, 22, face);
+    ctx.font = fredoka(20, 500);
+    ctx.fillStyle = MUTED;
+    ctx.fillText(label, 886, y + 38);
+    ctx.font = fredoka(46, 600);
+    ctx.fillStyle = TEXT;
+    ctx.fillText(value, 886, y + 90);
   });
 
-  ctx.font = pf(22, 500);
-  ctx.fillStyle = PAPER;
-  ctx.fillText('A creature with no home. It lives on one', 608, 492);
-  ctx.fillText('friend’s laptop at a time.', 608, 522);
-  ctx.font = pf(18, 500);
-  ctx.fillStyle = DUSK;
-  ctx.fillText('built on Switch · Flip the Switch 2026', 608, 572);
+  ctx.font = nunito(18, 600);
+  ctx.fillStyle = MUTED;
+  ctx.fillText('built on Switch · Flip the Switch 2026', 862, 578);
 
   if (sample) {
-    box(ctx, 940, 54, 200, 44, SUN, INK);
-    ctx.font = pf(22, 700);
-    ctx.fillStyle = INK;
-    ctx.fillText('SAMPLE DATA', 966, 84);
+    ctx.fillStyle = BUTTER;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(862, 50, 190, 44, 22);
+    ctx.fill();
+    ctx.stroke();
+    ctx.font = fredoka(20, 600);
+    ctx.fillStyle = TEXT;
+    ctx.fillText('Sample data', 898, 80);
   }
   return canvas;
 }
@@ -191,7 +214,7 @@ export function PostcardButton({
       onClick={() => void make()}
       disabled={busy}
     >
-      {busy ? 'DRAWING…' : 'MAKE A POSTCARD'}
+      {busy ? 'Drawing…' : 'Make a postcard'}
     </PixelButton>
   );
 }
