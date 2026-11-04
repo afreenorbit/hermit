@@ -1,9 +1,9 @@
 /**
- * "Make a postcard": a 1200×630 PNG of Tilli, the shell and the top stats,
+ * "Make a postcard": a 1200×630 PNG of Hermit, the shell and the top stats,
  * for the README header and the #HowISwitch post. Owner: C. plan.md §7.6.
  *
  * Drawn straight onto one canvas instead of screenshotting the DOM: the shell
- * keeps whole pixels, and Tilli is the same SVG the page animates.
+ * keeps whole pixels, and Hermit is the same SVG the page animates.
  */
 import {
   formatDay,
@@ -106,7 +106,7 @@ export async function drawPostcard(
   ctx.font = fredoka(18, 500);
   ctx.fillText('the shell we built', 112, 572);
 
-  // Tilli, celebrating, big
+  // Hermit, celebrating, big
   ctx.fillStyle = '#fdf0c9';
   ctx.beginPath();
   ctx.ellipse(420, 360, 200, 200, 0, 0, Math.PI * 2);
@@ -126,7 +126,7 @@ export async function drawPostcard(
   ctx.fillText('Hermit', 64, 132);
   ctx.font = fredoka(30, 500);
   ctx.fillStyle = MUTED;
-  ctx.fillText('with Tilli, a creature with no home', 66, 178);
+  ctx.fillText('with Hermit, a creature with no home', 66, 178);
   ctx.font = nunito(26, 700);
   ctx.fillStyle = TEXT;
   const friends = d.hostIds.length;

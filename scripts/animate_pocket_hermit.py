@@ -8,7 +8,9 @@ from PIL import Image, ImageDraw, ImageFilter
 from base64 import b64encode
 
 
-ASSETS = Path(__file__).resolve().parents[1] / "map/public/pocket-hermit"
+# Single home for the mascot: both the map and the Electron critter import
+# from here, so neither app keeps its own copy of the source art.
+ASSETS = Path(__file__).resolve().parents[1] / "ui-shared/assets/pocket-hermit"
 # Landmarks in the original character sheet, before cropping the pose PNGs.
 POSES = {
     "visiting": ((280, 125), [(519, 713), (718, 713)], [(542, 467), (792, 441)],

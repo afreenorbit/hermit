@@ -1,22 +1,5 @@
 /** One card per stop, newest first, with filters. Owner: C. plan.md §7.5. */
-import {
-  BrainBadge,
-  DepartureChip,
-  formatClock,
-  formatDay,
-  formatSpan,
-  formatTemp,
-  PixelAvatar,
-  PixelBox,
-  PixelCanvas,
-  PixelIcon,
-  PixelToggleGroup,
-  QuestCard,
-  renderShellGrid,
-  Tilli,
-  weatherInfo,
-  type BrainProvider,
-} from '@hermit/ui';
+import { BrainBadge, DepartureChip, formatClock, formatDay, formatSpan, formatTemp, PixelAvatar, PixelBox, PixelCanvas, PixelIcon, PixelToggleGroup, PocketHermit, QuestCard, renderShellGrid, type BrainProvider, weatherInfo } from '@hermit/ui';
 import type { StopT } from '@hermit/ui/contracts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -133,8 +116,8 @@ export function QuestLog({
 
       {derived.stopsNewestFirst.length === 0 ? (
         <div className="empty empty--big">
-          <Tilli mood="sleeping" size={150} label="" />
-          <p>Tilli hasn’t left its first laptop yet.</p>
+          <PocketHermit mood="sleeping" size={150} label="" />
+          <p>Hermit hasn’t left its first laptop yet.</p>
         </div>
       ) : stops.length === 0 ? (
         <div className="empty">

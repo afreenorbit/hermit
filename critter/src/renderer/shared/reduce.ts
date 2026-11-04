@@ -1,10 +1,23 @@
 /**
- * Keeper events → what the creature should be doing. Pure, so every row of
- * plan.md §6.3 has a unit test. Owner: C.
+ * Keeper events -> what the creature should be doing. Pure, so every row has a
+ * unit test.
+ *
+ * Holds only what is local to this laptop. Who owns the soul is shared state
+ * from Switch and arrives through `soulHolder`; whether this machine is
+ * eligible to host is local and arrives through `present`. The two are never
+ * merged, because merging them is how two laptops end up both showing
+ * `visiting`.
  */
 import type { EventT, KeeperStatusT, ShellPieceT } from '@hermit/ui/contracts';
 
-export type Phase = 'hidden' | 'arriving' | 'here' | 'leaving';
+/**
+ * Where the creature is in the handoff, on THIS laptop.
+ *
+ * `waiting` used to be `hidden`, and the rename is the point: a laptop that is
+ * not hosting still draws Hermit — looking off toward whoever has it. Only the
+ * mood changes, never the presence.
+ */
+export type Phase = 'waiting' | 'arriving' | 'here' | 'leaving';
 
 export interface Line {
   text: string;
@@ -46,7 +59,7 @@ export const initial: CritterState = {
   shell: [],
   events: [],
   lines: [],
-  phase: 'hidden',
+  phase: 'waiting',
   abrupt: false,
   celebrate: 0,
   quest: false,
@@ -63,7 +76,7 @@ export function applyStatus(
   const holding = st.soul_holder === st.host;
   let phase = s.phase;
   // On connect (or a missed event) jump straight to the right place, no walk.
-  if (holding && phase === 'hidden') phase = 'here';
+  if (holding && phase === 'waiting') phase = 'here';
   if (!holding && (phase === 'here' || phase === 'arriving')) phase = 'leaving';
   const line = st.last_line ?? null;
   const lines =
@@ -112,14 +125,14 @@ export function applyEvent(s: CritterState, e: EventT): CritterState {
       return {
         ...next,
         soulHolder: holder,
-        phase: s.phase === 'hidden' ? 'hidden' : 'leaving',
+        phase: s.phase === 'waiting' ? 'waiting' : 'leaving',
         quest: false,
         lastFreedBy: null,
       };
     }
     case 'DEPARTURE_STARTED':
     case 'SOUL_RELEASED':
-      if (e.host !== me || s.phase === 'hidden') return next;
+      if (e.host !== me || s.phase === 'waiting') return next;
       return { ...next, phase: 'leaving', quest: false };
     case 'FAVOR_ASSIGNED':
       return str(d.assignee) === me ? { ...next, quest: true } : next;
@@ -137,7 +150,7 @@ export function applyEvent(s: CritterState, e: EventT): CritterState {
 
 /** Animation phases call this when the walk-off finishes. */
 export function finishLeaving(s: CritterState): CritterState {
-  return s.phase === 'leaving' ? { ...s, phase: 'hidden', abrupt: false } : s;
+  return s.phase === 'leaving' ? { ...s, phase: 'waiting', abrupt: false } : s;
 }
 
 export function finishArriving(s: CritterState): CritterState {

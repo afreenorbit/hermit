@@ -74,6 +74,13 @@ def create_app(runtime: KeeperRuntime | None = None) -> FastAPI:
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
+    @app.get("/v1/group")
+    async def group() -> dict[str, Any]:
+        """Every laptop in the group, so a non-hosting critter knows what to show."""
+        if runtime is None:
+            return {"v": 1, "soul_holder": None, "hosts": [], "self": None}
+        return await runtime.group_status()
+
     @app.get("/v1/shell")
     async def shell() -> dict[str, Any]:
         # TODO(Abhishek): serve real pieces once shell_model.py lands (Phase 4.2).

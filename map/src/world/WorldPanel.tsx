@@ -1,23 +1,8 @@
 /**
  * The world: pastel pixel ground, dotted route, houses with pixel faces, and
- * Tilli waddling along the latest hop. Owner: C. plan.md §7.2.
+ * Hermit waddling along the latest hop. Owner: C. plan.md §7.2.
  */
-import {
-  BrainBadge,
-  crispScale,
-  formatDay,
-  formatDwell,
-  HOUSE,
-  HOUSE_WINDOW,
-  P,
-  pixelAvatar,
-  PixelButton,
-  RGB,
-  Tilli,
-  toImageData,
-  useDevicePixelRatio,
-  useFrame,
-} from '@hermit/ui';
+import { BrainBadge, crispScale, formatDay, formatDwell, HOUSE, HOUSE_WINDOW, P, pixelAvatar, PixelButton, PocketHermit, RGB, toImageData, useDevicePixelRatio, useFrame } from '@hermit/ui';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 
 import { nameOf, type Derived } from '../lib/derive';
@@ -190,7 +175,7 @@ export function WorldPanel({
     hover,
   ]);
 
-  // Tilli walks the latest hop, then rests at the door.
+  // Hermit walks the latest hop, then rests at the door.
   const walker = useMemo(() => {
     const last = route[route.length - 1];
     if (!last || last.points.length < 2) return null;
@@ -357,11 +342,9 @@ export function WorldPanel({
             style={{ left: walker.x * css, top: walker.y * css }}
             aria-hidden
           >
-            <Tilli
-              mood={walker.walking ? 'walk' : 'happy'}
+            <PocketHermit
+              mood={walker.walking ? 'away' : 'visiting'}
               size={css >= 4 ? 52 : 42}
-              flip={walker.left}
-              marks={false}
               label=""
             />
           </div>
@@ -410,7 +393,7 @@ export function WorldPanel({
         ))}
         <li>
           <span className="world__dot world__dot--hermit" aria-hidden />
-          Tilli’s latest hop
+          Hermit’s latest hop
         </li>
       </ul>
 

@@ -48,6 +48,7 @@ export {
   type TilliMood,
   type TilliOptions,
 } from './mascot/tilli';
-
-export { PocketHermit, MOOD_LABEL } from './components/PocketHermit';
+export { PocketHermit, MOODS, MOOD_LABEL } from './components/PocketHermit';
 export type { Mood, PocketHermitProps } from './components/PocketHermit';
+export { moodFor, moodLine } from './mascot/mood';
+export type { KeeperState, MoodInput } from './mascot/mood';

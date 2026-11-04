@@ -1,5 +1,5 @@
 /** Logo, live ticker, data switch, sound and theme toggles. Owner: C. */
-import { formatDwell, PixelButton, PixelToggleGroup, sound, Ticker, Tilli } from '@hermit/ui';
+import { formatDwell, PixelButton, PixelToggleGroup, PocketHermit, sound, Ticker } from '@hermit/ui';
 import { useEffect, useState } from 'react';
 
 import type { Derived } from '../lib/derive';
@@ -38,11 +38,11 @@ export function Header({ derived, source, dark, onTheme, onSource }: Props) {
       <div className="masthead__row">
         <a className="logo" href="./" aria-label="Hermit — home">
           <span className="logo__mark">
-            <Tilli mood="happy" size={58} marks={false} label="" />
+            <PocketHermit mood="visiting" size={58} label="" />
           </span>
           <span className="logo__text">
             <span className="logo__word">Hermit</span>
-            <span className="logo__sub">with Tilli, a creature with no home</span>
+            <span className="logo__sub">with Hermit, a creature with no home</span>
           </span>
         </a>
         <div className="masthead__ticker">

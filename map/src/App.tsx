@@ -4,7 +4,7 @@
  * Where Hermit has been, what friends did for each other, and the shell they
  * built. Reads `data/journey.json` (falls back to the committed sample).
  */
-import { PixelBox, sound, Tilli, useMediaQuery, useReducedMotion } from '@hermit/ui';
+import { PixelBox, PocketHermit, sound, useMediaQuery, useReducedMotion } from '@hermit/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { requestedSource, useJourney, type JourneySource } from './hooks/useJourney';
@@ -83,17 +83,17 @@ export function App() {
 
       {error && (
         <PixelBox variant="quest" className="notice" role="alert">
-          <Tilli mood="curious" size={96} label="" />
+          <PocketHermit mood="waiting" size={96} label="" />
           <p>
-            Tilli couldn’t find the journey. <code>{error}</code>
+            Hermit couldn’t find the journey. <code>{error}</code>
           </p>
         </PixelBox>
       )}
 
       {!journey && !error && (
         <div className="loading" role="status">
-          <Tilli mood="walk" size={140} label="" />
-          <span>Following Tilli’s footprints…</span>
+          <PocketHermit mood="away" size={140} label="" />
+          <span>Following Hermit’s footprints…</span>
         </div>
       )}
 
@@ -108,8 +108,8 @@ export function App() {
           >
             <div className="intro">
               <p>
-                <strong>Where Tilli has wandered.</strong> Each house is a friend; the dotted trail
-                is every hop between laptops, coloured by how Tilli left. Click a house to see only
+                <strong>Where Hermit has wandered.</strong> Each house is a friend; the dotted trail
+                is every hop between laptops, coloured by how Hermit left. Click a house to see only
                 that friend’s stops.
               </p>
             </div>

@@ -1,9 +1,9 @@
 /**
- * The welcome stage: Tilli acting out each movement from the demo — arriving
+ * The welcome stage: Hermit acting out each movement — arriving
  * with a letter, visiting, wondering, sleeping, walking away, celebrating.
  * Cycles on its own until someone picks a movement. Owner: C.
  */
-import { formatDwell, Tilli, useReducedMotion, type TilliMood } from '@hermit/ui';
+import { formatDwell, type Mood, PocketHermit, useReducedMotion } from '@hermit/ui';
 import { useEffect, useState } from 'react';
 
 import type { Derived } from '../lib/derive';
@@ -11,7 +11,7 @@ import type { Derived } from '../lib/derive';
 interface Movement {
   id: string;
   label: string;
-  mood: TilliMood;
+  mood: Mood;
   line: string;
   scene: string;
 }
@@ -27,21 +27,21 @@ const MOVEMENTS: Movement[] = [
   {
     id: 'visiting',
     label: 'Visiting',
-    mood: 'happy',
+    mood: 'visiting',
     line: 'Cozy laptop. I think I’ll stay a while.',
     scene: 'scene--day',
   },
   {
     id: 'curious',
     label: 'Curious',
-    mood: 'curious',
+    mood: 'waiting',
     line: 'Ooh — what will you leave for the next friend?',
     scene: 'scene--day',
   },
   {
     id: 'celebrate',
     label: 'Favor done',
-    mood: 'celebrate',
+    mood: 'visiting',
     line: 'A new piece for my shell! Thank you!',
     scene: 'scene--dusk',
   },
@@ -85,7 +85,7 @@ export function MascotStage({ derived }: { derived: Derived | null }) {
           <span>A shell full of stories.</span>
         </h1>
         <p className="stage__lede">
-          Meet <strong>Tilli</strong>, Hermit’s wandering companion. Tilli lives on one friend’s
+          Meet <strong>Hermit</strong>, Hermit’s wandering companion. Hermit lives on one friend’s
           laptop at a time, borrows their AI as a voice, and moves on when they go quiet — carrying
           a little favor to whoever is awake next.
         </p>
@@ -100,7 +100,7 @@ export function MascotStage({ derived }: { derived: Derived | null }) {
         {host && (
           <p className="stage__now">
             <span className="stage__dot" aria-hidden />
-            Right now Tilli is with <strong>{host.display_name}</strong> in {host.city}
+            Right now Hermit is with <strong>{host.display_name}</strong> in {host.city}
             {derived?.current.dwellS != null
               ? ` · ${formatDwell(derived.current.dwellS).toLowerCase()}`
               : ''}
@@ -119,11 +119,11 @@ export function MascotStage({ derived }: { derived: Derived | null }) {
           {m.line}
         </p>
         <div className="scene__tilli" key={`t-${m.id}`}>
-          <Tilli mood={m.mood} size={260} label={`Tilli — ${m.label.toLowerCase()}`} />
+          <PocketHermit mood={m.mood} size={260} label={`Hermit — ${m.label.toLowerCase()}`} />
         </div>
         <figcaption>
           <span className="scene__label">Preview a movement</span>
-          <div className="scene__moves" role="radiogroup" aria-label="Tilli's movements">
+          <div className="scene__moves" role="radiogroup" aria-label="Hermit's movements">
             {MOVEMENTS.map((mv, i) => (
               <button
                 key={mv.id}
@@ -136,7 +136,7 @@ export function MascotStage({ derived }: { derived: Derived | null }) {
                   setAuto(false);
                 }}
               >
-                <Tilli mood={mv.mood} size={34} marks={false} still label="" />
+                <PocketHermit mood={mv.mood} size={34} still label="" />
                 {mv.label}
               </button>
             ))}
@@ -146,21 +146,21 @@ export function MascotStage({ derived }: { derived: Derived | null }) {
 
       <ol className="steps" aria-label="How Hermit works">
         <li>
-          <Tilli mood="arriving" size={84} marks={false} still label="" />
+          <PocketHermit mood="arriving" size={84} still label="" />
           <div>
-            <strong>Tilli arrives</strong>
+            <strong>Hermit arrives</strong>
             <span>on whichever friend is at their laptop, and speaks in their AI’s voice.</span>
           </div>
         </li>
         <li>
-          <Tilli mood="curious" size={84} marks={false} still label="" />
+          <PocketHermit mood="waiting" size={84} still label="" />
           <div>
             <strong>Leave a favor</strong>
-            <span>before Tilli moves on — a song, a photo, a kind word for the next friend.</span>
+            <span>before Hermit moves on — a song, a photo, a kind word for the next friend.</span>
           </div>
         </li>
         <li>
-          <Tilli mood="celebrate" size={84} marks={false} still label="" />
+          <PocketHermit mood="visiting" size={84} still label="" />
           <div>
             <strong>The shell grows</strong>
             <span>every favor done adds a piece, coloured by when and where it happened.</span>

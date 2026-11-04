@@ -33,8 +33,8 @@ const connected = applyStatus(initial, status());
 
 describe('critter reducer (plan.md 6.3)', () => {
   it('stays hidden while someone else has the soul', () => {
-    expect(connected.phase).toBe('hidden');
-    expect(applyEvent(connected, ev('SOUL_CLAIMED', { holder: 'abhishek' })).phase).toBe('hidden');
+    expect(connected.phase).toBe('waiting');
+    expect(applyEvent(connected, ev('SOUL_CLAIMED', { holder: 'abhishek' })).phase).toBe('waiting');
   });
 
   it('walks in when this host claims the soul, then settles', () => {
@@ -90,7 +90,7 @@ describe('critter reducer (plan.md 6.3)', () => {
     expect(applyEvent(leaving, ev('SOUL_RELEASED', { departure: 'graceful' })).phase).toBe(
       'leaving',
     );
-    expect(finishLeaving(leaving).phase).toBe('hidden');
+    expect(finishLeaving(leaving).phase).toBe('waiting');
   });
 
   it('jumps straight to "here" when it connects mid-visit (no walk-in)', () => {

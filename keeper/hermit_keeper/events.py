@@ -19,6 +19,8 @@ from .ids import new_id
 
 class EventType(StrEnum):
     PRESENCE_CHANGED = "PRESENCE_CHANGED"
+    #: Periodic "I am still here" so other laptops can tell silence from absence.
+    HOST_HEARTBEAT = "HOST_HEARTBEAT"
     SOUL_FREE = "SOUL_FREE"
     SOUL_CLAIMED = "SOUL_CLAIMED"
     SOUL_CLAIM_REJECTED = "SOUL_CLAIM_REJECTED"

@@ -36,6 +36,20 @@ paths:
           content:
             text/event-stream:
               schema: { type: string }
+  /v1/group:
+    get:
+      summary: Every laptop in the group, as this keeper last saw it
+      description: >
+        Folded from the shared ledger room, so any keeper can answer it and
+        the desktop critter needs no extra service. `soul_holder` is shared
+        state owned by Switch; each host's `present` is local to that machine.
+        A host we have not heard from within the staleness window is reported
+        `stale: true` with mood `offline` rather than guessed at.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Group" }
   /v1/shell:
     get:
       summary: All shell pieces known to this host
@@ -94,6 +108,29 @@ paths:
                         latency_ms: { type: integer }
 components:
   schemas:
+    Group:
+      type: object
+      required: [v, generated_at, soul_holder, hosts]
+      properties:
+        v: { const: 1 }
+        generated_at: { type: string, format: date-time }
+        self: { type: [string, "null"], description: the host serving this }
+        soul_holder:
+          type: [string, "null"]
+          description: null when free, or when the holder has gone stale
+        hosts:
+          type: array
+          items:
+            type: object
+            required: [host_id, mood, stale, holding]
+            properties:
+              host_id: { type: string }
+              state: { type: [string, "null"] }
+              present: { type: [boolean, "null"] }
+              mood: { enum: [arriving, visiting, away, sleeping, waiting, offline] }
+              last_seen: { type: [string, "null"], format: date-time }
+              stale: { type: boolean }
+              holding: { type: boolean }
     Status:
       type: object
       required: [host, state, present, soul_holder, mood]
@@ -106,8 +143,10 @@ components:
         since: { type: [string, "null"], format: date-time }
         mood:
           description: >
-            Which mascot to draw. Matches the filenames in
-            map/public/pocket-hermit/ exactly.
-          enum: [arriving, visiting, away, sleeping]
+            Which mascot this laptop should draw. Every laptop has one, not
+            just the host: a laptop that is awake while Hermit is elsewhere
+            shows `waiting`, and one we cannot hear from shows `offline`.
+            Only the soul holder is ever `visiting`.
+          enum: [arriving, visiting, away, sleeping, waiting, offline]
         favor_pending: { type: [object, "null"] }
         last_line: { type: [string, "null"] }

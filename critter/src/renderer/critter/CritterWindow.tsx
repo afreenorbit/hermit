@@ -1,10 +1,10 @@
 /**
- * Tilli on the desktop. Owner: C. plan.md §6.3, moves from the mascot demo.
+ * Hermit on the desktop — on every laptop in the group, not only the host.
  *
  *   SOUL_CLAIMED (me)      waddle in from the edge → wave with a letter (curious if abrupt)
  *   idle                   visiting: breathes, blinks, eyes follow the cursor
  *   new den line           chatter while the bubble types, stays 7s
- *   FAVOR_ASSIGNED (me)    a little letter badge bobbing by Tilli
+ *   FAVOR_ASSIGNED (me)    a little letter badge bobbing beside Hermit
  *   SHELL_PIECE_ADDED      celebrate with sparkles; the shell badge grows
  *   after 00:30            tucked into the shell asleep, zzz, lilac bubble
  *   DEPARTURE / RELEASED   wave → turn around → walk off the other edge → hide
@@ -12,16 +12,18 @@
  */
 import {
   DialogBox,
+  type Mood,
+  moodFor,
+  moodLine,
   PixelCanvas,
+  PocketHermit,
   renderShellGrid,
   sound,
-  Tilli,
   useReducedMotion,
-  type TilliMood,
 } from '@hermit/ui';
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 
-import { bridge, inElectron } from '../shared/bridge';
+import { bridge } from '../shared/bridge';
 import { toPieceInputs } from '../shared/pieces';
 import { isSleepyHour } from '../shared/reduce';
 import { useKeeper } from '../shared/store';
@@ -29,7 +31,6 @@ import { useKeeper } from '../shared/store';
 const WALK_PX = 220;
 const SPRITE = 150;
 
-type Look = readonly [number, number];
 
 export function CritterWindow() {
   const k = useKeeper();
@@ -37,14 +38,13 @@ export function CritterWindow() {
   const pieces = useMemo(() => toPieceInputs(k.shell), [k.shell]);
   const shellGrid = useMemo(() => renderShellGrid(pieces, { size: 24 }), [pieces]);
   const [x, setX] = useState(0);
-  const [act, setAct] = useState<{ mood: TilliMood | null; flip: boolean }>({
+  const [act, setAct] = useState<{ mood: Mood | null; flip: boolean }>({
     mood: null,
     flip: false,
   });
   const [effect, setEffect] = useState<'dust' | null>(null);
   const [line, setLine] = useState<string | null>(null);
   const [typing, setTyping] = useState(false);
-  const [look, setLook] = useState<Look>([1, 0]);
   const [sleepy, setSleepy] = useState(isSleepyHour());
   const [faded, setFaded] = useState(false);
   const spriteRef = useRef<HTMLDivElement>(null);
@@ -70,30 +70,9 @@ export function CritterWindow() {
 
   // show the window whenever there is something to show
   useEffect(() => {
-    bridge.setVisible(k.phase !== 'hidden');
-    if (k.phase === 'hidden') bridge.setMouseOver(false);
+    bridge.setVisible(k.phase !== 'waiting');
+    if (k.phase === 'waiting') bridge.setMouseOver(false);
   }, [k.phase]);
-
-  // eyes follow the cursor (screen position from main, or the page in a browser)
-  useEffect(() => {
-    const aim = (px: number, py: number): void => {
-      const r = spriteRef.current?.getBoundingClientRect();
-      if (!r) return;
-      const dx = px - (r.left + r.width * 0.65);
-      const dy = py - (r.top + r.height * 0.35);
-      setLook([Math.abs(dx) < 30 ? 0 : Math.sign(dx), Math.abs(dy) < 30 ? 0 : Math.sign(dy)]);
-    };
-    const off = bridge.on('cursor', (v) => {
-      const p = v as { x: number; y: number };
-      aim(p.x, p.y);
-    });
-    const onMove = (e: MouseEvent): void => aim(e.clientX, e.clientY);
-    if (!inElectron) window.addEventListener('mousemove', onMove);
-    return () => {
-      off();
-      window.removeEventListener('mousemove', onMove);
-    };
-  }, []);
 
   // --- arrival ---------------------------------------------------------------
   useEffect(() => {
@@ -106,11 +85,11 @@ export function CritterWindow() {
       later(30, () => setFaded(false));
       later(450, arrived);
     } else {
-      setAct({ mood: 'walk', flip: true });
+      setAct({ mood: 'away', flip: true });
       setX(WALK_PX);
       for (let i = 1; i <= 16; i++) later(i * 100, () => setX(Math.round(WALK_PX * (1 - i / 16))));
       later(1650, () => {
-        setAct({ mood: k.abrupt ? 'curious' : 'arriving', flip: false });
+        setAct({ mood: 'arriving', flip: false });
         setEffect('dust');
       });
       later(k.abrupt ? 3400 : 3200, () => {
@@ -135,7 +114,7 @@ export function CritterWindow() {
         left();
       });
     } else {
-      setAct({ mood: 'wave', flip: false });
+      setAct({ mood: 'away', flip: false });
       later(1400, () => setAct({ mood: 'away', flip: true }));
       for (let i = 1; i <= 18; i++)
         later(1400 + i * 100, () => setX(-Math.round((WALK_PX * i) / 18)));
@@ -154,7 +133,7 @@ export function CritterWindow() {
     if (k.celebrate === seenCelebrate.current) return;
     seenCelebrate.current = k.celebrate;
     if (k.phase !== 'here') return;
-    setAct({ mood: 'celebrate', flip: false });
+    setAct({ mood: 'visiting', flip: false });
     const t = window.setTimeout(() => setAct({ mood: null, flip: false }), 1800);
     return () => window.clearTimeout(t);
   }, [k.celebrate, k.phase]);
@@ -193,20 +172,24 @@ export function CritterWindow() {
     if (d && Math.abs(e.screenX - d.x) + Math.abs(e.screenY - d.y) < 4) bridge.panel(true);
   };
 
-  if (k.phase === 'hidden') {
-    return inElectron ? null : (
-      <div className="web-hint">
-        {k.connected
-          ? 'Tilli is visiting someone else right now.'
-          : 'Waiting for the keeper on 127.0.0.1:47800…'}
-      </div>
-    );
-  }
-
+  // Every laptop keeps a presence, not just the host: a blank screen on the
+  // other machines was what made the companion feel broken. A non-hosting
+  // laptop shows `waiting` (Hermit is with someone else), `sleeping` (this
+  // host is idle or past bedtime) or `offline` (we cannot reach the keeper).
   const here = k.phase === 'here';
-  const base: TilliMood = here && sleepy ? 'sleeping' : here && typing ? 'talking' : 'happy';
-  const mood: TilliMood = act.mood ?? base;
-  const eyes: Look = act.flip ? [-look[0], look[1]] : look;
+  const derived = moodFor({
+    state: k.state,
+    present: k.present,
+    soulHolder: k.soulHolder,
+    host: k.hostId ?? '',
+    connected: k.connected,
+  });
+  // The animation phases own the brief in-between moments; otherwise the
+  // keeper's own state decides.
+  const phased: Mood | null =
+    k.phase === 'arriving' ? 'arriving' : k.phase === 'leaving' ? 'away' : null;
+  const base: Mood = here && sleepy ? 'sleeping' : (phased ?? derived);
+  const mood: Mood = act.mood ?? base;
 
   return (
     <div className={`stage${faded ? ' is-faded' : ''}`}>
@@ -214,7 +197,7 @@ export function CritterWindow() {
         <div className="bubble" {...hover}>
           <DialogBox
             text={line}
-            name="TILLI"
+            name="HERMIT"
             compact
             tone={sleepy ? 'dream' : 'paper'}
             onDone={() => setTyping(false)}
@@ -229,11 +212,11 @@ export function CritterWindow() {
         onPointerDown={onDown}
         onPointerUp={onUp}
         role="button"
-        aria-label="Tilli. Click to open Tilli's menu."
+        aria-label={`${moodLine(mood, k.soulHolder, k.hostId ?? '')} Click for the menu.`}
         {...hover}
       >
         {k.quest && here && (
-          <span className="quest-mark" aria-label="Tilli is carrying a favor for you">
+          <span className="quest-mark" aria-label="Hermit is carrying a favor for you">
             <span aria-hidden>✉</span>
             <b aria-hidden>!</b>
           </span>
@@ -243,14 +226,7 @@ export function CritterWindow() {
             <PixelCanvas grid={shellGrid} scale={2} label={`Shell: ${pieces.length} pieces`} />
           </span>
         )}
-        <Tilli
-          mood={mood}
-          size={SPRITE}
-          flip={act.flip}
-          look={mood === 'walk' || mood === 'away' ? undefined : eyes}
-          letter={mood === 'arriving' || (k.quest && here && mood === 'happy')}
-          label="Tilli"
-        />
+        <PocketHermit mood={mood} size={SPRITE} label={moodLine(mood, k.soulHolder, k.hostId ?? '')} />
         {effect === 'dust' && (
           <span className="fx fx--dust" aria-hidden>
             <i />

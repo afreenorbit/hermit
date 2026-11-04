@@ -4,15 +4,28 @@
   "title": "Event",
   "description": "Envelope for everything that crosses a boundary: EventBus, critter SSE, ledger lines.",
   "type": "object",
-  "required": ["v", "id", "type", "host", "ts", "data"],
+  "required": [
+    "v",
+    "id",
+    "type",
+    "host",
+    "ts",
+    "data"
+  ],
   "additionalProperties": false,
   "properties": {
-    "v": { "const": 1 },
-    "id": { "type": "string", "pattern": "^evt_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "v": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^evt_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
     "type": {
       "type": "string",
       "enum": [
         "PRESENCE_CHANGED",
+        "HOST_HEARTBEAT",
         "SOUL_FREE",
         "SOUL_CLAIMED",
         "SOUL_CLAIM_REJECTED",
@@ -29,11 +42,21 @@
         "ERROR"
       ]
     },
-    "host": { "$ref": "#/$defs/hostId" },
-    "ts": { "type": "string", "format": "date-time" },
-    "data": { "type": "object" }
+    "host": {
+      "$ref": "#/$defs/hostId"
+    },
+    "ts": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data": {
+      "type": "object"
+    }
   },
   "$defs": {
-    "hostId": { "type": "string", "pattern": "^[a-z0-9-]{2,24}$" }
+    "hostId": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]{2,24}$"
+    }
   }
 }

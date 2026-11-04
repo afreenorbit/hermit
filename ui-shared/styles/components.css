@@ -601,3 +601,20 @@
     transition: none;
   }
 }
+
+/* ── Pocket Hermit ──────────────────────────────────────────────────────────
+   Four drawings, six moods. `waiting` and `offline` reuse the tucked-in
+   `away` pose and are told apart here: waiting is calm and slightly faded,
+   offline is greyed out so "we cannot reach this laptop" never reads as
+   "Hermit is quietly resting there". */
+.pocket-hermit {
+  image-rendering: auto;
+  user-select: none;
+}
+.pocket-hermit--waiting {
+  opacity: 0.72;
+}
+.pocket-hermit--offline {
+  opacity: 0.45;
+  filter: grayscale(1);
+}

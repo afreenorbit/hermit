@@ -1,25 +1,9 @@
 /**
- * "Tilli's menu" — a cozy pocket companion. Owner: C. plan.md §6.4.
- * Tilli + status, then Quest / Log / Shell / Friends tabs, then Open chat and
- * I'm busy. Tilli's pose mirrors what is happening: visiting, asleep, away.
+ * "Hermit's menu" — a cozy pocket companion. Owner: C. plan.md §6.4.
+ * Hermit + status, then Quest / Log / Shell / Friends tabs, then Open chat and
+ * I'm busy. Hermit's pose mirrors what is happening: visiting, asleep, away.
  */
-import {
-  BrainBadge,
-  DialogBox,
-  formatDay,
-  formatDwell,
-  formatSpan,
-  PixelAvatar,
-  PixelButton,
-  PixelTabs,
-  QuestCard,
-  ShellView,
-  sound,
-  Ticker,
-  Tilli,
-  type BrainProvider,
-  type TilliMood,
-} from '@hermit/ui';
+import { BrainBadge, DialogBox, formatDay, formatDwell, formatSpan, PixelAvatar, PixelButton, PixelTabs, PocketHermit, QuestCard, ShellView, sound, Ticker, type BrainProvider, type Mood, moodFor, moodLine } from '@hermit/ui';
 import { useEffect, useMemo, useState } from 'react';
 
 import { bridge } from '../shared/bridge';
@@ -75,17 +59,13 @@ export function PanelWindow() {
         ? `Visiting ${titleCase(k.soulHolder)}`
         : 'Asleep · nobody around';
   const sleepy = isSleepyHour(new Date(now));
-  const heroMood: TilliMood = !k.connected
-    ? 'curious'
-    : !mine
-      ? k.soulHolder
-        ? 'away'
-        : 'sleeping'
-      : sleepy
-        ? 'sleeping'
-        : k.favorPending
-          ? 'arriving'
-          : 'happy';
+  const heroMood: Mood = moodFor({
+    state: k.state,
+    present: k.present,
+    soulHolder: k.soulHolder,
+    host: k.hostId ?? '',
+    connected: k.connected,
+  });
   const heroLine = !k.connected
     ? 'I can’t find my keeper… is it running?'
     : !mine
@@ -139,7 +119,7 @@ export function PanelWindow() {
   return (
     <div className="menu">
       <header className="menu__bar">
-        <span className="menu__title">Tilli’s menu</span>
+        <span className="menu__title">Hermit’s menu</span>
         <div className="menu__tools">
           <PixelButton
             variant="ghost"
@@ -159,9 +139,9 @@ export function PanelWindow() {
         </div>
       </header>
 
-      <section className="menu__hero" aria-label="Tilli right now">
+      <section className="menu__hero" aria-label="Hermit right now">
         <div className={`menu__portrait menu__portrait--${heroMood}`}>
-          <Tilli mood={heroMood} size={118} label={`Tilli, ${heroMood}`} />
+          <PocketHermit mood={heroMood} size={118} label={moodLine(heroMood, k.soulHolder, k.hostId ?? '')} />
         </div>
         <div className="menu__status">
           <p className="menu__line">{heroLine}</p>
@@ -187,7 +167,7 @@ export function PanelWindow() {
       </dl>
 
       <PixelTabs
-        label="Tilli's menu"
+        label="Hermit's menu"
         tabs={[
           {
             id: 'quest',
@@ -196,12 +176,12 @@ export function PanelWindow() {
             content: favor?.text ? (
               <QuestCard
                 text={favor.text}
-                from={favor.left_by ? titleCase(favor.left_by) : 'Tilli'}
+                from={favor.left_by ? titleCase(favor.left_by) : 'Hermit'}
                 status={(favor.status as 'open' | 'assigned' | 'done' | 'expired') ?? 'assigned'}
                 reward={reward}
               />
             ) : (
-              <p className="menu__empty">No favor right now. Tilli is just happy to be here.</p>
+              <p className="menu__empty">No favor right now. Hermit is just happy to be here.</p>
             ),
           },
           {
@@ -213,7 +193,7 @@ export function PanelWindow() {
                   <li key={l.ts + l.text}>
                     <DialogBox
                       text={l.text}
-                      name="TILLI"
+                      name="HERMIT"
                       compact
                       speed={1000}
                       badge={<BrainBadge provider={myBrain} short />}
@@ -222,7 +202,7 @@ export function PanelWindow() {
                 ))}
               </ol>
             ) : (
-              <p className="menu__empty">Tilli hasn’t said anything here yet.</p>
+              <p className="menu__empty">Hermit hasn’t said anything here yet.</p>
             ),
           },
           {
