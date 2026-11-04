@@ -1,0 +1,65 @@
+[project]
+name = "hermit-keeper"
+version = "0.1.0"
+description = "Hermit's keeper: presence, soul lease, state machine and local API for one host."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "httpx>=0.28",
+    "pydantic>=2.10",
+    "structlog>=24.4",
+    "typer>=0.15",
+    "python-ulid>=3.0",
+    "tomli>=2.0; python_version < '3.11'",
+    "sse-starlette>=2.1",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "hypothesis>=6.122",
+    "respx>=0.22",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "jsonschema>=4.23",
+    "types-PyYAML",
+]
+
+[project.scripts]
+hermit-keeper = "hermit_keeper.cli:app"
+
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["hermit_keeper*", "sim*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "RUF"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["hermit_keeper"]
+plugins = []
+
+[[tool.mypy.overrides]]
+module = ["tests.*", "sim.*"]
+strict = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+markers = [
+    "live: needs a real Switch server (deselect with -m 'not live')",
+]

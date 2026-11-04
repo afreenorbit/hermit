@@ -1,0 +1,24 @@
+{
+  "name": "hermit",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Hermit — a creature with no home, living on one friend's laptop at a time. Workspace root.",
+  "packageManager": "pnpm@9.15.4",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev:map": "pnpm --filter @hermit/map dev",
+    "dev:critter": "pnpm --filter @hermit/critter dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "contracts": "node scripts/gen-contracts.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "json-schema-to-typescript": "^15.0.3",
+    "json-schema-to-zod": "^2.6.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,109 @@
+openapi: 3.1.0
+info:
+  title: Hermit Keeper local API
+  version: 0.1.0
+  description: >
+    Served by each keeper on 127.0.0.1:<api.port> (default 47800). No auth: loopback only.
+    Non-loopback origins must be rejected. Consumed by the critter, the sim and scripts.
+servers:
+  - url: http://127.0.0.1:47800
+paths:
+  /v1/health:
+    get:
+      summary: Liveness
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  version: { type: string }
+  /v1/status:
+    get:
+      summary: What Hermit is doing on this host right now
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Status" }
+  /v1/events:
+    get:
+      summary: SSE stream of event envelopes
+      responses:
+        "200":
+          content:
+            text/event-stream:
+              schema: { type: string }
+  /v1/shell:
+    get:
+      summary: All shell pieces known to this host
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pieces:
+                    type: array
+                    items: { type: object }
+  /v1/presence/override:
+    post:
+      summary: Force presence (sim, tests, demo)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode]
+              properties:
+                mode: { enum: [auto, awake, asleep] }
+      responses:
+        "200": { description: applied }
+  /v1/depart:
+    post:
+      summary: Trigger a graceful departure ("I'm busy")
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { enum: [manual] }
+      responses:
+        "202": { description: departure started }
+  /v1/metrics:
+    get:
+      summary: Handoff latencies and counters
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  handoffs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        from: { type: [string, "null"] }
+                        to: { type: string }
+                        latency_ms: { type: integer }
+components:
+  schemas:
+    Status:
+      type: object
+      required: [host, state, present, soul_holder, mood]
+      properties:
+        host: { type: string }
+        state:
+          enum: [IDLE_AWAY, WAITING, CLAIMING, HOLDING, DEPARTING, ASLEEP]
+        present: { type: boolean }
+        soul_holder: { type: [string, "null"] }
+        since: { type: [string, "null"], format: date-time }
+        mood: { enum: [arriving, curious, sleepy, leaving, away] }
+        favor_pending: { type: [object, "null"] }
+        last_line: { type: [string, "null"] }

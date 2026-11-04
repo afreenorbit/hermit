@@ -1,0 +1,39 @@
+# Copy to hermit.config.toml and edit. NEVER commit the real file.
+#   cp hermit.config.example.toml hermit.config.toml
+
+host_id        = "afreen"
+display_name   = "Afreen"
+city           = "Bengaluru"
+lat            = 12.97
+lon            = 77.59
+timezone       = "Asia/Kolkata"
+
+brain_agent    = "hermit-afreen"
+brain_provider = "claude-code"        # afreen=claude-code, abhishek=opencode, akshay=codex
+window_dir     = "~/HermitWindow"     # the only folder Hermit's brain can see
+
+[presence]
+idle_threshold_s   = 300              # no input for 5 min => idle
+arrive_debounce_s  = 60               # must be present 60s before claiming the soul
+min_dwell_s        = 600              # hold at least 10 min before a voluntary handoff
+sleep_gap_s        = 90               # heartbeat gap bigger than this => the machine slept
+
+[bedtime]
+start = "01:00"
+end   = "06:00"
+grace_idle_s = 120                    # after bedtime, leave after 2 min idle
+
+[switch]
+server_url     = "http://127.0.0.1:8080"   # VERIFY in Phase 0
+den_room       = "hermit-den"
+ledger_room    = "hermit-ledger"
+token_env      = "HERMIT_SWITCH_TOKEN"     # token lives in the environment, not here
+lease_strategy = "fake"                    # gateway | agent_instructed | task_lock | fake
+
+[features]
+overlap = false
+nudge   = false
+critter = true
+
+[api]
+port = 47800                               # keeper local API, 127.0.0.1 only

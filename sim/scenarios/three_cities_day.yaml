@@ -1,0 +1,29 @@
+# A normal day: three friends, Hermit follows whoever is awake.
+# Owner: D. Shape is provisional until Phase 5.1.
+#
+# Real hosts and brains (plan.md 3.2b). Cities/timezones below are PLACEHOLDERS
+# for the timezone story — replace with the team's real ones, or keep these for
+# the three-cities demo clip and use a separate one-timezone scenario.
+name: three_cities_day
+speed: 600            # 600 simulated seconds per real second
+duration_s: 86400
+hosts:
+  - host_id: afreen
+    city: Bengaluru
+    timezone: Asia/Kolkata
+    brain_provider: claude-code
+    presence: [[0, true], [39600, false], [75600, true]]
+  - host_id: abhishek
+    city: Berlin          # TODO: real city
+    timezone: Europe/Berlin
+    brain_provider: opencode
+    presence: [[25200, true], [61200, false]]
+  - host_id: akshay
+    city: Toronto         # TODO: real city
+    timezone: America/Toronto
+    brain_provider: codex
+    presence: [[46800, true], [82800, false]]
+expect:
+  - never_two_souls
+  - handoffs_at_least: 2
+  - favors_left_at_least: 2

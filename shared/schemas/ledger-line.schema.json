@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermit.dev/schemas/ledger-line.schema.json",
+  "title": "LedgerLine",
+  "description": "One message in hermit-ledger: the literal prefix 'HERMIT/1 ' followed by compact JSON of an Event. Anything else in the room is ignored by parsers.",
+  "type": "string",
+  "pattern": "^HERMIT/1 \{.*\}$"
+}

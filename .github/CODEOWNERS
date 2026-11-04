@@ -1,0 +1,35 @@
+# You only edit files in folders you own. Need a change elsewhere? Small PR to that owner.
+# Replace the placeholders with real GitHub handles before protecting main.
+
+# A — Switch & Core
+/switch/                 @owner-a
+/keeper/hermit_keeper/lease/     @owner-a
+/keeper/hermit_keeper/room/      @owner-a
+/keeper/hermit_keeper/brain/     @owner-a
+/keeper/hermit_keeper/presence/  @owner-a
+/keeper/hermit_keeper/statemachine.py @owner-a
+/keeper/hermit_keeper/handoff.py      @owner-a
+/keeper/hermit_keeper/cli.py          @owner-a
+
+# B — Gameplay
+/keeper/hermit_keeper/favors.py       @owner-b
+/keeper/hermit_keeper/shell_model.py  @owner-b
+/keeper/hermit_keeper/bedtime.py      @owner-b
+/keeper/hermit_keeper/journal.py      @owner-b
+/keeper/hermit_keeper/overlap.py      @owner-b
+/keeper/hermit_keeper/nudge.py        @owner-b
+/keeper/hermit_keeper/context/        @owner-b
+
+# C — UI
+/ui-shared/              @owner-c
+/critter/                @owner-c
+/map/                    @owner-c
+
+# D (merged into B and C if you are three) — sim, QA, story
+/sim/                    @owner-d
+/keeper/tests/           @owner-d
+/docs/                   @owner-d
+/README.md               @owner-d
+
+# Contracts: two approvals, always.
+/shared/                 @owner-a @owner-b @owner-c

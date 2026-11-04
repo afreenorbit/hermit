@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermit.dev/schemas/favor.schema.json",
+  "title": "Favor",
+  "description": "Something a host leaves for whoever Hermit visits next. Stored as a Switch room Task.",
+  "type": "object",
+  "required": ["v", "id", "left_by", "text", "kind", "created_at", "assignee", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "v": { "const": 1 },
+    "id": { "type": "string", "pattern": "^fav_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "left_by": { "type": "string", "description": "host_id, or 'hermit' for a wild favor" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 280 },
+    "kind": { "enum": ["share", "note", "dare", "question"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "assignee": { "type": ["string", "null"], "description": "null until Hermit arrives somewhere" },
+    "status": { "enum": ["open", "assigned", "done", "expired"] },
+    "switch_task_id": { "type": ["string", "null"] },
+    "completed_at": { "type": ["string", "null"], "format": "date-time" }
+  }
+}

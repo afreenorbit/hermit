@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hermit.dev/schemas/shell-piece.schema.json",
+  "title": "ShellPiece",
+  "description": "One stop's contribution to the shell. Pure data; rendering lives in ui-shared/shell.",
+  "type": "object",
+  "required": ["v", "id", "host", "city", "brain_provider", "dwell_s", "departure", "created_at", "seed"],
+  "additionalProperties": false,
+  "properties": {
+    "v": { "const": 1 },
+    "id": { "type": "string", "pattern": "^pc_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "host": { "type": "string", "pattern": "^[a-z0-9-]{2,24}$" },
+    "city": { "type": "string" },
+    "brain_provider": { "enum": ["claude-code", "codex", "opencode", "other"] },
+    "temp_c": { "type": ["number", "null"] },
+    "weather_code": { "type": ["integer", "null"], "description": "Open-Meteo WMO code" },
+    "dwell_s": { "type": "integer", "minimum": 0 },
+    "departure": { "enum": ["graceful", "bedtime", "abrupt", "manual"] },
+    "favor_id": { "type": ["string", "null"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "seed": { "type": "integer", "description": "deterministic render seed derived from id" }
+  }
+}

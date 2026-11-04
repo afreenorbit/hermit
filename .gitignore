@@ -1,0 +1,41 @@
+# --- secrets & per-host config (NEVER commit) ---
+hermit.config.toml
+*.local.toml
+.env
+.env.*
+!.env.example
+
+# --- python ---
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+
+# --- node ---
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
+storybook-static/
+out/
+.vite/
+test-results/
+playwright-report/
+blob-report/
+
+# --- hermit runtime data ---
+*.jsonl
+map/public/data/journey.json
+!map/public/data/journey.sample.json
+
+# --- os / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

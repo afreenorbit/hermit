@@ -1,0 +1,41 @@
+/* Cozy pixel RPG tokens (plan.md §3.6). Palette: Sweetie 16 (Lospec).
+   Owner: C. Verify every hex against the palette file before the art is made. */
+@import 'tailwindcss';
+
+@theme {
+  --color-ink: #1a1c2c;
+  --color-night: #333c57;
+  --color-dusk: #566c86;
+  --color-paper: #f4f4f4;
+  --color-mist: #94b0c2;
+  --color-ember: #ef7d57;
+  --color-sun: #ffcd75;
+  --color-leaf: #38b764;
+  --color-sea: #41a6f6;
+  --color-berry: #b13e53;
+  --color-dream: #5d275d;
+
+  --radius-pixel: 0px;
+  --spacing-px4: 4px;
+}
+
+:root {
+  --px: 4px;
+  --shadow-pixel: 4px 4px 0 var(--color-ink);
+  color-scheme: light dark;
+}
+
+/* Pixels stay crisp, always. Integer scaling only. */
+img[data-pixel],
+canvas[data-pixel] {
+  image-rendering: pixelated;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

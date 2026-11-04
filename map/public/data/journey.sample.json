@@ -1,0 +1,356 @@
+{
+  "v": 1,
+  "generated_at": "2025-11-05T12:10:00Z",
+  "hermit": {
+    "current_host": "abhishek",
+    "current_city": "Berlin",
+    "since": "2025-11-05T11:20:00Z"
+  },
+  "hosts": [
+    {
+      "host_id": "afreen",
+      "display_name": "Afreen",
+      "city": "Bengaluru",
+      "lat": 12.97,
+      "lon": 77.59,
+      "brain_provider": "claude-code"
+    },
+    {
+      "host_id": "abhishek",
+      "display_name": "Abhishek",
+      "city": "Berlin",
+      "lat": 52.52,
+      "lon": 13.4,
+      "brain_provider": "opencode"
+    },
+    {
+      "host_id": "akshay",
+      "display_name": "Akshay",
+      "city": "Toronto",
+      "lat": 43.65,
+      "lon": -79.38,
+      "brain_provider": "codex"
+    }
+  ],
+  "stops": [
+    {
+      "stop_id": "stop_3YRST4CHN5KN0T78F603XZBCWC",
+      "seq": 1,
+      "host": "afreen",
+      "arrived_at": "2025-11-05T00:00:00Z",
+      "left_at": "2025-11-05T01:30:00Z",
+      "departure": "graceful",
+      "weather": {
+        "temp_c": 24.0,
+        "code": 2
+      },
+      "favor_received": null,
+      "favor_left": {
+        "id": "fav_WXWCBYB6WK952SWA0432CF1XMW",
+        "text": "Send the group the last song stuck in your head",
+        "left_by": "afreen",
+        "for": "next",
+        "status": "done"
+      },
+      "shell_piece_id": "pc_CEJZ05XHT5GMEJ146S6JR410DD"
+    },
+    {
+      "stop_id": "stop_2GFSGTZJB48EY4HDD14HTWF32B",
+      "seq": 2,
+      "host": "abhishek",
+      "arrived_at": "2025-11-05T01:35:00Z",
+      "left_at": "2025-11-05T03:35:00Z",
+      "departure": "bedtime",
+      "weather": {
+        "temp_c": 8.5,
+        "code": 3
+      },
+      "favor_received": {
+        "id": "fav_WXWCBYB6WK952SWA0432CF1XMW",
+        "text": "Send the group the last song stuck in your head",
+        "left_by": "afreen",
+        "status": "done"
+      },
+      "favor_left": {
+        "id": "fav_8TR7STD0HK1DBS629DWG0NJR44",
+        "text": "Tell Akshay one thing you're proud of this week",
+        "left_by": "abhishek",
+        "for": "next",
+        "status": "done"
+      },
+      "shell_piece_id": "pc_5DF0QQX8Y8RB9KEFCACRY5T366"
+    },
+    {
+      "stop_id": "stop_1K5Y1E7ZZG0QK9CANWZFMSGCVC",
+      "seq": 3,
+      "host": "akshay",
+      "arrived_at": "2025-11-05T03:40:00Z",
+      "left_at": "2025-11-05T04:40:00Z",
+      "departure": "graceful",
+      "weather": {
+        "temp_c": -2.0,
+        "code": 71
+      },
+      "favor_received": {
+        "id": "fav_8TR7STD0HK1DBS629DWG0NJR44",
+        "text": "Tell Akshay one thing you're proud of this week",
+        "left_by": "abhishek",
+        "status": "done"
+      },
+      "favor_left": {
+        "id": "fav_JQ85Q8WN821YPK214Y4KM844WQ",
+        "text": "Take a photo of your window right now",
+        "left_by": "akshay",
+        "for": "next",
+        "status": "done"
+      },
+      "shell_piece_id": "pc_28NP5Y4T1Z0RR04557GTNRXWX5"
+    },
+    {
+      "stop_id": "stop_Y2BEHPASE5TR8WXC0RNXMD67DF",
+      "seq": 4,
+      "host": "afreen",
+      "arrived_at": "2025-11-05T04:45:00Z",
+      "left_at": "2025-11-05T05:00:00Z",
+      "departure": "abrupt",
+      "weather": {
+        "temp_c": 26.5,
+        "code": 1
+      },
+      "favor_received": {
+        "id": "fav_JQ85Q8WN821YPK214Y4KM844WQ",
+        "text": "Take a photo of your window right now",
+        "left_by": "akshay",
+        "status": "done"
+      },
+      "favor_left": null,
+      "shell_piece_id": "pc_H2HPK18SXC1HF937W6Q4CCYGB0"
+    },
+    {
+      "stop_id": "stop_XTSHFYZ8NVYM6CT1G812C9E0JM",
+      "seq": 5,
+      "host": "abhishek",
+      "arrived_at": "2025-11-05T05:05:00Z",
+      "left_at": "2025-11-05T08:05:00Z",
+      "departure": "graceful",
+      "weather": {
+        "temp_c": 9.0,
+        "code": 61
+      },
+      "favor_received": {
+        "id": "fav_JQ85Q8WN821YPK214Y4KM844WQ",
+        "text": "Take a photo of your window right now",
+        "left_by": "akshay",
+        "status": "expired"
+      },
+      "favor_left": {
+        "id": "fav_R5KMG1P52WNTHZ1D4V2BN8Y9WZ",
+        "text": "Write one line of a story the next person continues",
+        "left_by": "abhishek",
+        "for": "next",
+        "status": "done"
+      },
+      "shell_piece_id": "pc_5EWJAGKRDK9HZCT70R12S7Z5A4"
+    },
+    {
+      "stop_id": "stop_9CB7DBAJ638X46MSXVPVDQ02CB",
+      "seq": 6,
+      "host": "akshay",
+      "arrived_at": "2025-11-05T08:10:00Z",
+      "left_at": "2025-11-05T09:55:00Z",
+      "departure": "bedtime",
+      "weather": {
+        "temp_c": -4.5,
+        "code": 73
+      },
+      "favor_received": {
+        "id": "fav_R5KMG1P52WNTHZ1D4V2BN8Y9WZ",
+        "text": "Write one line of a story the next person continues",
+        "left_by": "abhishek",
+        "status": "done"
+      },
+      "favor_left": {
+        "id": "fav_PFZ6Z7GCV1RTADDD8EPBMMCDC6",
+        "text": "Send Abhishek the worst photo on your camera roll",
+        "left_by": "akshay",
+        "for": "next",
+        "status": "done"
+      },
+      "shell_piece_id": "pc_8F85GR6VT8CS16CPQ7NC4Y612Y"
+    },
+    {
+      "stop_id": "stop_GWS3CR06GGHNT6W42RARYAZ3VZ",
+      "seq": 7,
+      "host": "afreen",
+      "arrived_at": "2025-11-05T10:00:00Z",
+      "left_at": "2025-11-05T11:15:00Z",
+      "departure": "graceful",
+      "weather": {
+        "temp_c": 27.0,
+        "code": 0
+      },
+      "favor_received": {
+        "id": "fav_PFZ6Z7GCV1RTADDD8EPBMMCDC6",
+        "text": "Send Abhishek the worst photo on your camera roll",
+        "left_by": "akshay",
+        "status": "done"
+      },
+      "favor_left": {
+        "id": "fav_TXQQSCA60M5SCNGH7AS8NQVBSD",
+        "text": "Recommend one thing worth 10 minutes",
+        "left_by": "afreen",
+        "for": "next",
+        "status": "open"
+      },
+      "shell_piece_id": "pc_B4NKY60P3EHKNDSB4RZD7S176F"
+    },
+    {
+      "stop_id": "stop_J8FY7KPHHCHFCFC230HGV126EH",
+      "seq": 8,
+      "host": "abhishek",
+      "arrived_at": "2025-11-05T11:20:00Z",
+      "left_at": null,
+      "departure": "present",
+      "weather": {
+        "temp_c": 10.5,
+        "code": 2
+      },
+      "favor_received": {
+        "id": "fav_TXQQSCA60M5SCNGH7AS8NQVBSD",
+        "text": "Recommend one thing worth 10 minutes",
+        "left_by": "afreen",
+        "status": "done"
+      },
+      "favor_left": {
+        "id": "fav_TJSKQJYHJJ10F2ATR3MS3M4EVY",
+        "text": "Send the group the last song stuck in your head",
+        "left_by": "abhishek",
+        "for": "next",
+        "status": "open"
+      },
+      "shell_piece_id": "pc_GF26X9F73TX7D3P97QW8TXGTQ8"
+    }
+  ],
+  "shell": [
+    {
+      "v": 1,
+      "id": "pc_CEJZ05XHT5GMEJ146S6JR410DD",
+      "host": "afreen",
+      "city": "Bengaluru",
+      "brain_provider": "claude-code",
+      "temp_c": 24.0,
+      "weather_code": 2,
+      "dwell_s": 5400,
+      "departure": "graceful",
+      "favor_id": null,
+      "created_at": "2025-11-05T01:30:00Z",
+      "seed": 1158301259
+    },
+    {
+      "v": 1,
+      "id": "pc_5DF0QQX8Y8RB9KEFCACRY5T366",
+      "host": "abhishek",
+      "city": "Berlin",
+      "brain_provider": "opencode",
+      "temp_c": 8.5,
+      "weather_code": 3,
+      "dwell_s": 7200,
+      "departure": "bedtime",
+      "favor_id": "fav_WXWCBYB6WK952SWA0432CF1XMW",
+      "created_at": "2025-11-05T03:35:00Z",
+      "seed": 855258848
+    },
+    {
+      "v": 1,
+      "id": "pc_28NP5Y4T1Z0RR04557GTNRXWX5",
+      "host": "akshay",
+      "city": "Toronto",
+      "brain_provider": "codex",
+      "temp_c": -2.0,
+      "weather_code": 71,
+      "dwell_s": 3600,
+      "departure": "graceful",
+      "favor_id": "fav_8TR7STD0HK1DBS629DWG0NJR44",
+      "created_at": "2025-11-05T04:40:00Z",
+      "seed": 575008070
+    },
+    {
+      "v": 1,
+      "id": "pc_H2HPK18SXC1HF937W6Q4CCYGB0",
+      "host": "afreen",
+      "city": "Bengaluru",
+      "brain_provider": "claude-code",
+      "temp_c": 26.5,
+      "weather_code": 1,
+      "dwell_s": 900,
+      "departure": "abrupt",
+      "favor_id": "fav_JQ85Q8WN821YPK214Y4KM844WQ",
+      "created_at": "2025-11-05T05:00:00Z",
+      "seed": 1810886697
+    },
+    {
+      "v": 1,
+      "id": "pc_5EWJAGKRDK9HZCT70R12S7Z5A4",
+      "host": "abhishek",
+      "city": "Berlin",
+      "brain_provider": "opencode",
+      "temp_c": 9.0,
+      "weather_code": 61,
+      "dwell_s": 10800,
+      "departure": "graceful",
+      "favor_id": "fav_JQ85Q8WN821YPK214Y4KM844WQ",
+      "created_at": "2025-11-05T08:05:00Z",
+      "seed": 169558482
+    },
+    {
+      "v": 1,
+      "id": "pc_8F85GR6VT8CS16CPQ7NC4Y612Y",
+      "host": "akshay",
+      "city": "Toronto",
+      "brain_provider": "codex",
+      "temp_c": -4.5,
+      "weather_code": 73,
+      "dwell_s": 6300,
+      "departure": "bedtime",
+      "favor_id": "fav_R5KMG1P52WNTHZ1D4V2BN8Y9WZ",
+      "created_at": "2025-11-05T09:55:00Z",
+      "seed": 26110299
+    },
+    {
+      "v": 1,
+      "id": "pc_B4NKY60P3EHKNDSB4RZD7S176F",
+      "host": "afreen",
+      "city": "Bengaluru",
+      "brain_provider": "claude-code",
+      "temp_c": 27.0,
+      "weather_code": 0,
+      "dwell_s": 4500,
+      "departure": "graceful",
+      "favor_id": "fav_PFZ6Z7GCV1RTADDD8EPBMMCDC6",
+      "created_at": "2025-11-05T11:15:00Z",
+      "seed": 666780595
+    },
+    {
+      "v": 1,
+      "id": "pc_GF26X9F73TX7D3P97QW8TXGTQ8",
+      "host": "abhishek",
+      "city": "Berlin",
+      "brain_provider": "opencode",
+      "temp_c": 10.5,
+      "weather_code": 2,
+      "dwell_s": 2700,
+      "departure": "graceful",
+      "favor_id": "fav_TXQQSCA60M5SCNGH7AS8NQVBSD",
+      "created_at": "2025-11-05T12:05:00Z",
+      "seed": 1403385945
+    }
+  ],
+  "stats": {
+    "handoffs": 7,
+    "favors_done": 6,
+    "favors_left": 7,
+    "overlaps_suggested": 2,
+    "overlaps_taken": 1,
+    "median_handoff_ms": 8400
+  }
+}

@@ -1,0 +1,14 @@
+# The honest case: all three of us in one timezone. Handoffs still happen —
+# people are idle, in class, asleep at different hours — they are just rarer.
+# Worth running so the README reports what actually happens for our group.
+# Owner: D. TODO(D): Phase 5.2.
+name: one_timezone_day
+speed: 600
+duration_s: 86400
+hosts:
+  - { host_id: afreen,   timezone: Asia/Kolkata, brain_provider: claude-code }
+  - { host_id: abhishek, timezone: Asia/Kolkata, brain_provider: opencode }
+  - { host_id: akshay,   timezone: Asia/Kolkata, brain_provider: codex }
+expect:
+  - never_two_souls
+  - handoffs_at_least: 1
