@@ -374,6 +374,8 @@ async def run_scenario(path: Path, verbose: bool = True) -> SimResult:
 
     collected.extend(_ledger_events(hub))
     journey = _build_journey(collected, hosts, clock)
+    # The map stamps SIMULATION from this field; metrics reads it too.
+    journey["source"] = {"kind": "simulation", "scenario": path.stem}
     failures = _check(
         scenario.get("assertions") or scenario.get("expect") or [],
         collected,

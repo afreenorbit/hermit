@@ -99,6 +99,9 @@ def _row(
 def _source_of(path: Path, journey: dict[str, Any], forced: str | None) -> str:
     if forced:
         return forced
+    declared = (journey.get("source") or {}).get("kind")
+    if declared in ("simulation", "real"):
+        return str(declared)
     if (journey.get("stats") or {}).get("source") == "simulation" or _under_out(path):
         return "simulation"
     return "real"
