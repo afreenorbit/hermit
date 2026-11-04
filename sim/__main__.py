@@ -3,6 +3,7 @@
     python -m sim run sim/scenarios/one_timezone_day.yaml
     python -m sim all                 # every scenario, time-compressed
     python -m sim live                # three real keepers, three ports
+    python -m sim live --switch standin   # ...over HTTP, real Switch code path, stand-in server
     python -m sim metrics             # numbers from every sim/out/*/journey.json
     python -m sim metrics pilot/journey.json          # a real export
     python -m sim metrics ~/.hermit/journey.jsonl ... # raw ledger/journal lines
@@ -216,10 +217,17 @@ def main(argv: list[str] | None = None) -> int:
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is not None:
             reconfigure(errors="replace")
+    argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["live"]:
+        # `live` has its own options (--hosts, --switch standin, ...).
+        from sim.live import main as live_main
+
+        return live_main(argv[1:])
+
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument("command", choices=["run", "all", "live", "metrics"])
+    parser.add_argument("command", choices=["run", "all", "metrics"])
     parser.add_argument("scenarios", nargs="*", type=Path)
     parser.add_argument("--quiet", action="store_true", help="hide the timeline")
     parser.add_argument(
@@ -235,10 +243,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--name", help="metrics: dataset name for raw ledger files")
     args = parser.parse_args(argv)
 
-    if args.command == "live":
-        from sim.live import main as live_main
-
-        return live_main([])
     if args.command == "metrics":
         return _metrics(args)
 

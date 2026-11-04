@@ -5,125 +5,375 @@ assume a Switch role on an agent's behalf.** `assume_role` resolves the holder
 from the caller's own live connection, and a sibling session of the same agent
 cannot hold the seat open. So the keeper cannot take the soul for its brain.
 
-That turned out to be the right shape anyway. `assume_role` returns the role's
-*instructions*, so the agent holding the soul receives Hermit's identity from
-the room. Hermit's personality lives in a Switch room role, not in our code, and
-it is handed to whichever agent currently holds it.
+The live server then showed the keeper cannot even *ask* who holds it: there
+is no roles endpoint over HTTP. So this lease never queries Switch for the
+holder. Switch **enforces** exclusivity — a second `assume_role` on the
+exclusive role fails — and every keeper **observes** the outcome in the ledger,
+folded by :mod:`.soul_ledger` into the same answer on every laptop.
 
 What this class does:
 
-* ``claim``  - cue the brain to call ``assume_role("soul")``, wait for its ACK,
-               then confirm against the room rather than trusting the ACK.
-* ``release`` - cue ``release_role()``, same confirmation.
-* ``holder`` - ask the room who holds it (``list_roles`` -> ``held_by``).
-* ``watch``  - poll ``holder`` and yield changes.
+* ``claim``   cue the brain to ``assume_role("soul")``, wait for its ACK,
+              restate the claim in the ledger, wait a moment for a competing
+              claim, and only then report success — and only if the ledger
+              fold agrees. An optimistic ACK alone never makes this keeper
+              Hermit.
+* ``release`` cue ``release_role()``, then record the release.
+* ``holder``  fold the ledger. When Switch is unreachable, return the last
+              known answer (and report ``switch_state == "offline"``) rather
+              than guessing that the soul is free.
+* reconcile   if the fold says this keeper lost a conflict, or the ledger
+              shows our brain holding a claim we never confirmed, cue a
+              release. After an outage, re-ask the brain to confirm it still
+              holds the soul.
 
 Nothing here keeps the lease alive. Switch does that from the brain's session,
-and drops it shortly after that session dies — which is exactly the lid-slam
-handoff, for free (SP3).
+and drops it shortly after that session dies (SP3). The keeper mirrors that
+with heartbeat silence: ``lease_expiry_s`` after the holder goes quiet.
 """
 
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from collections.abc import AsyncIterator
-from typing import Any, Protocol
+from datetime import datetime
+from typing import Any, Literal, Protocol
 
+import httpx
 import structlog
 
-from ..brain.base import BrainDirector
+from ..brain.ledger_director import AckReceipt
 from ..clock import Clock, RealClock
+from ..events import Event, EventType
+from ..ledger import encode
+from ..room.base import Message
 from .base import ClaimResult
+from .soul_ledger import CLAIM_CUE, RELEASE_CUE, Claim, SoulLedger, SoulView
 
 log = structlog.get_logger(__name__)
 
 #: How long to wait for the brain to come back after a cue. Coding agents are
 #: not fast, and a cue that lands mid-turn waits for the turn to finish.
 ACK_TIMEOUT_S = 45.0
-
-#: Gap between `holder()` polls in `watch()`. Switch has no role-change
-#: subscription we can use from outside the holding session, so this is a poll.
+#: After a successful ACK, how long to wait for a competing claim to surface
+#: before believing we are Hermit.
+SETTLE_S = 2.0
+#: Gap between `holder()` polls in `watch()`.
 POLL_S = 5.0
+#: Missed heartbeats before the holder's silence starts to count.
+STALE_BEATS = 2.0
+#: Messages folded per refresh.
+WINDOW = 500
+
+SwitchState = Literal["online", "offline"]
 
 
-class RoleReader(Protocol):
-    """The part of the room client this needs. Implemented by ``switch_client``."""
+class LedgerRoom(Protocol):
+    async def post(self, room: str, text: str) -> str: ...
+    async def history(
+        self, room: str, since: datetime | None = None, limit: int = 200
+    ) -> list[Message]: ...
 
-    async def role_holder(self, room: str, role: str) -> str | None:
-        """Agent name holding ``role``, or None. From ``list_roles().held_by``."""
-        ...
+
+class LedgerBrain(Protocol):
+    """What the lease needs from :class:`~..brain.ledger_director.LedgerBrainDirector`."""
+
+    async def cue(self, cue: str, context: dict[str, Any]) -> None: ...
+    async def wait_ack_receipt(self, cue: str, timeout_s: float) -> AckReceipt | None: ...
 
 
 class AgentInstructedLease:
-    """Args:
-    brain: this host's coding agent, cued over the ledger.
-    rooms: something that can answer "who holds the soul right now".
-    room: the room the role is defined in (the den).
-    role: role name, "soul".
+    """Implements :class:`~.base.SoulLease` by cueing the brain and reading the ledger.
+
+    Args:
+        brain: this host's brain director.
+        room: this keeper's room client (shared; never drains on its own).
+        host: this keeper's host_id. The lease's agent is ``hermit-<host>``,
+            matching the state machine.
+        ledger_room / den_room: where the evidence lives / where the role is.
+        heartbeat_s: how often keepers post a heartbeat.
+        lease_expiry_s: how long Switch takes to free a dead session's role.
+            The holder is presumed gone after ``STALE_BEATS * heartbeat_s +
+            lease_expiry_s`` of silence.
+        settle_s: see ``SETTLE_S``.
+        warmup_s: refuse to claim until we have listened this long, so a
+            keeper that just started (or just reconnected) has heard the
+            current holder's heartbeat before deciding the soul is free.
+            Defaults to ``STALE_BEATS * heartbeat_s``.
     """
 
     def __init__(
         self,
-        brain: BrainDirector,
-        rooms: RoleReader,
-        room: str = "hermit-den",
+        brain: LedgerBrain,
+        room: LedgerRoom,
+        host: str,
+        *,
+        ledger_room: str = "hermit-ledger",
+        den_room: str = "hermit-den",
         role: str = "soul",
         clock: Clock | None = None,
         ack_timeout_s: float = ACK_TIMEOUT_S,
+        heartbeat_s: float = 10.0,
+        lease_expiry_s: float = 8.0,
+        settle_s: float = SETTLE_S,
+        warmup_s: float | None = None,
         poll_s: float = POLL_S,
     ) -> None:
         self._brain = brain
-        self._rooms = rooms
         self._room = room
+        self.host = host
+        self.agent = f"hermit-{host}"
+        self._ledger = ledger_room
+        self._den = den_room
         self._role = role
         self._clock: Clock = clock or RealClock()
         self._ack_timeout_s = ack_timeout_s
+        self._settle_s = settle_s
+        self._warmup_s = STALE_BEATS * heartbeat_s if warmup_s is None else warmup_s
         self._poll_s = poll_s
+        self.book = SoulLedger(stale_after_s=STALE_BEATS * heartbeat_s + lease_expiry_s)
+
+        #: The claim our brain confirmed and the ledger agreed with.
+        self._mine: Claim | None = None
+        self._cached: str | None = None
+        self._needs_verify = False
+        self._stretch: datetime | None = None
+        self._op = asyncio.Lock()
+        self._background: asyncio.Task[None] | None = None
+        #: The most recent fold, for status and tests.
+        self.view = SoulView()
+
+    # -- connectivity --------------------------------------------------------
+
+    @property
+    def online(self) -> bool:
+        return bool(getattr(self._room, "online", True))
+
+    @property
+    def switch_state(self) -> SwitchState:
+        return "online" if self.online else "offline"
+
+    def _warm(self) -> bool:
+        if not self.online:
+            return False
+        since: datetime | None = getattr(self._room, "listening_since", None)
+        if since is None:
+            return True  # a room client that does not track this is always listening
+        elapsed: float = (self._clock.now() - since).total_seconds()
+        return elapsed >= self._warmup_s
 
     # -- reads ---------------------------------------------------------------
 
+    async def _fold(self) -> SoulView:
+        messages = await self._room.history(self._ledger, limit=WINDOW)
+        since = getattr(self._room, "listening_since", None)
+        if since is None and not hasattr(self._room, "listening_since"):
+            since = self._clock.now()  # fakes: always listening, never stale
+        self.view = self.book.fold(
+            messages, now=self._clock.now(), listening_since=since, self_host=self.host
+        )
+        return self.view
+
     async def holder(self) -> str | None:
-        """Who Switch says holds the soul. The room is the authority, always."""
-        try:
-            return await self._rooms.role_holder(self._room, self._role)
-        except Exception:  # a lookup failure must not crash the keeper
-            log.exception("could not read the soul holder", room=self._room)
-            return None
+        """Who holds the soul, by the ledger. ``hermit-<host>`` or None.
+
+        When Switch is unreachable this is the **last known** holder, not
+        None: "I cannot hear the room" must never read as "the soul is free".
+        Callers that show it to a person should check ``switch_state`` and
+        say "unknown" instead.
+        """
+        if not self.online:
+            # Anything we hold must be re-confirmed once the room is back.
+            self._needs_verify = self._mine is not None
+            return self._cached
+        stretch = getattr(self._room, "listening_since", None)
+        if stretch != self._stretch:
+            # A new unbroken stretch of listening means there was a gap, even
+            # one too short for us to have been asked during it.
+            if self._stretch is not None and self._mine is not None:
+                self._needs_verify = True
+            self._stretch = stretch
+        view = await self._fold()
+        self._cached = f"hermit-{view.holder}" if view.holder else None
+        self._reconcile(view)
+        return self._cached
+
+    def heartbeat_data(self) -> dict[str, Any]:
+        """Folded into this keeper's heartbeat, so late joiners learn the holder."""
+        mine = self._mine
+        if mine is None:
+            return {"soul": None}
+        return {"soul": {"ack": mine.ref, "ack_ts": mine.at.isoformat()}}
 
     # -- writes --------------------------------------------------------------
 
     async def claim(self, agent: str) -> ClaimResult:
-        """Ask our brain to take the soul, then check whether it did.
+        """Ask our brain to take the soul, then let the ledger decide.
 
-        The ACK is not proof. A brain can cheerfully report success and have
-        hit an exclusivity error, and two friends each being told they have
-        Hermit is the one failure this project cannot have. So the room decides.
+        The ACK is not proof on its own. Two friends each being told they have
+        Hermit is the one failure this project cannot have, so success needs
+        the brain's ``ok:true`` **and** the ledger fold naming us after the
+        settle window.
         """
-        current = await self.holder()
-        if current is not None:
-            return ClaimResult(ok=current == agent, holder=current)
+        if agent != self.agent:
+            return ClaimResult(ok=False, holder=self._cached)
+        if not self._warm() or self._op.locked():
+            return ClaimResult(ok=False, holder=self._cached)
 
-        await self._brain.cue("CLAIM_SOUL", {"role": self._role, "room": self._room})
-        await self._brain.wait_ack("CLAIM_SOUL", self._ack_timeout_s)
+        async with self._op:
+            view = await self._fold()
+            if view.holder is not None:
+                ours = self._mine is not None and view.claim == self._mine
+                return ClaimResult(ok=ours, holder=f"hermit-{view.holder}")
+            try:
+                await self._brain.cue(CLAIM_CUE, {"role": self._role, "room": self._den})
+            except httpx.HTTPError:
+                log.info("could not cue the brain to claim", host=self.host)
+                return ClaimResult(ok=False, holder=self._cached)
+            receipt = await self._brain.wait_ack_receipt(CLAIM_CUE, self._ack_timeout_s)
+            if receipt is None or not receipt.ok:
+                log.info("brain did not take the soul", host=self.host, acked=receipt is not None)
+                return ClaimResult(ok=False, holder=await self._holder_now())
 
-        confirmed = await self.holder()
-        if confirmed == agent:
-            return ClaimResult(ok=True, holder=agent)
-        log.info("claim did not take", agent=agent, actual_holder=confirmed, room=self._room)
-        return ClaimResult(ok=False, holder=confirmed)
+            mine = Claim(self.host, receipt.message_id, receipt.ts)
+            self._mine = mine
+            await self._record(EventType.SOUL_CLAIMED, holder=self.host, **_ref(mine))
+            await self._clock.sleep(self._settle_s)
+
+            view = await self._fold()
+            if view.holder == self.host and view.claim == mine:
+                self._cached = self.agent
+                return ClaimResult(ok=True, holder=self.agent)
+            log.warning(
+                "claim lost in the ledger; conceding",
+                host=self.host,
+                winner=view.holder,
+                ref=mine.ref,
+            )
+            await self._concede(mine, "conflict")
+            return ClaimResult(ok=False, holder=await self._holder_now())
 
     async def release(self, agent: str) -> None:
-        """Ask our brain to let go. Idempotent, like ``release_role`` itself."""
-        if await self.holder() != agent:
+        """Ask our brain to let go, then record it. Idempotent."""
+        if agent != self.agent:
             return
-        await self._brain.cue("RELEASE_SOUL", {"role": self._role, "room": self._room})
-        await self._brain.wait_ack("RELEASE_SOUL", self._ack_timeout_s)
+        async with self._op:
+            mine = self._mine
+            if mine is None:
+                return
+            await self._concede(mine, "release")
 
-        if await self.holder() == agent:
-            # The brain did not let go. Do not pretend it did: say so, and let
-            # Switch expire the lease when the session ends. Hermit being stuck
-            # on one laptop is a bad evening; two Hermits is a broken product.
-            log.warning("brain did not release the soul", agent=agent, room=self._room)
+    async def _concede(self, claim: Claim, reason: str) -> None:
+        """Cue ``release_role()`` and record that ``claim`` is over.
+
+        Called with ``self._op`` held. The record is written even when the
+        brain does not ACK in time: this keeper has stopped being Hermit
+        either way, and Switch still refuses anyone else's ``assume_role``
+        until the brain really lets go, so nobody gets a second Hermit out of
+        it — at worst they retry.
+        """
+        if self._mine is not None and self._mine.ref == claim.ref:
+            self._mine = None
+        try:
+            await self._brain.cue(RELEASE_CUE, {"role": self._role, "room": self._den})
+            receipt = await self._brain.wait_ack_receipt(RELEASE_CUE, self._ack_timeout_s)
+            acked = receipt is not None and receipt.ok
+            if not acked:
+                log.warning("brain did not confirm the release", host=self.host, reason=reason)
+            await self._record(
+                EventType.SOUL_RELEASED,
+                releases=claim.ref,
+                confirmed=acked,
+                reason=reason,
+                departure="graceful" if reason == "release" else "abrupt",
+            )
+        except httpx.HTTPError:
+            # Unreachable: the orphan rule in `_reconcile` retries once the
+            # room is back, because the ledger will still show the claim.
+            log.warning("could not release the soul; Switch unreachable", host=self.host)
+
+    async def _record(self, event_type: EventType, **data: object) -> None:
+        event = Event(type=event_type, host=self.host, ts=self._clock.now(), data=data)
+        try:
+            await self._room.post(self._ledger, encode(event))
+        except httpx.HTTPError:
+            log.warning("could not record soul event", host=self.host, type=str(event_type))
+
+    async def _holder_now(self) -> str | None:
+        if not self.online:
+            return self._cached
+        view = await self._fold()
+        self._cached = f"hermit-{view.holder}" if view.holder else None
+        return self._cached
+
+    # -- keeping the ledger and our brain in agreement -----------------------
+
+    def _reconcile(self, view: SoulView) -> None:
+        if self._op.locked() or (self._background and not self._background.done()):
+            return
+        mine = self._mine
+        job: Any = None
+        if mine is not None and self._needs_verify:
+            self._needs_verify = False
+            job = self._verify(mine)
+        elif mine is not None and mine in view.losers:
+            job = self._locked_concede(mine, "conflict")
+        elif mine is None and view.claim is not None and view.claim.host == self.host:
+            # Our brain holds a claim this keeper never confirmed: a late ACK
+            # after a timeout, or a claim from before a restart. Let it go;
+            # the state machine will claim properly if it should.
+            job = self._locked_concede(view.claim, "orphan")
+        elif mine is None:
+            orphan = next((c for c in view.losers if c.host == self.host), None)
+            if orphan is not None:
+                job = self._locked_concede(orphan, "orphan")
+        if job is not None:
+            self._background = asyncio.create_task(job)
+
+    async def _locked_concede(self, claim: Claim, reason: str) -> None:
+        async with self._op:
+            await self._concede(claim, reason)
+
+    async def _verify(self, mine: Claim) -> None:
+        """Back from an outage while holding: ask the brain if it still does.
+
+        Stage directions say a brain already holding ``soul`` ACKs a repeated
+        ``CLAIM_SOUL`` with ``ok:true``. A refusal means the lease was lost
+        while we could not see the room.
+        """
+        async with self._op:
+            if self._mine != mine:
+                return
+            try:
+                await self._brain.cue(
+                    CLAIM_CUE, {"role": self._role, "room": self._den, "verify": True}
+                )
+            except httpx.HTTPError:
+                return
+            receipt = await self._brain.wait_ack_receipt(CLAIM_CUE, self._ack_timeout_s)
+            if receipt is None:
+                return  # no answer: keep what we believed, try again next outage
+            if receipt.ok:
+                renewed = Claim(self.host, receipt.message_id, receipt.ts)
+                self._mine = renewed
+                await self._record(EventType.SOUL_CLAIMED, holder=self.host, **_ref(renewed))
+                return
+            log.warning("soul lost during the outage", host=self.host)
+            self._mine = None
+            await self._record(
+                EventType.SOUL_RELEASED,
+                releases=mine.ref,
+                confirmed=True,
+                reason="lost_after_outage",
+                departure="abrupt",
+            )
+
+    async def aclose(self) -> None:
+        if self._background is not None:
+            self._background.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._background
 
     # -- watching ------------------------------------------------------------
 
@@ -143,37 +393,5 @@ class AgentInstructedLease:
         return _stream()
 
 
-class SwitchRoleReader:
-    """Adapts a Switch room client to :class:`RoleReader`.
-
-    ``list_roles()`` returns ``held_by`` entries shaped
-    ``{"name", "present_here", "session_room"}`` (switch-facts SP4). We take the
-    first live holder: the role is exclusive, so there is at most one.
-    """
-
-    def __init__(self, client: Any) -> None:
-        self._client = client
-
-    async def role_holder(self, room: str, role: str) -> str | None:
-        roles = await self._client.list_roles(room)
-        for entry in roles:
-            if entry.get("name") != role:
-                continue
-            held_by = entry.get("held_by") or []
-            if not held_by:
-                return None
-            holder = held_by[0]
-            return str(holder.get("name")) if isinstance(holder, dict) else str(holder)
-        return None
-
-
-async def wait_for_free(lease: AgentInstructedLease, timeout_s: float) -> bool:
-    """Block until the soul is free, or the timeout passes."""
-    try:
-        async with asyncio.timeout(timeout_s):
-            async for holder in lease.watch():
-                if holder is None:
-                    return True
-    except TimeoutError:
-        return False
-    return False
+def _ref(claim: Claim) -> dict[str, str]:
+    return {"ack": claim.ref, "ack_ts": claim.at.isoformat()}

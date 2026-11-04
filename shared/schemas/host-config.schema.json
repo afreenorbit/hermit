@@ -44,7 +44,15 @@
         "den_room": { "type": "string" },
         "ledger_room": { "type": "string" },
         "token_env": { "type": "string", "default": "HERMIT_SWITCH_TOKEN" },
-        "lease_strategy": { "enum": ["agent_instructed", "fake"], "default": "agent_instructed", "description": "agent_instructed: the brain assumes the soul role itself. No external path exists - see docs/switch-facts.md SP2." }
+        "lease_strategy": { "enum": ["agent_instructed", "fake"], "default": "agent_instructed", "description": "agent_instructed: the brain assumes the soul role itself. No external path exists - see docs/switch-facts.md SP2." },
+        "agent_id": { "type": "string", "minLength": 1, "description": "This keeper's registered Switch agent uuid. Required for agent_instructed. The api_key is read from the env var named by token_env, never from this file." },
+        "rooms": {
+          "type": "object",
+          "description": "Room name -> Switch room uuid, e.g. {\"hermit-den\": \"<uuid>\", \"hermit-ledger\": \"<uuid>\"}. Switch addresses rooms by uuid only.",
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "lease_expiry_s": { "type": "number", "exclusiveMinimum": 0, "default": 8, "description": "How long Switch takes to free the soul after the holding session dies. 8 is a guess until measured against a live server." },
+        "brain_agent_id": { "type": "string", "minLength": 1, "description": "Optional: the brain's agent uuid, only needed if Switch reports message senders by uuid rather than by name." }
       }
     },
     "features": {

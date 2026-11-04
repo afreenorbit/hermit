@@ -31,7 +31,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Coroutine, Iterable
 from dataclasses import dataclass, field, fields
 from datetime import datetime
 from pathlib import Path
@@ -63,6 +63,11 @@ POLL_S = 2.0
 #: heartbeats fill that in well under an hour, so a keeper that only synced on
 #: arrival would miss favors left long before. Syncing often keeps it current.
 SYNC_S = 30.0
+
+#: Cap on how long departure waits for a favor, whatever ``Handoff`` asks for.
+#: The wait blocks a tick, and a tick blocked longer than ``presence.sleep_gap_s``
+#: (90 s by default) would be read as the laptop having been asleep.
+MAX_WAIT_S = 60.0
 
 #: After this many refused favors, Hermit stops asking. Being asked to "try
 #: again" a third time is nagging, and Hermit does not nag.
@@ -130,6 +135,7 @@ class LedgerFavors:
         snapshot: Path | None = None,
         poll_s: float = POLL_S,
         sync_s: float = SYNC_S,
+        max_wait_s: float = MAX_WAIT_S,
     ) -> None:
         self.host = host
         self._room = room
@@ -145,6 +151,7 @@ class LedgerFavors:
         self._snapshot = snapshot
         self._poll_s = poll_s
         self._sync_s = sync_s
+        self._max_wait_s = max_wait_s
 
         self.book = FavorBook(clock, room=den_room)
         self._seen_events: set[str] = set()
@@ -205,9 +212,12 @@ class LedgerFavors:
 
     async def run(self) -> None:
         """Keep the book current in the background until cancelled."""
-        while True:
-            await self.sync()
-            await self._clock.sleep(self._sync_s)
+        try:
+            while True:
+                await self.sync()
+                await self._clock.sleep(self._sync_s)
+        finally:
+            self._cancel_watcher()
 
     # -- FavorStore: arrival -------------------------------------------------
 
@@ -251,7 +261,7 @@ class LedgerFavors:
         except Exception:
             log.info("favor capture could not read the den", host=self.host)
             return None
-        deadline = self._clock.now().timestamp() + timeout_s
+        deadline = self._clock.now().timestamp() + min(timeout_s, self._max_wait_s)
 
         while self._clock.now().timestamp() < deadline:
             await self._clock.sleep(self._poll_s)
@@ -412,7 +422,7 @@ class LiveContext:
         city: str,
         timezone: str,
         window_dir: str,
-        weather: Weather,
+        weather: Weather | None,
         clock: Clock,
         favors: LedgerFavors | None = None,
     ) -> None:
@@ -427,7 +437,7 @@ class LiveContext:
         return self._clock.now().astimezone(self._zone)
 
     async def arrival_context(self) -> dict[str, Any]:
-        weather = await self._weather.current()
+        weather = await self._weather.current() if self._weather is not None else None
         if self._favors is not None:
             self._favors.note_weather(weather)
         local = self.local_now()
@@ -463,18 +473,26 @@ class Gameplay:
     favors: LedgerFavors
     context: LiveContext
     is_bedtime: Callable[[datetime], bool]
-    journal: Journal
+    journal: Journal | None
+    bus: EventBus
     _tasks: list[asyncio.Task[None]] = field(default_factory=list)
 
     def runtime_kwargs(self) -> dict[str, Any]:
         """``KeeperRuntime(..., **gameplay.runtime_kwargs())``."""
         return {"favors": self.favors, "context": self.context, "is_bedtime": self.is_bedtime}
 
-    def start(self, bus: EventBus) -> None:
-        self._tasks = [
-            asyncio.create_task(self.favors.run()),
-            asyncio.create_task(journal_events(bus, self.journal)),
-        ]
+    def companions(self) -> list[Callable[[], Coroutine[Any, Any, None]]]:
+        """Background jobs for ``KeeperRuntime(companions=...)``: they start and
+        stop with the keeper's tick loop."""
+        jobs: list[Callable[[], Coroutine[Any, Any, None]]] = [self.favors.run]
+        journal = self.journal
+        if journal is not None:
+            jobs.append(lambda: journal_events(self.bus, journal))
+        return jobs
+
+    def start(self) -> None:
+        """Run the companions without a runtime (tests, scripts)."""
+        self._tasks = [asyncio.create_task(job()) for job in self.companions()]
 
     async def stop(self) -> None:
         await self.favors.close()
@@ -494,12 +512,20 @@ def build_gameplay(
     bus: EventBus,
     *,
     state_dir: Path | None = None,
+    persist: bool = True,
+    weather: bool = True,
     weather_client: Any = None,
+    poll_s: float = POLL_S,
+    favor_wait_s: float = MAX_WAIT_S,
 ) -> Gameplay:
     """Assemble favors, context, bedtime and the journal for one real keeper.
 
     ``config`` is a :class:`~hermit_keeper.config.HostConfig`. Typed loosely so
     this module does not have to change when that one grows.
+
+    ``persist=False`` keeps everything in memory: no favor snapshot and no
+    journal, which is what tests and the one-machine stand-in demo want.
+    ``weather=False`` never calls Open-Meteo.
     """
     home = state_dir or Path.home() / ".hermit"
     zone = ZoneInfo(config.timezone)
@@ -516,13 +542,15 @@ def build_gameplay(
         den_room=config.switch.den_room,
         ledger_room=config.switch.ledger_room,
         humans=humans,
-        snapshot=home / f"favors-{config.host_id}.json",
+        snapshot=home / f"favors-{config.host_id}.json" if persist else None,
+        poll_s=poll_s,
+        max_wait_s=favor_wait_s,
     )
     context = LiveContext(
         config.city,
         config.timezone,
         config.window_dir,
-        Weather(config.lat, config.lon, clock, client=weather_client),
+        Weather(config.lat, config.lon, clock, client=weather_client) if weather else None,
         clock,
         favors=favors,
     )
@@ -536,5 +564,6 @@ def build_gameplay(
         favors=favors,
         context=context,
         is_bedtime=bedtime_now,
-        journal=Journal(home / "journey.jsonl"),
+        journal=Journal(home / "journey.jsonl") if persist else None,
+        bus=bus,
     )
