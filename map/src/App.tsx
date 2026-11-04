@@ -7,11 +7,13 @@
 import { PixelBox, PocketHermit, sound, useMediaQuery, useReducedMotion } from '@hermit/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { requestedKeeper, useGroup } from './hooks/useGroup';
 import { requestedSource, useJourney, type JourneySource } from './hooks/useJourney';
 import { useTheme } from './hooks/useTheme';
 import { derive } from './lib/derive';
 import { Header } from './sections/Header';
 import { ImpactPanel } from './sections/ImpactPanel';
+import { LivePanel } from './sections/LivePanel';
 import { MascotStage } from './sections/MascotStage';
 import { PostcardButton } from './sections/Postcard';
 import { QuestLog } from './sections/QuestLog';
@@ -21,6 +23,9 @@ import { WorldPanel } from './world/WorldPanel';
 export function App() {
   const [want, setWant] = useState<JourneySource | null>(requestedSource);
   const { journey, source, error } = useJourney(want);
+  // Live group status is a separate feed from the exported journey, on purpose.
+  const keeper = requestedKeeper();
+  const live = useGroup(keeper);
   const { dark, toggle } = useTheme();
   const reduced = useReducedMotion();
   const narrow = useMediaQuery('(max-width: 767px)');
@@ -80,6 +85,8 @@ export function App() {
       />
 
       <MascotStage derived={derived} />
+
+      <LivePanel group={live.group} error={live.error} keeper={live.keeper} />
 
       {error && (
         <PixelBox variant="quest" className="notice" role="alert">

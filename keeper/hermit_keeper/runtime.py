@@ -113,6 +113,11 @@ class KeeperRuntime:
             while True:
                 try:
                     await self.machine.tick()
+                    # Tell the group we are alive, and hear how they are.
+                    # Both are cheap and must keep running even while this
+                    # laptop is doing nothing interesting.
+                    await self.beat()
+                    await self.refresh_group()
                 except Exception:
                     log.exception("tick failed", host=self.config.host_id)
                 await self.clock.sleep(TICK_S)
