@@ -1,9 +1,13 @@
-# A normal day: three friends, Hermit follows whoever is awake.
+# CAPABILITY scenario — the same code with three timezones.
 # Owner: D. Shape is provisional until Phase 5.1.
 #
-# Real hosts and brains (plan.md 3.2b). Cities/timezones below are PLACEHOLDERS
-# for the timezone story — replace with the team's real ones, or keep these for
-# the three-cities demo clip and use a separate one-timezone scenario.
+# Our real group is all in Bengaluru (see one_timezone_day.yaml, the primary
+# scenario). These cities are DELIBERATELY FICTIONAL: they demonstrate that
+# Hermit handles a scattered group, which is what it is built for.
+#
+# RULE FOR THE DEMO VIDEO: label this as the simulation on screen. Never cut it
+# beside real pilot footage as though it were the same run. Judges forgive a
+# small pilot; they do not forgive a staged one.
 name: three_cities_day
 speed: 600            # 600 simulated seconds per real second
 duration_s: 86400
@@ -14,12 +18,12 @@ hosts:
     brain_provider: claude-code
     presence: [[0, true], [39600, false], [75600, true]]
   - host_id: abhishek
-    city: Berlin          # TODO: real city
+    city: Berlin          # fictional, for the timezone demo
     timezone: Europe/Berlin
     brain_provider: opencode
     presence: [[25200, true], [61200, false]]
   - host_id: akshay
-    city: Toronto         # TODO: real city
+    city: Toronto         # fictional, for the timezone demo
     timezone: America/Toronto
     brain_provider: codex
     presence: [[46800, true], [82800, false]]

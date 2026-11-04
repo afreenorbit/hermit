@@ -34,9 +34,10 @@ def test_schema_is_valid(schema_name: str) -> None:
     Draft202012Validator.check_schema(_load(schema_name))
 
 
-def test_sample_journey_validates() -> None:
+@pytest.mark.parametrize("fixture_name", ["journey.sample.json", "journey.wide.sample.json"])
+def test_sample_journey_validates(fixture_name: str) -> None:
     journey = json.loads(
-        (REPO_ROOT / "map" / "public" / "data" / "journey.sample.json").read_text(encoding="utf-8")
+        (REPO_ROOT / "map" / "public" / "data" / fixture_name).read_text(encoding="utf-8")
     )
     registry = Registry().with_resource(
         "https://hermit.dev/schemas/shell-piece.schema.json",

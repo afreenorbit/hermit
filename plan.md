@@ -35,14 +35,33 @@
 
 ## 1. How to use this plan
 
-- **Four roles** (map to teammates; if you are three, merge D into B and C):
+### 1.1 Who does what — three people, no overlap
 
-| Role | Owns | Phases led |
-|---|---|---|
-| **A — Switch & Core** | `switch/`, `keeper/hermit_keeper/lease/`, `room/`, `brain/`, `statemachine.py` | 0, 2, 3, 8 |
-| **B — Gameplay** | `favors.py`, `shell_model.py`, `context/`, `bedtime.py`, `overlap.py`, `nudge.py`, `journal.py` | 4 |
-| **C — UI** | `critter/`, `map/`, `ui-shared/` | 6, 7 |
-| **D — Sim, QA & Story** | `sim/`, `keeper/tests/`, `docs/`, README, video, pilot | 5, 9, 10 |
+We are three, so the fourth role (D) is split. **Nobody edits a file outside
+their own column.** If you need something in someone else's folder, open a small
+PR to them or ask in chat — do not "just fix it", because that is how three
+people spend Nov 6 resolving merge conflicts instead of shipping.
+
+| | **Afreen — A: Switch & Core** | **Abhishek — B: Gameplay & Data** | **Akshay — C: UI & Story** |
+|---|---|---|---|
+| **Owns** | `switch/`, `sim/`, and in `keeper/hermit_keeper/`: `lease/`, `room/`, `brain/`, `presence/`, `statemachine.py`, `handoff.py`, `cli.py`, `config.py`, `clock.py`, `events.py`, `ids.py`, `ledger.py`, `api.py` | in `keeper/hermit_keeper/`: `favors.py`, `shell_model.py`, `bedtime.py`, `journal.py`, `overlap.py`, `nudge.py`, `context/`, `metrics.py`; plus `scripts/export_journey.py`, `scripts/make_fixtures.py`, `keeper/tests/` | `ui-shared/`, `critter/`, `map/`, `scripts/make_pixel_world.py` |
+| **Phases** | 0, 2, 3, 5, 8 | 4, 10 (pilot numbers, QA) | 6, 7, 9 (video, screenshots) |
+| **First thing** | Phase 0 spikes SP1–SP3 — *can the soul role be claimed and released from outside the agent?* Everything else waits on this answer. | Phase 1.3 fakes you depend on, then `favors.py` + `shell_model.py` against `FakeRoomHub` | Storybook + `renderShellGrid` + the map against the two committed fixtures |
+| **Blocked by** | nobody — start now | A's `room/fake.py` and `lease/fake.py` (Phase 1.3, tonight) | nobody — the fixtures are already committed |
+| **Never touches** | `ui-shared/`, `critter/`, `map/` | `switch/`, `lease/`, `room/` | `keeper/`, `switch/`, `sim/` |
+
+Why this split: Afreen has all three agents installed, so she is the only one who
+can run the Phase 0 spikes and the three-brain live sim on one machine. Akshay's
+work needs no backend at all — the fixtures are committed — so he is never
+blocked. Abhishek sits in the middle and is the one who most needs A's fakes
+early, which is why they are tonight's job.
+
+**Shared, needs two approvals:** `shared/schemas/` (frozen after Phase 1),
+`plan.md`, `README.md`.
+
+**Everyone writes tests for their own modules.** Abhishek owns `keeper/tests/`
+as a folder (fixtures, conftest, CI gate), but a PR without tests for its own
+code does not get merged, whoever wrote it.
 
 - **The golden rule:** everyone codes against the contracts in §5 and the fake adapters from Phase 1. Nobody waits for real Switch to work.
 - **⚠ VERIFY** marks anything about Switch internals we have not confirmed yet. Phase 0 resolves every one of them, and the answers go in `docs/switch-facts.md`.
@@ -58,7 +77,19 @@
 - Existing async tools (Marco Polo, Waffle, Cave, Locket) need someone to start every exchange. Group chats die because nobody starts them.
 
 ### 2.2 What Hermit does differently
-Hermit **creates the recurring moment itself**, and it uses the one thing scattered friends always share: **someone is always awake**.
+Hermit **creates the recurring moment itself**. It needs no one to start it, and
+it moves to whoever is actually there.
+
+**Hermit follows attention, not daylight.** The soul goes to whoever is at their
+laptop right now. Across timezones that means "someone is always awake"; inside
+one city it means "someone is always free" — one of us is in class, one is at
+work, one is up at 2am. Both are the same mechanic, and we ship both.
+
+> **Our group is three friends in Bengaluru** (§3.2b), about 25 km apart and
+> still not seeing each other for weeks. That is the honest version of the
+> problem and the one we pilot. The distance stat in §2.1 is the headline; the
+> stat that actually describes us is the second one — plenty of friends, no
+> **continuity or routine**. Lead with that.
 
 ### 2.3 MVP features (must ship)
 | ID | Feature | One-line description |
@@ -124,11 +155,23 @@ Hermit **creates the recurring moment itself**, and it uses the one thing scatte
 
 ### 3.2b The three laptops (real)
 
-| Host | `host_id` | Brain for Hermit | Also installed | City / tz |
+| Host | `host_id` | Brain for Hermit | Also installed | Area (Bengaluru) |
 |---|---|---|---|---|
-| Afreen | `afreen` | **Claude Code** | OpenCode, Codex | Bengaluru · Asia/Kolkata |
-| Abhishek | `abhishek` | **OpenCode** | Claude Code | ⚠ TBD |
-| Akshay | `akshay` | **Codex** | Claude Code | ⚠ TBD |
+| Afreen | `afreen` | **Claude Code** | OpenCode, Codex | Indiranagar |
+| Abhishek | `abhishek` | **OpenCode** | Claude Code | Kengeri |
+| Akshay | `akshay` | **Codex** | Claude Code | ⚠ confirm |
+
+All three in **Bengaluru · Asia/Kolkata**. Confirm who is where — the table
+above is a guess from one line in chat, and each person's real `lat`/`lon` goes
+in their own git-ignored `hermit.config.toml`, not here.
+
+Approximate area centres (use the neighbourhood centre, **never your actual
+address** — see §3.2c):
+
+| Area | lat | lon |
+|---|---|---|
+| Indiranagar | 12.9719 | 77.6412 |
+| Kengeri | 12.9166 | 77.4826 |
 
 The assignment is forced, and that is lucky: Akshay is the only one besides
 Afreen with Codex, and Abhishek is the only one besides Afreen with OpenCode, so
@@ -141,10 +184,30 @@ join a room during the pilot, that host switches to Claude Code and we say so in
 the README rather than faking it. Only the `brain_provider` line in their
 `hermit.config.toml` changes.
 
-⚠ Cities and timezones must be filled in before Phase 5 — the simulation
-scenarios and the map both need real `lat`/`lon`. If all three of us are in one
-timezone, keep the handoffs honest (bedtime and idle still differ by hours) and
-record a clip of the sim's three-city scenario for the timezone story.
+### 3.2c One city, one timezone — what it changes
+
+We are all in Bengaluru. Three consequences, all handled, none hidden:
+
+1. **The pilot is same-city.** Handoffs come from work, class, commutes and
+   different sleep hours, not from daylight. They are less frequent and that is
+   fine — report the real number. Primary scenario:
+   `sim/scenarios/one_timezone_day.yaml`.
+2. **The timezone story becomes a demonstrated capability, not a claim.**
+   `three_cities_day.yaml` runs the same code with three timezones. Show it in
+   the video as the sim, label it as the sim, and never cut it next to pilot
+   footage as if it were the same thing. Judges forgive a small pilot; they do
+   not forgive a staged one.
+3. **The map must auto-fit.** Three pins 25 km apart on a world map is a dot.
+   `map/src/world/projection.ts` fits the viewport to the bounding box of the
+   hosts with padding, so the same component draws a city and a planet (§7).
+   Build it against both fixtures: `journey.sample.json` (Bengaluru) and
+   `journey.wide.sample.json` (three timezones).
+
+**Privacy with neighbours.** City-level was the rule when "city" meant
+Bengaluru vs Berlin. In one city, an *area* centre (Indiranagar, Kengeri) is the
+right grain: coarse enough to be meaningless to a stranger, specific enough for
+the map. Everyone types their own area centre. Nobody's street, nobody's house,
+and the `lat`/`lon` never leave the group's own Switch server.
 
 ### 3.3 Two agents per laptop
 | Agent | What it is | Why |
@@ -188,7 +251,7 @@ This mix — off-the-shelf coding agents plus a custom protocol agent in the sam
 | Client state | **Zustand** (critter SSE state), small `useJourney` hook (map) | |
 | Runtime validation | **zod** schemas generated from `shared/schemas` via `json-schema-to-zod`; TS types via `json-schema-to-typescript` | UI and keeper agree on contracts at compile time *and* runtime. |
 | Critter shell | **Electron 33+** via **electron-vite** (React + TS template) | Transparent, frameless, always-on-top. |
-| Map rendering | Custom **pixel world map** on `<canvas>` (land grid baked from a land/sea mask) + **react-zoom-pan-pinch** | No tile server; fully on-brand. Auto-fits to where hosts are, so it works for friends within one country too. |
+| Map rendering | Custom **pixel map** on `<canvas>` + **react-zoom-pan-pinch** | No tile server; fully on-brand. **Auto-fits to the hosts' bounding box**, so the same component draws Bengaluru (our pilot) and a planet (the sim). At city scale the land/sea mask is all land — draw an abstract pixel ground instead and keep `world-grid.bin` for the wide view only. |
 | Share card | **html-to-image** | "Postcard" PNG of the shell + stats for posting. |
 | Shared UI code | `ui-shared/` package: design tokens, fonts, pixel components, `shell` renderer, avatars, formatters | Used by both critter and map. |
 | Component workshop | **Storybook 8** | Every component built and reviewed against fixtures, in parallel with backend work. |
@@ -257,7 +320,15 @@ Light theme = paper surfaces on a soft `mist` background. Dark theme (`prefers-c
 **Pixel shell rendering** (`ui-shared/shell/`)
 - `renderShellGrid(pieces, { size: 24 | 48 }) -> { w, h, cells: number[] }` — pure, deterministic; each cell is a palette index.
 - Pieces are laid along a pixel spiral from the center outward, oldest first.
-- Encoding: **color** from temperature (cold → `sea`/`mist`, mild → `leaf`/`sun`, hot → `ember`/`berry`); **dither pattern** from brain (Claude Code = checker, Codex = horizontal stripes, OpenCode = diagonal waves, other = solid); **segment length** from `log(dwell_s)`; **outline** solid for graceful, dotted for bedtime, broken/cracked pixels for abrupt.
+- Encoding: **color** from the host's **local hour of arrival** — night `dream`/`night`, dawn `ember`/`sun`, day `leaf`/`sea`, dusk `berry`/`dusk` — shaded lighter or darker by `temp_c`; **dither pattern** from brain (Claude Code = checker, Codex = horizontal stripes, OpenCode = diagonal waves, other = solid); **segment length** from `log(dwell_s)`; **outline** solid for graceful, dotted for bedtime, broken/cracked pixels for abrupt.
+- ⚠ **Why hour and not temperature (changed Nov 4).** We are all in one city
+  (§3.2c), so temperature alone would make every piece the same colour and the
+  shell would read as one flat blob. Hour of arrival varies between hosts even
+  25 km apart — a 2am piece and a 10am piece are obviously different — so the
+  shell still tells the story of *when* each friend showed up. Temperature stays
+  as a shade modifier, which keeps the three-timezone case looking right too.
+  Four independent axes (hour, brain, dwell, departure) is what makes the shell
+  worth looking at.
 - Output adapters: `toCanvas(grid, ctx, scale)` and `toSVG(grid, scale)` (rects; crisp at any size).
 - The same grid is drawn on the critter's back, in the map's shell panel and on the postcard, so the shell is one recognizable object everywhere.
 
@@ -1121,7 +1192,7 @@ Mobile (< 768 px): Header → World (55 vh) → Impact → Shell → Quest Log (
 
 ### 7.4 Shell panel
 - `ShellView` at 48 × 48 grid, 6× scale. Hover/focus a piece → tooltip (host, city, weather, brain, favor) and the matching quest card scrolls into view and flashes.
-- Legend row: color = temperature, pattern = brain, outline = departure type.
+- Legend row: color = local hour of arrival (shaded by temperature), pattern = brain, outline = departure type.
 
 ### 7.5 Quest log
 - One card per stop: seq number, `PixelAvatar` + name, city, `BrainBadge`, arrival time in the viewer's local time, weather icon + temp, `DepartureChip`, favor received (✓ if done) and favor left, mini shell piece.
@@ -1208,12 +1279,13 @@ Mobile (< 768 px): Header → World (55 vh) → Impact → Shell → Quest Log (
 | Time | Shot | Voiceover (draft) |
 |---|---|---|
 | 0:00–0:15 | Title, then a dead group chat ("last message: 3 weeks ago") | "Friends drift apart because of distance — and because nobody starts the conversation." |
-| 0:15–0:45 | Split screen, two laptops. Afreen closes her lid. Seconds later the critter crawls onto Abhishek's screen; Discord shows Hermit greeting her in a different voice. | "Hermit has no home. It lives on one friend's laptop at a time and uses their AI as its brain." |
-| 0:45–1:15 | Hermit delivers Afreen's favor; Abhishek does it from her phone; a shell piece snaps on in the critter. | "Every host leaves a favor for the next. Doing it grows Hermit's shell." |
+| 0:15–0:45 | Split screen, two laptops. Afreen closes her lid. Seconds later the critter crawls onto Abhishek's screen; Discord shows Hermit greeting them in a different voice. | "Hermit has no home. It lives on one friend's laptop at a time and uses their AI as its brain." |
+| 0:45–1:15 | Hermit delivers Afreen's favor; Abhishek does it from their phone; a shell piece snaps on in the critter. | "Every host leaves a favor for the next. Doing it grows Hermit's shell." |
 | 1:15–1:50 | Under the hood: the `soul` role moving between agents; room memory carrying across Claude and Codex; favors as room Tasks; the bedtime rule as a room Rule; a handoff latency chart. | "Switch is the whole engine: one exclusive role is Hermit's soul, the room is its memory, tasks are its favors." |
-| 1:50–2:05 | Overlap finder suggests a call; two friends actually call (or bedtime eviction tease if S1 isn't shipped). | "It even finds the rare moment two friends are both awake." |
-| 2:05–2:20 | Pilot numbers + one quote. | "In a 2-night pilot with N friends…" |
-| 2:20–2:30 | Journey map zooming out. Tagline. | "Someone is always awake. Hermit makes sure that counts." |
+| 1:50–2:05 | **"What if we weren't in the same city?"** Cut to the simulation, watermarked `SIMULATION` in the corner, running `three_cities_day.yaml`: Bengaluru → Berlin → Toronto, the soul chasing daylight around the planet, map zoomed out to the wide fixture. | "We all live in Bengaluru. But the same code doesn't care — here's the group we built it for, simulated across three timezones." |
+| 2:05–2:12 | Back to the real critter on a real laptop. | "Everything before this was real, on our three machines." |
+| 2:12–2:22 | Pilot numbers + one quote. | "In a 2-night pilot with N friends…" |
+| 2:22–2:30 | Journey map zooming out. Tagline. | "Someone is always around. Hermit makes sure that counts." |
 
 Recording rules: 1080p, cursor highlighted, real footage from the pilot plus live-sim takes as backup; captions burned in; music low.
 
@@ -1322,6 +1394,24 @@ All green before each recording session and before submission.
   3. Did Hermit feel different on different laptops? What did you notice? (free text)
 - **Capture:** 2–3 short screen clips and quotes (with permission).
 - **Write-up:** `docs/pilot-results.md` — numbers, honest limits (small N, friends of the team), what we'd change.
+
+### 10.6b Optional: one remote friend (do NOT let this block anything)
+
+If someone we know is in another city **and** willing to install a keeper, a
+single real cross-city handoff is worth a lot — it turns the timezone story from
+simulated to demonstrated. Owner: **Abhishek** (recruiting), **Afreen** (setup).
+
+- **Ask by Nov 5 morning.** One person, one laptop, 20 minutes of their time.
+  Anyone further than ~300 km counts; a different timezone is a bonus, not a
+  requirement.
+- **Hard rule: this is a bonus, never a dependency.** The pilot, the video and
+  the submission must all be complete and recorded assuming it does not happen.
+  If they flake on Nov 6, nothing changes. Do not design a demo beat around a
+  person who has not already run `hermit-keeper doctor` successfully.
+- **If it works:** record that one handoff and use it at 1:50 instead of the
+  simulation, and say plainly in the README how many hosts were real.
+- **If it doesn't:** the simulation beat stands on its own, clearly labelled. See
+  §9.2, 1:50–2:05.
 
 ### 10.7 Demo rehearsal
 - Two full dry runs of the video storyline on real laptops; time each shot.

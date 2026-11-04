@@ -3,32 +3,32 @@
   "generated_at": "2025-11-05T12:10:00Z",
   "hermit": {
     "current_host": "abhishek",
-    "current_city": "Berlin",
+    "current_city": "Kengeri",
     "since": "2025-11-05T11:20:00Z"
   },
   "hosts": [
     {
       "host_id": "afreen",
       "display_name": "Afreen",
-      "city": "Bengaluru",
-      "lat": 12.97,
-      "lon": 77.59,
+      "city": "Indiranagar",
+      "lat": 12.9719,
+      "lon": 77.6412,
       "brain_provider": "claude-code"
     },
     {
       "host_id": "abhishek",
       "display_name": "Abhishek",
-      "city": "Berlin",
-      "lat": 52.52,
-      "lon": 13.4,
+      "city": "Kengeri",
+      "lat": 12.9166,
+      "lon": 77.4826,
       "brain_provider": "opencode"
     },
     {
       "host_id": "akshay",
       "display_name": "Akshay",
-      "city": "Toronto",
-      "lat": 43.65,
-      "lon": -79.38,
+      "city": "Koramangala",
+      "lat": 12.9352,
+      "lon": 77.6245,
       "brain_provider": "codex"
     }
   ],
@@ -41,8 +41,8 @@
       "left_at": "2025-11-05T01:30:00Z",
       "departure": "graceful",
       "weather": {
-        "temp_c": 24.0,
-        "code": 2
+        "temp_c": 26.0,
+        "code": 1
       },
       "favor_received": null,
       "favor_left": {
@@ -62,8 +62,8 @@
       "left_at": "2025-11-05T03:35:00Z",
       "departure": "bedtime",
       "weather": {
-        "temp_c": 8.5,
-        "code": 3
+        "temp_c": 23.5,
+        "code": 2
       },
       "favor_received": {
         "id": "fav_WXWCBYB6WK952SWA0432CF1XMW",
@@ -88,8 +88,8 @@
       "left_at": "2025-11-05T04:40:00Z",
       "departure": "graceful",
       "weather": {
-        "temp_c": -2.0,
-        "code": 71
+        "temp_c": 21.0,
+        "code": 3
       },
       "favor_received": {
         "id": "fav_8TR7STD0HK1DBS629DWG0NJR44",
@@ -114,8 +114,8 @@
       "left_at": "2025-11-05T05:00:00Z",
       "departure": "abrupt",
       "weather": {
-        "temp_c": 26.5,
-        "code": 1
+        "temp_c": 27.5,
+        "code": 0
       },
       "favor_received": {
         "id": "fav_JQ85Q8WN821YPK214Y4KM844WQ",
@@ -134,8 +134,8 @@
       "left_at": "2025-11-05T08:05:00Z",
       "departure": "graceful",
       "weather": {
-        "temp_c": 9.0,
-        "code": 61
+        "temp_c": 24.0,
+        "code": 2
       },
       "favor_received": {
         "id": "fav_JQ85Q8WN821YPK214Y4KM844WQ",
@@ -160,8 +160,8 @@
       "left_at": "2025-11-05T09:55:00Z",
       "departure": "bedtime",
       "weather": {
-        "temp_c": -4.5,
-        "code": 73
+        "temp_c": 20.5,
+        "code": 61
       },
       "favor_received": {
         "id": "fav_R5KMG1P52WNTHZ1D4V2BN8Y9WZ",
@@ -186,7 +186,7 @@
       "left_at": "2025-11-05T11:15:00Z",
       "departure": "graceful",
       "weather": {
-        "temp_c": 27.0,
+        "temp_c": 28.0,
         "code": 0
       },
       "favor_received": {
@@ -212,8 +212,8 @@
       "left_at": null,
       "departure": "present",
       "weather": {
-        "temp_c": 10.5,
-        "code": 2
+        "temp_c": 22.5,
+        "code": 1
       },
       "favor_received": {
         "id": "fav_TXQQSCA60M5SCNGH7AS8NQVBSD",
@@ -236,10 +236,10 @@
       "v": 1,
       "id": "pc_CEJZ05XHT5GMEJ146S6JR410DD",
       "host": "afreen",
-      "city": "Bengaluru",
+      "city": "Indiranagar",
       "brain_provider": "claude-code",
-      "temp_c": 24.0,
-      "weather_code": 2,
+      "temp_c": 26.0,
+      "weather_code": 1,
       "dwell_s": 5400,
       "departure": "graceful",
       "favor_id": null,
@@ -250,10 +250,10 @@
       "v": 1,
       "id": "pc_5DF0QQX8Y8RB9KEFCACRY5T366",
       "host": "abhishek",
-      "city": "Berlin",
+      "city": "Kengeri",
       "brain_provider": "opencode",
-      "temp_c": 8.5,
-      "weather_code": 3,
+      "temp_c": 23.5,
+      "weather_code": 2,
       "dwell_s": 7200,
       "departure": "bedtime",
       "favor_id": "fav_WXWCBYB6WK952SWA0432CF1XMW",
@@ -264,10 +264,10 @@
       "v": 1,
       "id": "pc_28NP5Y4T1Z0RR04557GTNRXWX5",
       "host": "akshay",
-      "city": "Toronto",
+      "city": "Koramangala",
       "brain_provider": "codex",
-      "temp_c": -2.0,
-      "weather_code": 71,
+      "temp_c": 21.0,
+      "weather_code": 3,
       "dwell_s": 3600,
       "departure": "graceful",
       "favor_id": "fav_8TR7STD0HK1DBS629DWG0NJR44",
@@ -278,10 +278,10 @@
       "v": 1,
       "id": "pc_H2HPK18SXC1HF937W6Q4CCYGB0",
       "host": "afreen",
-      "city": "Bengaluru",
+      "city": "Indiranagar",
       "brain_provider": "claude-code",
-      "temp_c": 26.5,
-      "weather_code": 1,
+      "temp_c": 27.5,
+      "weather_code": 0,
       "dwell_s": 900,
       "departure": "abrupt",
       "favor_id": "fav_JQ85Q8WN821YPK214Y4KM844WQ",
@@ -292,10 +292,10 @@
       "v": 1,
       "id": "pc_5EWJAGKRDK9HZCT70R12S7Z5A4",
       "host": "abhishek",
-      "city": "Berlin",
+      "city": "Kengeri",
       "brain_provider": "opencode",
-      "temp_c": 9.0,
-      "weather_code": 61,
+      "temp_c": 24.0,
+      "weather_code": 2,
       "dwell_s": 10800,
       "departure": "graceful",
       "favor_id": "fav_JQ85Q8WN821YPK214Y4KM844WQ",
@@ -306,10 +306,10 @@
       "v": 1,
       "id": "pc_8F85GR6VT8CS16CPQ7NC4Y612Y",
       "host": "akshay",
-      "city": "Toronto",
+      "city": "Koramangala",
       "brain_provider": "codex",
-      "temp_c": -4.5,
-      "weather_code": 73,
+      "temp_c": 20.5,
+      "weather_code": 61,
       "dwell_s": 6300,
       "departure": "bedtime",
       "favor_id": "fav_R5KMG1P52WNTHZ1D4V2BN8Y9WZ",
@@ -320,9 +320,9 @@
       "v": 1,
       "id": "pc_B4NKY60P3EHKNDSB4RZD7S176F",
       "host": "afreen",
-      "city": "Bengaluru",
+      "city": "Indiranagar",
       "brain_provider": "claude-code",
-      "temp_c": 27.0,
+      "temp_c": 28.0,
       "weather_code": 0,
       "dwell_s": 4500,
       "departure": "graceful",
@@ -334,10 +334,10 @@
       "v": 1,
       "id": "pc_GF26X9F73TX7D3P97QW8TXGTQ8",
       "host": "abhishek",
-      "city": "Berlin",
+      "city": "Kengeri",
       "brain_provider": "opencode",
-      "temp_c": 10.5,
-      "weather_code": 2,
+      "temp_c": 22.5,
+      "weather_code": 1,
       "dwell_s": 2700,
       "departure": "graceful",
       "favor_id": "fav_TXQQSCA60M5SCNGH7AS8NQVBSD",

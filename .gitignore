@@ -32,6 +32,7 @@ blob-report/
 *.jsonl
 map/public/data/journey.json
 !map/public/data/journey.sample.json
+!map/public/data/journey.wide.sample.json
 
 # --- os / editor ---
 .DS_Store

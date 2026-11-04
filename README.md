@@ -15,18 +15,26 @@
 
 ## What it is
 
-Friends scattered across timezones share exactly one thing: **someone is always awake.**
+You don't drift apart from your friends because you're far away. You drift apart
+because **nobody starts it.** The group chat has been quiet for three weeks and
+everyone has noticed.
 
-Hermit turns that into a game. Exactly one friend "has" Hermit at any moment —
-because exactly one agent holds the `soul` role in Switch. When that friend's
-laptop goes idle, the role frees and Hermit moves to whoever is awake next,
-speaking through *their* coding agent instead. Its memory is the Switch room, so
-it remembers Berlin while speaking in Claude's voice from Bengaluru.
+Hermit starts it. Exactly one friend "has" Hermit at any moment — because exactly
+one agent holds the `soul` role in Switch. When that friend's laptop goes idle,
+the role frees and Hermit moves to whoever is around next, speaking through
+*their* coding agent instead. Its memory is the Switch room, so it remembers what
+you said last night while speaking in someone else's voice this morning.
+
+**Hermit follows attention, not daylight.** Across timezones that means someone
+is always awake. For us — three friends in Bengaluru, 25 km apart, who still
+manage not to see each other for weeks — it means someone is always free: one in
+class, one commuting, one up at 2am.
 
 Before it leaves, Hermit asks its host to leave a **favor** for whoever it visits
 next — a Switch room Task. Doing the favor adds a piece to Hermit's **shell**,
-generated from the city, the weather, which brain voiced it, and how long it
-stayed. Over a week the group gets a journey map and a shell they built together.
+generated from the hour it arrived, which brain voiced it, how long it stayed and
+how it left. Over a week the group gets a journey map and a shell they built
+together.
 
 > **Status: Phase 1.** The scaffolding, contracts and fakes are in. The features
 > are being built against them. See [`plan.md`](plan.md) for the full build plan.
@@ -83,6 +91,12 @@ machine, the ledger, the critter's API). Full detail in [`plan.md`](plan.md) §3
 | Afreen | `afreen` | **Claude Code** | OpenCode, Codex |
 | Abhishek | `abhishek` | **OpenCode** | Claude Code |
 | Akshay | `akshay` | **Codex** | Claude Code |
+
+All three in Bengaluru, same timezone. Handoffs come from work, class, commutes
+and different sleep hours rather than from daylight — rarer, and we report the
+real number. `sim/scenarios/three_cities_day.yaml` runs the identical code with
+three timezones to show the scattered-group case; it is labelled as a simulation
+wherever it appears.
 
 One brain each, all three different — so Hermit's memory visibly survives the
 agent changing underneath it. That's the demo. If a brain won't join a room
@@ -160,6 +174,16 @@ It opens on <http://localhost:5173> and reads
 `map/public/data/journey.sample.json` — a fake 8-stop journey with every
 departure type in it, so the UI can be built before any of the backend exists.
 
+Two fixtures ship, both valid against the same schema, because the map has to
+auto-fit to either:
+
+| Fixture | Scale | For |
+|---|---|---|
+| `journey.sample.json` | Bengaluru, 3 areas ~25 km apart | our real pilot shape |
+| `journey.wide.sample.json` | Bengaluru / Berlin / Toronto | the scattered-group case |
+
+Regenerate both with `python scripts/make_fixtures.py`.
+
 ### 4. Your host config
 
 ```bash
@@ -205,7 +229,9 @@ Deliberate, and part of the pitch:
 
 - Hermit's brain sees **one folder** you chose (`~/HermitWindow`) — file names
   only, contents never leave your machine and never reach the ledger.
-- **City-level location only**, typed by you into your config. No tracking.
+- **Area-level location only** — the centre of your neighbourhood, typed by you
+  into your own config. Never your street, never your address. No tracking, and
+  the coordinates never leave the group's own Switch server.
 - No central server of ours. Only the Switch server the group runs.
 - The bedtime rule means Hermit *leaves* when you should sleep. It never rewards
   staying up.
