@@ -1,0 +1,326 @@
+/* Tilli's motion. Owner: C. Mirrors the movement demo: blink, breathe, hop in
+   with a letter, chatter, tuck into the shell to sleep, turn and walk away.
+   Every transform is on an SVG group with transform-box: fill-box, so origins
+   are relative to the part being moved. */
+
+.tilli {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  line-height: 0;
+  vertical-align: bottom;
+}
+.tilli__svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.tilli--flip .tilli__svg {
+  transform: scaleX(-1);
+}
+.tilli--flip .t-mark text {
+  /* keep "?" and "z" readable when mirrored */
+  transform: scaleX(-1);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.tilli g,
+.tilli path,
+.tilli ellipse {
+  transform-box: fill-box;
+}
+
+/* eyes follow --tilli-look-x/y */
+.tilli .t-pupils {
+  transform: translate(calc(var(--tilli-look-x, 0) * 3px), calc(var(--tilli-look-y, 0) * 2px));
+  transition: transform 0.25s ease-out;
+}
+.tilli .t-eyes {
+  transform-origin: center;
+  animation: tilli-blink 4.6s infinite;
+}
+
+/* breathing for every standing mood */
+.tilli .t-body {
+  transform-origin: 50% 100%;
+  animation: tilli-breathe 2.8s ease-in-out infinite;
+}
+.tilli .t-head {
+  transform-origin: 50% 90%;
+}
+.tilli .t-leaf-sprout {
+  transform-origin: 0% 100%;
+  animation: tilli-sway 3.2s ease-in-out infinite;
+}
+.tilli .t-leaf-big {
+  transform-origin: 100% 40%;
+  animation: tilli-sway 3.8s ease-in-out infinite reverse;
+}
+.tilli .t-mark {
+  transform-origin: center;
+  animation: tilli-float 2.4s ease-in-out infinite;
+}
+.tilli .t-charm-flower {
+  transform-origin: 50% 0%;
+  animation: tilli-swing 2.8s ease-in-out infinite;
+}
+
+/* arriving: hop in, wave the letter */
+.tilli--arriving .t-body {
+  animation:
+    tilli-hop 0.9s cubic-bezier(0.3, 0.7, 0.4, 1) 2,
+    tilli-breathe 2.8s ease-in-out 1.8s infinite;
+}
+.tilli--arriving .t-paw-right,
+.tilli--wave .t-paw-right {
+  transform-origin: 0% 100%;
+  animation: tilli-wave 0.9s ease-in-out infinite;
+}
+.tilli--arriving .t-letter {
+  transform-box: view-box;
+}
+
+/* happy / visiting: a little bounce now and then */
+.tilli--happy .t-head {
+  animation: tilli-nod 3.6s ease-in-out infinite;
+}
+
+/* curious: head tilt */
+.tilli--curious .t-head {
+  animation: tilli-tilt 2.6s ease-in-out infinite;
+}
+
+/* talking: mouth chatters between open and smile */
+.tilli--talking .t-mouth-open {
+  animation: tilli-chatter 0.36s steps(1) infinite;
+}
+.tilli--talking .t-mouth-smile {
+  animation: tilli-chatter 0.36s steps(1) infinite reverse;
+}
+.tilli--talking .t-head {
+  animation: tilli-nod 1.1s ease-in-out infinite;
+}
+
+/* celebrate: jump with both paws up */
+.tilli--celebrate .t-body {
+  animation: tilli-jump 0.7s cubic-bezier(0.3, 0.7, 0.4, 1) infinite;
+}
+.tilli--celebrate .t-sparkles path {
+  transform-origin: center;
+  animation: tilli-twinkle 0.9s ease-in-out infinite;
+}
+.tilli--celebrate .t-sparkles path:nth-child(2n) {
+  animation-delay: 0.45s;
+}
+
+/* sleeping: sunk into the shell, slow breaths */
+.tilli--sleeping .t-head {
+  transform: translateY(12px) rotate(-5deg);
+}
+.tilli--sleeping .t-body {
+  animation: tilli-breathe 4.2s ease-in-out infinite;
+}
+.tilli--sleeping .t-feet {
+  transform: translateY(-8px) scaleY(0.6);
+}
+.tilli--sleeping .t-paws {
+  display: none;
+}
+.tilli--sleeping .t-leaf-big {
+  transform: rotate(-14deg) translate(-2px, 6px);
+}
+.tilli--sleeping .t-zzz text {
+  animation: tilli-zzz 2.6s ease-in-out infinite;
+  opacity: 0;
+}
+.tilli--sleeping .t-zzz text:nth-child(2) {
+  animation-delay: 0.6s;
+}
+.tilli--sleeping .t-zzz text:nth-child(3) {
+  animation-delay: 1.2s;
+}
+.tilli--sleeping .t-eyes {
+  animation: none;
+}
+
+/* walking (towards a side) and away (back turned) */
+.tilli--walk .t-body,
+.tilli--away .t-body {
+  transform-origin: 50% 100%;
+  animation: tilli-waddle 0.6s ease-in-out infinite;
+}
+.tilli--walk .t-foot-l,
+.tilli--away .t-foot-l {
+  transform-origin: center;
+  animation: tilli-step 0.6s ease-in-out infinite;
+}
+.tilli--walk .t-foot-r,
+.tilli--away .t-foot-r {
+  transform-origin: center;
+  animation: tilli-step 0.6s ease-in-out infinite 0.3s;
+}
+
+.tilli--still *,
+.tilli--still .t-body {
+  animation: none !important;
+}
+
+@keyframes tilli-blink {
+  0%,
+  94%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.12);
+  }
+}
+@keyframes tilli-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  50% {
+    transform: translateY(1.5px) scale(1.012, 0.985);
+  }
+}
+@keyframes tilli-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-7deg);
+  }
+}
+@keyframes tilli-swing {
+  0%,
+  100% {
+    transform: rotate(4deg);
+  }
+  50% {
+    transform: rotate(-6deg);
+  }
+}
+@keyframes tilli-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes tilli-hop {
+  0% {
+    transform: translateY(0) scale(1.06, 0.92);
+  }
+  40% {
+    transform: translateY(-18px) scale(0.96, 1.05);
+  }
+  75% {
+    transform: translateY(0) scale(1.05, 0.94);
+  }
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+}
+@keyframes tilli-jump {
+  0%,
+  100% {
+    transform: translateY(0) scale(1.05, 0.94);
+  }
+  45% {
+    transform: translateY(-20px) scale(0.97, 1.04);
+  }
+}
+@keyframes tilli-wave {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-22deg);
+  }
+}
+@keyframes tilli-nod {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  80% {
+    transform: rotate(-3deg) translateY(-2px);
+  }
+  90% {
+    transform: rotate(2deg) translateY(0);
+  }
+}
+@keyframes tilli-tilt {
+  0%,
+  100% {
+    transform: rotate(-6deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+@keyframes tilli-chatter {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes tilli-twinkle {
+  0%,
+  100% {
+    transform: scale(0.4) rotate(0deg);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.1) rotate(25deg);
+    opacity: 1;
+  }
+}
+@keyframes tilli-zzz {
+  0% {
+    opacity: 0;
+    transform: translate(0, 6px);
+  }
+  30%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(6px, -10px);
+  }
+}
+@keyframes tilli-waddle {
+  0%,
+  100% {
+    transform: rotate(-3.5deg) translateY(0);
+  }
+  50% {
+    transform: rotate(3.5deg) translateY(-3px);
+  }
+}
+@keyframes tilli-step {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilli *,
+  .tilli .t-body {
+    animation: none !important;
+  }
+}

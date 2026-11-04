@@ -1,0 +1,603 @@
+/* Components in Tilli's storybook style. Owner: C.
+   Soft "sticker" surfaces: rounded corners, a cocoa outline and a solid,
+   unblurred drop shadow below — friendly like the mascot, still crisp.
+   Tap targets are at least 44px; long words wrap instead of overflowing. */
+
+/* ---------- helpers ---------- */
+.hm-sr {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.hm-icon {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+
+:where(
+  .hm-btn,
+  .hm-toggle,
+  .hm-tabs__tab,
+  .hm-tabs__panel,
+  .hm-dialog,
+  .hm-shellview canvas,
+  .hm-focusable
+):focus-visible {
+  outline: 3px solid var(--hm-focus);
+  outline-offset: 4px;
+}
+
+@keyframes hm-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+@keyframes hm-bob {
+  50% {
+    transform: translateY(-5px);
+  }
+}
+@keyframes hm-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes hm-flash {
+  0%,
+  100% {
+    outline-color: transparent;
+  }
+  50% {
+    outline: 6px solid var(--hm-butter);
+    outline-offset: 2px;
+  }
+}
+
+/* ---------- PixelBox (card) ---------- */
+.hm-box {
+  --face: var(--hm-surface);
+  --text: var(--hm-fg);
+  position: relative;
+  margin: 0;
+  padding: 22px;
+  border: 2.5px solid var(--hm-edge);
+  border-radius: var(--radius);
+  background: var(--face);
+  color: var(--text);
+  box-shadow: 0 6px 0 var(--hm-shadow);
+}
+.hm-box--flat {
+  box-shadow: none;
+}
+.hm-box--night {
+  --face: #3a3144;
+  --text: #f7eddc;
+}
+.hm-box--ink {
+  --face: #2f2736;
+  --text: #f7eddc;
+}
+.hm-box--quest {
+  --face: var(--hm-quest);
+  border-style: dashed;
+}
+.hm-box--inset {
+  --face: var(--hm-surface-2);
+  border-width: 2px;
+  border-color: var(--hm-line);
+  box-shadow: none;
+}
+.hm-box--tabbed {
+  padding-top: 32px;
+}
+.hm-box__tab {
+  position: absolute;
+  top: -16px;
+  left: 20px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 14px 4px;
+  border: 2.5px solid var(--hm-edge);
+  border-radius: 999px;
+  background: var(--hm-butter);
+  color: #3e2a1c;
+  font: 600 15px/20px var(--font-ui);
+  letter-spacing: 0.02em;
+}
+
+/* ---------- PixelButton ---------- */
+.hm-btn {
+  --face: var(--hm-peach);
+  --fg: #3e2a1c;
+  --lip: #c97b5c;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0 0 5px;
+  padding: 8px 20px;
+  border: 2.5px solid #5b3d27;
+  border-radius: 999px;
+  background: var(--face);
+  color: var(--fg);
+  font: 600 16px/1 var(--font-ui);
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  box-shadow: 0 5px 0 var(--lip);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    filter 0.12s ease;
+}
+.hm-btn:hover:not(:disabled) {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 0 var(--lip);
+}
+.hm-btn:active:not(:disabled),
+.hm-btn[data-pressed='true'] {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--lip);
+}
+.hm-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.hm-btn--ghost {
+  --face: var(--hm-surface);
+  --fg: var(--hm-fg);
+  --lip: var(--hm-shadow);
+  border-color: var(--hm-edge);
+}
+.hm-btn--danger {
+  --face: #eba08f;
+  --lip: #b9614f;
+}
+.hm-btn--quest {
+  --face: var(--hm-butter);
+  --lip: #d0a650;
+}
+.hm-btn--sm {
+  min-height: 40px;
+  padding: 4px 14px;
+  font-size: 14px;
+}
+.hm-btn--lg {
+  min-height: 54px;
+  padding: 12px 26px;
+  font-size: 18px;
+}
+.hm-btn--icon {
+  min-width: 44px;
+  padding: 8px;
+}
+.hm-btn--sm.hm-btn--icon {
+  min-width: 40px;
+}
+
+/* ---------- chips ---------- */
+.hm-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px 3px;
+  border: 2px solid #5b3d27;
+  border-radius: 999px;
+  background: var(--chip, #f6ecda);
+  color: var(--chip-fg, #3e2a1c);
+  font: 600 13px/18px var(--font-ui);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.hm-brain--claude-code {
+  --chip: #f6c6ae;
+}
+.hm-brain--codex {
+  --chip: #c6e0eb;
+}
+.hm-brain--opencode {
+  --chip: #d8e1ad;
+}
+.hm-brain--other {
+  --chip: #e4d9c7;
+}
+.hm-dep--graceful {
+  --chip: #d8e1ad;
+}
+.hm-dep--bedtime {
+  --chip: #dccbe5;
+}
+.hm-dep--abrupt {
+  --chip: #f3bcb0;
+}
+.hm-dep--manual {
+  --chip: #e4d9c7;
+}
+.hm-dep--present {
+  --chip: #f8d98a;
+}
+.hm-dep__pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d97a6c;
+  animation: hm-blink 1.2s ease-in-out infinite;
+}
+.hm-status--open {
+  --chip: #f8d98a;
+}
+.hm-status--assigned {
+  --chip: #c6e0eb;
+}
+.hm-status--done {
+  --chip: #d8e1ad;
+}
+.hm-status--expired {
+  --chip: #e7ddcd;
+  --chip-fg: #74604a;
+}
+
+/* ---------- PixelAvatar ---------- */
+.hm-avatar {
+  display: inline-flex;
+  flex: none;
+  line-height: 0;
+}
+.hm-avatar--framed {
+  overflow: hidden;
+  border: 2px solid #5b3d27;
+  border-radius: 10px;
+}
+
+/* ---------- DialogBox (speech bubble) ---------- */
+.hm-dialog {
+  --face: #fffaf1;
+  --text: #483424;
+  position: relative;
+  margin: 16px 0 12px;
+  padding: 16px 18px 18px;
+  border: 2.5px solid #5b3d27;
+  border-radius: 20px;
+  background: var(--face);
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: 0 5px 0 rgba(91, 61, 39, 0.18);
+}
+.hm-dialog--night {
+  --face: #3a3144;
+  --text: #f7eddc;
+}
+.hm-dialog--dream {
+  --face: #ede3f1;
+}
+.hm-dialog__head {
+  position: absolute;
+  top: -14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hm-dialog__name {
+  padding: 2px 12px 3px;
+  border: 2px solid #5b3d27;
+  border-radius: 999px;
+  background: #f8d98a;
+  color: #3e2a1c;
+  font: 600 13px/18px var(--font-ui);
+  letter-spacing: 0.04em;
+}
+.hm-dialog__text {
+  margin: 4px 0 0;
+  font: 500 15px/1.6 var(--font-body);
+  overflow-wrap: anywhere;
+}
+.hm-dialog__ghost {
+  visibility: hidden;
+}
+.hm-dialog__more {
+  position: absolute;
+  right: 14px;
+  bottom: 4px;
+  color: #d97a6c;
+  font: 12px/1 var(--font-ui);
+  animation: hm-bob 1s ease-in-out infinite;
+}
+.hm-dialog--compact {
+  padding: 12px 14px 14px;
+}
+.hm-dialog--compact .hm-dialog__text {
+  font-size: 14px;
+}
+
+/* ---------- StatTile ---------- */
+.hm-stat {
+  --tone: #e48a6c;
+  --tone-soft: var(--hm-peach-soft);
+  position: relative;
+  padding: 16px 18px 18px;
+  border: 2.5px solid var(--hm-edge);
+  border-radius: 18px;
+  background: var(--hm-surface);
+  color: var(--hm-fg);
+  box-shadow: 0 5px 0 var(--hm-shadow);
+}
+.hm-stat--leaf {
+  --tone: #7f9550;
+  --tone-soft: var(--hm-sage-soft);
+}
+.hm-stat--sun {
+  --tone: #c7962f;
+  --tone-soft: var(--hm-butter-soft);
+}
+.hm-stat--sea {
+  --tone: #4f8aa6;
+  --tone-soft: var(--hm-sky-soft);
+}
+.hm-stat--dream {
+  --tone: #8a6a9e;
+  --tone-soft: var(--hm-plum-soft);
+}
+.hm-stat__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--hm-muted);
+  font: 600 14px/18px var(--font-ui);
+}
+.hm-stat__label .hm-icon {
+  box-sizing: content-box;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--tone-soft);
+  color: var(--tone);
+}
+.hm-stat__value {
+  margin-top: 10px;
+  color: var(--hm-fg);
+  font: 600 34px/1.05 var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+.hm-stat__hint {
+  margin-top: 4px;
+  color: var(--hm-muted);
+  font: 500 14px/1.5 var(--font-body);
+}
+
+/* ---------- Ticker (status pill) ---------- */
+.hm-ticker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 9px 18px;
+  border: 2.5px solid var(--hm-edge);
+  border-radius: 999px;
+  background: var(--hm-surface);
+  color: var(--hm-fg);
+  box-shadow: 0 4px 0 var(--hm-shadow);
+}
+.hm-ticker__led {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cdbba3;
+}
+.hm-ticker--live .hm-ticker__led {
+  background: #8ea35f;
+  box-shadow: 0 0 0 4px rgba(142, 163, 95, 0.25);
+  animation: hm-blink 1.6s ease-in-out infinite;
+}
+.hm-ticker__text {
+  min-width: 0;
+  overflow: hidden;
+  font: 600 14px/20px var(--font-ui);
+  letter-spacing: 0.03em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- QuestCard (favor note) ---------- */
+.hm-quest {
+  position: relative;
+  padding: 14px 16px;
+  border: 2px dashed #c9a35a;
+  border-radius: 16px;
+  background: var(--hm-quest);
+  color: var(--hm-fg);
+}
+.hm-quest--done {
+  border-style: solid;
+  border-color: #a9b97a;
+  background: var(--hm-sage-soft);
+}
+.hm-quest--expired {
+  border-color: var(--hm-line);
+  background: var(--hm-surface-2);
+  opacity: 0.85;
+}
+.hm-quest__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hm-quest__mark {
+  color: #e48a6c;
+}
+.hm-quest__from {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font: 600 13px/20px var(--font-ui);
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hm-quest__text {
+  margin: 8px 0 0;
+  font: 600 15px/1.6 var(--font-body);
+  overflow-wrap: anywhere;
+}
+.hm-quest__reward {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  color: var(--hm-muted);
+  font: 600 13px/1 var(--font-ui);
+}
+.hm-quest--compact {
+  padding: 10px 12px;
+}
+.hm-quest--compact .hm-quest__text {
+  font-size: 14px;
+}
+
+/* ---------- Tabs ---------- */
+.hm-tabs__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 2px solid var(--hm-line);
+  border-radius: 999px;
+  background: var(--hm-surface-2);
+}
+.hm-tabs__tab {
+  flex: 1;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--hm-muted);
+  font: 600 15px/1 var(--font-ui);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.hm-tabs__tab:hover {
+  color: var(--hm-fg);
+}
+.hm-tabs__tab[data-state='active'] {
+  background: #f8d98a;
+  color: #3e2a1c;
+  box-shadow: inset 0 0 0 2px #5b3d27;
+}
+.hm-tabs__panel {
+  padding: 14px 2px 2px;
+  border-radius: 12px;
+  animation: hm-in 0.25s ease-out;
+}
+
+/* ---------- Toggle group ---------- */
+.hm-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.hm-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 4px 16px;
+  border: 2px solid var(--hm-line);
+  border-radius: 999px;
+  background: var(--hm-surface);
+  color: var(--hm-fg);
+  font: 600 14px/1 var(--font-ui);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.hm-toggle:hover {
+  border-color: var(--hm-edge);
+}
+.hm-toggle[data-state='on'] {
+  border-color: #5b3d27;
+  background: #f8d98a;
+  color: #3e2a1c;
+  box-shadow: 0 3px 0 #d0a650;
+}
+
+/* ---------- Tooltip ---------- */
+.hm-tip {
+  position: absolute;
+  z-index: 30;
+  width: max-content;
+  max-width: 250px;
+  padding: 10px 12px;
+  border: 2px solid #5b3d27;
+  border-radius: 14px;
+  background: #fffaf1;
+  color: #483424;
+  font: 500 13px/1.45 var(--font-body);
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 14px));
+  box-shadow: 0 5px 0 rgba(91, 61, 39, 0.2);
+}
+.hm-tip::after {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid #5b3d27;
+  border-bottom: 2px solid #5b3d27;
+  background: #fffaf1;
+  content: '';
+  transform: translateX(-50%) rotate(45deg);
+}
+.hm-tip strong {
+  display: block;
+  margin-bottom: 2px;
+  color: #483424;
+  font: 600 15px/1.3 var(--font-ui);
+}
+
+/* ---------- ShellView ---------- */
+.hm-shellview {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+.hm-shellview canvas {
+  display: block;
+  border-radius: 6px;
+  cursor: crosshair;
+}
+.hm-shellview__tip {
+  line-height: 1.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hm-btn,
+  .hm-toggle,
+  .hm-tabs__tab {
+    transition: none;
+  }
+}

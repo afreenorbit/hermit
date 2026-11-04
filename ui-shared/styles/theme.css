@@ -1,43 +1,147 @@
-/* "Pocket hermit" design tokens (plan.md 3.6).
-   Taken from the mascot art in map/public/pocket-hermit/ — soft, rounded,
-   pastel. Not pixel art: no hard edges, no image-rendering: pixelated. */
+/* Cozy storybook tokens, in Tilli's colours. Owner: C. plan.md §3.6.
+   Light by default (cream paper); `prefers-color-scheme: dark` unless the page
+   sets data-theme="light"; data-theme="dark" forces the night theme. */
 @import 'tailwindcss';
+@import './components.css';
+@import './tilli.css';
 
 @theme {
+  --color-ink: #5b3d27;
+  --color-dream: #8a6a9e;
+  --color-berry: #d97a6c;
+  --color-ember: #f2a07f;
+  --color-sun: #f8d98a;
+  --color-lime: #e3e9b0;
+  --color-leaf: #a9b97a;
+  --color-teal: #7d9567;
+  --color-navy: #55507a;
+  --color-blue: #8a9fd0;
+  --color-sea: #9fcbe0;
+  --color-cyan: #d3ecf1;
+  --color-paper: #fffaf1;
+  --color-mist: #eadfc8;
+  --color-dusk: #a48f77;
+  --color-night: #6a5878;
+
+  /* Pocket Hermit tokens (Afreen), kept so her mascot pieces keep working. */
   --color-cream: #f5e9c8;
   --color-sage: #a8b88a;
   --color-deep-sage: #7e9065;
   --color-blush: #f2b5a0;
   --color-warm-brown: #8a6a4f;
   --color-off-white: #fdfbf5;
-  --color-ink: #4a3a2c;
-
   --radius-soft: 16px;
+
+  --font-display: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  --font-ui: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  --font-body: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+
+  --radius-pixel: 0px;
+  --spacing-px4: 4px;
+}
+
+/* Semantic colours that follow the theme: bg-surface, text-muted, … */
+@theme inline {
+  --color-bg: var(--hm-bg);
+  --color-surface: var(--hm-surface);
+  --color-surface-2: var(--hm-surface-2);
+  --color-fg: var(--hm-fg);
+  --color-muted: var(--hm-muted);
+  --color-edge: var(--hm-edge);
+  --color-link: var(--hm-link);
 }
 
 :root {
-  --color-cream: #f5e9c8;
-  --color-sage: #a8b88a;
-  --color-deep-sage: #7e9065;
-  --color-blush: #f2b5a0;
-  --color-warm-brown: #8a6a4f;
-  --color-off-white: #fdfbf5;
+  --px: 4px;
+  --radius: 22px;
+  --radius-sm: 14px;
+  --hm-bg: #f8f1e5;
+  --hm-bg-2: #f1e6d2;
+  --hm-dot: #e6d7bb;
+  --hm-surface: #fffaf1;
+  --hm-surface-2: #f6ecda;
+  --hm-surface-3: #efe2c8;
+  --hm-fg: #483424;
+  --hm-muted: #74604a;
+  --hm-edge: #5b3d27;
+  --hm-line: #e1cfae;
+  --hm-shadow: #e2d0ad;
+  --hm-link: #4f6aa8;
+  --hm-focus: #d97a6c;
+  --hm-quest: #fdf1d2;
+  --hm-sage-soft: #e7ecd3;
+  --hm-peach-soft: #fbe3d7;
+  --hm-butter: #f8d98a;
+  --hm-butter-soft: #fdf0c9;
+  --hm-sky-soft: #e2f0f4;
+  --hm-plum-soft: #ede3f1;
+  --hm-peach: #f2a07f;
+  --shadow-pixel: 0 5px 0 var(--hm-shadow);
   --shadow-soft: 0 4px 16px rgb(138 106 79 / 0.12);
   color-scheme: light;
 }
 
-body {
-  background: var(--color-off-white);
-  color: var(--color-warm-brown);
-  font-family: var(--font-body, system-ui, sans-serif);
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --hm-bg: #2a2331;
+    --hm-bg-2: #231d29;
+    --hm-dot: #3a3142;
+    --hm-surface: #382f42;
+    --hm-surface-2: #31293a;
+    --hm-surface-3: #43394e;
+    --hm-fg: #f7eddc;
+    --hm-muted: #d0bfa7;
+    --hm-edge: #14101a;
+    --hm-line: #4c4157;
+    --hm-shadow: #17121c;
+    --hm-link: #9fcbe0;
+    --hm-focus: #f8d98a;
+    --hm-quest: #4a3f38;
+    --hm-sage-soft: #3b4234;
+    --hm-peach-soft: #4b3634;
+    --hm-butter-soft: #4a4130;
+    --hm-sky-soft: #2f3c45;
+    --hm-plum-soft: #3f3348;
+    color-scheme: dark;
+  }
 }
 
-/* Motion only on real events, and never for anyone who asked us not to. */
+:root[data-theme='dark'] {
+  --hm-bg: #2a2331;
+  --hm-bg-2: #231d29;
+  --hm-dot: #3a3142;
+  --hm-surface: #382f42;
+  --hm-surface-2: #31293a;
+  --hm-surface-3: #43394e;
+  --hm-fg: #f7eddc;
+  --hm-muted: #d0bfa7;
+  --hm-edge: #14101a;
+  --hm-line: #4c4157;
+  --hm-shadow: #17121c;
+  --hm-link: #9fcbe0;
+  --hm-focus: #f8d98a;
+  --hm-quest: #4a3f38;
+  --hm-sage-soft: #3b4234;
+  --hm-peach-soft: #4b3634;
+  --hm-butter-soft: #4a4130;
+  --hm-sky-soft: #2f3c45;
+  --hm-plum-soft: #3f3348;
+  color-scheme: dark;
+}
+
+/* Generated art (shell, map, avatars) stays crisp: integer scaling only. */
+img[data-pixel],
+canvas[data-pixel],
+svg[shape-rendering='crispEdges'] {
+  image-rendering: pixelated;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
 }

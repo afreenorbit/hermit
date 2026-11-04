@@ -1,9 +1,12 @@
 # Pixel components — owner: C
 
-One file per component, each with `*.stories.tsx` and `*.test.tsx`.
-Build them against fixtures in Storybook while the backend is still fakes.
-
 PixelBox · DialogBox · PixelButton · QuestCard · StatTile · BrainBadge ·
-DepartureChip · PixelAvatar · ShellView · SpriteAnimator · Ticker
+DepartureChip · StatusChip · PixelAvatar · ShellView · HermitSprite ·
+SpriteAnimator · Ticker · PixelTabs · PixelToggleGroup · PixelIcon · PixelCanvas
 
-Specs: plan.md §3.6.
+Styles live in `../styles/components.css` (plain CSS, `hm-` prefix) so they work
+in any app that imports `@hermit/ui/styles/theme.css`. Specs: plan.md §3.6.
+
+There is no Storybook yet: the map (`pnpm dev:map`) and the critter browser
+preview (`pnpm --filter @hermit/critter dev:web`) exercise every component
+against the committed fixtures and the mock keeper.

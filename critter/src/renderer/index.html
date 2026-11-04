@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tilli critter — browser preview</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        gap: 32px;
+        align-items: flex-end;
+        justify-content: center;
+        padding: 32px;
+        box-sizing: border-box;
+        flex-wrap: wrap;
+        background: linear-gradient(160deg, #cfe8f1, #f8f1e5 60%, #fbe3d7);
+        font:
+          14px/1.4 Nunito,
+          system-ui,
+          sans-serif;
+        color: #483424;
+      }
+      figure {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      iframe {
+        border: 0;
+        background: transparent;
+      }
+      figcaption {
+        opacity: 0.8;
+      }
+      code {
+        color: #ffcd75;
+      }
+      .menu-frame {
+        border: 2.5px solid #5b3d27;
+        border-radius: 18px;
+        box-shadow: 0 6px 0 #e2d0ad;
+      }
+    </style>
+  </head>
+  <body>
+    <figure>
+      <iframe
+        src="./critter/index.html"
+        width="320"
+        height="300"
+        title="Critter window"
+        allowtransparency="true"
+      ></iframe>
+      <figcaption>Tilli on the desktop (320×300, transparent in Electron)</figcaption>
+    </figure>
+    <figure>
+      <iframe
+        src="./panel/index.html"
+        width="360"
+        height="520"
+        title="Tilli's menu"
+        class="menu-frame"
+      ></iframe>
+      <figcaption>
+        Tilli’s menu (360×520). Needs <code>pnpm --filter @hermit/critter mock</code>.
+      </figcaption>
+    </figure>
+  </body>
+</html>

@@ -1,12 +1,16 @@
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig } from 'electron-vite';
+import react from '@vitejs/plugin-react';
+import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 
 export default defineConfig({
-  main: { build: { lib: { entry: 'src/main/index.ts' } } },
-  preload: { build: { lib: { entry: 'src/preload/index.ts' } } },
+  main: { plugins: [externalizeDepsPlugin()], build: { lib: { entry: 'src/main/index.ts' } } },
+  preload: {
+    plugins: [externalizeDepsPlugin()],
+    build: { lib: { entry: 'src/preload/index.ts' } },
+  },
   renderer: {
     root: 'src/renderer',
-    plugins: [tailwindcss()],
+    plugins: [react(), tailwindcss()],
     build: {
       rollupOptions: {
         input: {
