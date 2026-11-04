@@ -1280,6 +1280,22 @@ Styled like a handheld game menu: `PixelBox` in night theme, Pixelify Sans headi
 
 ---
 
+**Status: Phase 6 is done except packaging.** The critter runs on every laptop
+in the group, not only the host — the old `hidden` phase is now `waiting`. It
+reads `/v1/status` and `/v1/events` from its own keeper, keeps the last known
+state when the connection drops, and recovers on its own. Mascot states come
+from `ui-shared/mascot/mood.ts`, which mirrors `mood_for()` in
+`keeper/hermit_keeper/group.py`.
+
+Afreen's animated WebP art is the mascot everywhere, moved to
+`ui-shared/assets/pocket-hermit/` so the map and the critter share one set of
+source files. Akshay's procedural `tilli.ts` rig stays in the repo, still
+tested, no longer used by app code.
+
+Not done: signed builds and tray polish on macOS/Linux (only Windows exercised).
+
+---
+
 ## Phase 7 — UI: journey map
 
 **Goal:** one beautiful, game-like page that shows where Hermit went **and what friends did for each other**. This page carries the impact story in the README and the video. **Lead:** C. **Time box:** Nov 6.

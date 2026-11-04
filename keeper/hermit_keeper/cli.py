@@ -33,6 +33,7 @@ from .presence import for_this_platform
 from .presence.composite import CompositePresence
 from .room.base import RoomClient
 from .room.fake import FakeRoomHub
+from .room.switch_client import describe_handshake
 from .runtime import KeeperRuntime
 
 app = typer.Typer(add_completion=False, help="Hermit keeper for one host.")
@@ -109,8 +110,14 @@ def version() -> None:
 
 
 @app.command()
-def check(config_path: Path = DEFAULT_CONFIG) -> None:
+def check(
+    config_path: Path = DEFAULT_CONFIG,
+    switch: bool = typer.Option(False, "--switch", help="print what Switch still needs proving"),
+) -> None:
     """Validate the config and report what is and isn't ready."""
+    if switch:
+        typer.echo(describe_handshake())
+        return
     cfg = _load(config_path)
     typer.secho(
         f"config ok — {cfg.display_name} ({cfg.host_id}) in {cfg.city}, "

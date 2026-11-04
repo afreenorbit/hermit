@@ -170,7 +170,8 @@ Run the map:
 pnpm dev:map
 ```
 
-It opens on <http://localhost:5173> and reads
+Vite prints the port it actually chose (5173 if free, otherwise the next one) —
+read it from the terminal. It reads
 `map/public/data/journey.sample.json` — a fake 8-stop journey with every
 departure type in it, so the UI can be built before any of the backend exists.
 
@@ -221,7 +222,33 @@ line. Answer it honestly — it's there so we don't merge code nobody can explai
 | `pnpm -r typecheck` / `pnpm -r test` | UI types and tests |
 | `pnpm dev:map` | Journey map on :5173 |
 | `python -m hermit_keeper api` | Keeper local API only, for UI work |
-| `python -m sim run sim/scenarios/three_cities_day.yaml` | Simulated journey *(Phase 5)* |
+| `python -m sim all` | Every simulated scenario, time-compressed |
+| `python -m sim live` | Three real keepers on three ports, one shared soul |
+| `pnpm --filter @hermit/critter dev` | The desktop companion |
+
+## Every laptop has a Hermit
+
+Each laptop runs its own keeper and its own critter, and **every one of them
+shows the mascot** — not just whoever is hosting. The holder sees *visiting*;
+the others see *waiting*, *sleeping*, or *offline* when their keeper cannot be
+reached.
+
+Two ideas stay separate everywhere: the **shared Switch lease** decides who
+holds the soul (one answer for the group), and each machine's **own keyboard**
+decides whether it is eligible to host (three independent answers). Only the
+holder is ever *visiting*.
+
+There is also a small live dashboard anyone can leave open:
+
+```bash
+pnpm dev:map
+```
+
+then open `http://localhost:<printed-port>/?live=http://127.0.0.1:47801`. The
+critter does not need it — it talks to its own keeper directly.
+
+Full setup, failure modes and what is not yet proven:
+[`docs/running-on-three-laptops.md`](docs/running-on-three-laptops.md).
 
 ## Privacy
 
