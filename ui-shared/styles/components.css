@@ -678,3 +678,51 @@
 .hm-shellview__tip {
   line-height: 1.4;
 }
+
+/* Consistent interaction feedback across the map and desktop companion. */
+.hm-btn,
+.hm-toggle,
+.hm-tabs__tab {
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 120ms ease;
+  touch-action: manipulation;
+}
+.hm-tabs__list {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.hm-tabs__tab {
+  min-height: 44px;
+}
+.hm-toggle {
+  min-height: 44px;
+}
+.hm-stat {
+  background: var(--color-ink);
+  padding: 18px;
+}
+.hm-stat__hint {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.hm-quest__text {
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.hm-dialog__text {
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.hm-tabs__panel:focus-visible {
+  outline: 3px solid var(--hm-focus);
+  outline-offset: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hm-btn,
+  .hm-toggle,
+  .hm-tabs__tab {
+    transition: none;
+  }
+}

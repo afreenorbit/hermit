@@ -45,14 +45,14 @@
 
 :root {
   --px: 4px;
-  --hm-bg: #94b0c2;
+  --hm-bg: #f8f1e5;
   --hm-dot: #566c86;
-  --hm-surface: #f4f4f4;
+  --hm-surface: #fffaf1;
   --hm-surface-2: color-mix(in srgb, #f4f4f4 80%, #94b0c2);
-  --hm-fg: #1a1c2c;
-  --hm-muted: #566c86;
+  --hm-fg: #483424;
+  --hm-muted: #70634e;
   --hm-edge: #1a1c2c;
-  --hm-shadow: #1a1c2c;
+  --hm-shadow: #c4b38f;
   --hm-link: #3b5dc9;
   --hm-focus: #1a1c2c;
   --hm-quest: color-mix(in srgb, #ffcd75 38%, #f4f4f4);

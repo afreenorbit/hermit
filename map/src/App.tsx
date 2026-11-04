@@ -79,6 +79,36 @@ export function App() {
         onSource={chooseSource}
       />
 
+      <section className="welcome" aria-labelledby="welcome-title">
+        <div className="welcome__copy">
+          <span className="welcome__eyebrow">A little creature. A shared adventure.</span>
+          <h1 id="welcome-title">
+            Small favors.
+            <br />A shell full of stories.
+          </h1>
+          <p>
+            Meet Tilli, your wandering companion. One friend at a time, one little kindness after
+            another — every stop becomes part of the journey.
+          </p>
+          <a className="welcome__link" href="#log">
+            Explore the journey <span aria-hidden="true">↗</span>
+          </a>
+          <span className="welcome__note">Made of moments together.</span>
+        </div>
+        <figure className="welcome__portrait">
+          <div className="welcome__art">
+            <img
+              src={`${import.meta.env.BASE_URL}assets/tilli.jpeg`}
+              alt="Tilli, a cheerful yellow creature with leaf ears, nestled in a sage shell with a heart and flower charm"
+              width="1241"
+              height="1268"
+              fetchPriority="high"
+            />
+          </div>
+          <figcaption>Your next little adventure starts with hello.</figcaption>
+        </figure>
+      </section>
+
       {error && (
         <PixelBox variant="quest" className="notice" role="alert">
           <HermitSprite animation="surprised" scale={2} />

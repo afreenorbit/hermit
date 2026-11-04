@@ -106,11 +106,12 @@ export const useKeeper = create<CritterState & Actions>()((set, get) => {
     },
 
     depart: async () => {
-      await fetch(`${base}/v1/depart`, {
+      const response = await fetch(`${base}/v1/depart`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ reason: 'manual' }),
       });
+      if (!response.ok) throw new Error('Departure request failed');
     },
 
     arrived: () => set((s) => finishArriving(s)),

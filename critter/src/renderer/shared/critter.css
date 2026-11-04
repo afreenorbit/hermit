@@ -265,3 +265,58 @@ html.panel-root body {
 .menu__actions .hm-btn {
   font-size: 14px;
 }
+
+/* A calmer, readable companion menu with persistent actions. */
+.menu {
+  gap: 20px;
+  padding-bottom: 20px;
+}
+.menu__bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.menu__hero {
+  padding: 8px 0;
+}
+.menu__friends li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-dusk);
+}
+.menu__friend span {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.menu__empty {
+  padding: 32px 16px;
+  line-height: 1.7;
+  background: var(--color-night);
+}
+.menu__actions {
+  flex-wrap: wrap;
+  gap: 8px;
+  position: sticky;
+  bottom: 0;
+  background: var(--color-ink);
+  padding: 12px 0;
+}
+.menu__error {
+  color: var(--color-sun);
+  font: 14px/1.5 var(--font-body);
+}
+.menu__log {
+  max-height: 280px;
+  scrollbar-gutter: stable;
+}
+@media (max-width: 360px) {
+  .menu__hero {
+    flex-direction: column;
+  }
+  .menu__facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+  .menu__title {
+    font-size: 10px;
+  }
+}

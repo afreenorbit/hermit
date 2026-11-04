@@ -34,6 +34,7 @@ export function useJourney(want: JourneySource | null = requestedSource()): Jour
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
     const order: JourneySource[] = want && want !== 'live' ? [want] : ['live', 'sample'];
     const load = async (): Promise<void> => {
       let lastError = 'no journey data found';
@@ -41,6 +42,7 @@ export function useJourney(want: JourneySource | null = requestedSource()): Jour
         try {
           const res = await fetch(`${import.meta.env.BASE_URL}${FILES[source]}`, {
             cache: 'no-store',
+            signal: controller.signal,
           });
           if (!res.ok) continue;
           const parsed = Journey.safeParse(await res.json());
@@ -52,6 +54,7 @@ export function useJourney(want: JourneySource | null = requestedSource()): Jour
           if (!cancelled) setState({ journey: parsed.data, source, error: null });
           return;
         } catch {
+          if (controller.signal.aborted) return;
           /* not there or not JSON — try the next one */
         }
       }
@@ -60,6 +63,7 @@ export function useJourney(want: JourneySource | null = requestedSource()): Jour
     void load();
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [want]);
 

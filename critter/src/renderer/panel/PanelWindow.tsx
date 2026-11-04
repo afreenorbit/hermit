@@ -26,6 +26,20 @@ import { useKeeper } from '../shared/store';
 
 export function PanelWindow() {
   const k = useKeeper();
+  const [departing, setDeparting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const depart = async (): Promise<void> => {
+    if (departing) return;
+    setDeparting(true);
+    setActionError(null);
+    try {
+      await k.depart();
+    } catch {
+      setActionError('Couldn’t send your goodbye. Please try again.');
+    } finally {
+      setDeparting(false);
+    }
+  };
   const { start } = k;
   useEffect(() => start(), [start]);
 
@@ -214,6 +228,11 @@ export function PanelWindow() {
         ]}
       />
 
+      {actionError && (
+        <p className="menu__error" role="alert">
+          {actionError}
+        </p>
+      )}
       <footer className="menu__actions">
         <PixelButton
           variant="ghost"
@@ -228,8 +247,13 @@ export function PanelWindow() {
         >
           OPEN CHAT
         </PixelButton>
-        <PixelButton variant="danger" icon="play" disabled={!mine} onClick={() => void k.depart()}>
-          I’M BUSY — GO
+        <PixelButton
+          variant="danger"
+          icon="play"
+          disabled={!mine || departing || !k.connected}
+          onClick={() => void depart()}
+        >
+          {departing ? 'SAYING GOODBYE…' : 'I’M BUSY — GO'}
         </PixelButton>
       </footer>
     </div>

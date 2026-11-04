@@ -760,3 +760,177 @@ code {
     font-size: 20px;
   }
 }
+
+/* Tilli's illustrated welcome keeps the interactive pixel world intact. */
+:root[data-theme='light'] {
+  --hm-bg: #f8f1e5;
+  --hm-surface: #fffaf1;
+  --hm-surface-2: #eee9d7;
+  --hm-fg: #483424;
+  --hm-muted: #70634e;
+  --hm-edge: #705136;
+  --hm-shadow: #c4b38f;
+  --hm-link: #56653b;
+  --hm-focus: #705136;
+}
+.welcome {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  align-items: center;
+  gap: 32px;
+  margin: 32px 0 44px;
+  padding: 40px;
+  border: 2px solid var(--hm-edge);
+  background: var(--hm-surface);
+  box-shadow: 6px 6px 0 var(--hm-shadow);
+}
+.welcome__eyebrow {
+  color: var(--hm-muted);
+  font: 700 12px/1.6 var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+.welcome h1 {
+  margin: 20px 0;
+  font: 700 clamp(30px, 4vw, 52px)/1.12 var(--font-ui);
+  letter-spacing: -0.025em;
+}
+.welcome__copy p {
+  max-width: 46ch;
+  color: var(--hm-muted);
+  font: 400 16px/1.8 var(--font-body);
+}
+.welcome__link {
+  display: inline-flex;
+  gap: 24px;
+  align-items: center;
+  margin: 16px 0;
+  padding: 14px 20px;
+  background: #dce2b8;
+  color: #3f482c;
+  border: 2px solid #705136;
+  box-shadow: 3px 3px 0 #705136;
+  font: 700 16px var(--font-ui);
+  text-decoration: none;
+}
+.welcome__link:hover {
+  background: #ece8bc;
+}
+.welcome__link:focus-visible {
+  outline: 3px solid var(--hm-focus);
+  outline-offset: 6px;
+}
+.welcome__note {
+  display: block;
+  margin-top: 8px;
+  color: var(--hm-muted);
+  font: 13px/1.5 var(--font-body);
+}
+.welcome__portrait {
+  margin: 0;
+  min-width: 0;
+}
+.welcome__art {
+  overflow: hidden;
+  aspect-ratio: 1.18;
+  background: #fcf3e8;
+  border-radius: 48% 48% 12px 12px;
+}
+.welcome__art img {
+  display: block;
+  width: 150%;
+  max-width: none;
+  height: auto;
+  margin-left: -25%;
+  margin-top: -17%;
+}
+.welcome__portrait figcaption {
+  margin-top: 16px;
+  color: var(--hm-muted);
+  text-align: center;
+  font: 13px/1.5 var(--font-body);
+}
+@media (max-width: 767px) {
+  .welcome {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 24px;
+    gap: 24px;
+    margin-top: 24px;
+  }
+  .welcome__portrait {
+    width: min(100%, 320px);
+    justify-self: center;
+  }
+  .welcome h1 {
+    font-size: 36px;
+  }
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --hm-bg: #f8f1e5;
+    --hm-surface: #fffaf1;
+    --hm-surface-2: #eee9d7;
+    --hm-fg: #483424;
+    --hm-muted: #70634e;
+    --hm-edge: #705136;
+    --hm-shadow: #c4b38f;
+    --hm-link: #56653b;
+    --hm-focus: #705136;
+  }
+}
+.welcome__note,
+.welcome__portrait figcaption {
+  font-size: 14px;
+}
+
+/* Clearer hierarchy and comfortable touch targets throughout the journey. */
+body {
+  background-image: none;
+}
+.masthead {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--hm-shadow);
+}
+.ribbon {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.panel--world {
+  padding: 28px 20px 20px;
+}
+.intro p {
+  line-height: 1.75;
+}
+.stop {
+  padding: 20px;
+  gap: 16px;
+}
+.stop__head {
+  align-items: flex-start;
+}
+.stop__who strong {
+  line-height: 1.4;
+}
+.stop__who span {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.stop__left {
+  line-height: 1.7;
+}
+.filters {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--hm-shadow);
+}
+.log {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr));
+}
+.foot {
+  border-top: 1px solid var(--hm-shadow);
+  padding-top: 28px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
