@@ -24,13 +24,22 @@ end   = "06:00"
 grace_idle_s = 120                    # after bedtime, leave after 2 min idle
 
 [switch]
-server_url     = "http://127.0.0.1:8080"   # VERIFY in Phase 0
+server_url     = "http://127.0.0.1:8000"   # Switch API; over Tailscale use http://100.x.y.z:8000
 den_room       = "hermit-den"
 ledger_room    = "hermit-ledger"
-token_env      = "HERMIT_SWITCH_TOKEN"     # token lives in the environment, not here
+token_env      = "HERMIT_SWITCH_TOKEN"     # your keeper agent's api_key lives in this env var, not here
 lease_strategy = "fake"                    # agent_instructed | fake
 # agent_instructed: your brain assumes the "soul" role itself when cued.
 # fake: offline, nothing leaves this machine. Good for UI work and demos.
+lease_expiry_s = 8                         # GUESS until measured: how long Switch takes to free the soul after a lid slam
+
+# Needed for agent_instructed. bootstrap_rooms.py prints these (never the key):
+# agent_id     = "<your keeper-<host_id> agent uuid>"
+# brain_agent_id = "<only if Switch reports senders by uuid>"
+#
+# [switch.rooms]
+# hermit-den    = "<den room uuid>"
+# hermit-ledger = "<ledger room uuid>"
 
 [features]
 overlap = false
