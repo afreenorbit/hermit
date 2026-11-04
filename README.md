@@ -250,6 +250,10 @@ critter does not need it — it talks to its own keeper directly.
 Full setup, failure modes and what is not yet proven:
 [`docs/running-on-three-laptops.md`](docs/running-on-three-laptops.md).
 
+**Doing the real three-laptop test?** Follow
+[`docs/live-test.md`](docs/live-test.md) — Tailscale, the two integration steps
+that still have to happen first, who does what, and the seven runs to make.
+
 ## Privacy
 
 Deliberate, and part of the pitch:
