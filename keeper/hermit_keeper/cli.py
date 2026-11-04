@@ -2,19 +2,27 @@
 
     hermit-keeper run                 # presence, state machine, API
     hermit-keeper check               # config, agent, Switch reachability
+    hermit-keeper check --switch      # probe the real server, say what is proven
     hermit-keeper status              # ask the running keeper
     hermit-keeper override awake|asleep|auto
     hermit-keeper depart
 
-With ``lease_strategy = "fake"`` in the config, ``run`` works entirely offline:
-a real keeper, real presence detection from your actual keyboard, fake Switch.
-That is how to test the critter and the loop before Phase 2 connects the real
-thing.
+With ``lease_strategy = "agent_instructed"`` (the real path), ``run`` talks to
+Switch as this host's keeper agent: ``switch.agent_id`` and ``switch.rooms`` in
+the config, the agent's api_key in the environment variable named by
+``switch.token_env``. Missing any of them is a startup error, never a silent
+fallback to the fake.
+
+With ``lease_strategy = "fake"``, ``run`` works entirely offline: a real
+keeper, real presence detection from your actual keyboard, fake Switch. That is
+how to test the critter and the loop without a server.
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
+from collections.abc import Awaitable, Callable, Mapping
 from pathlib import Path
 
 import httpx
@@ -27,14 +35,13 @@ from .api import create_app, serve
 from .brain.fake import FakeBrain
 from .clock import RealClock
 from .events import EventBus
-from .lease.base import SoulLease
 from .lease.fake import FakeSoulLease
 from .presence import for_this_platform
 from .presence.composite import CompositePresence
-from .room.base import RoomClient
 from .room.fake import FakeRoomHub
-from .room.switch_client import describe_handshake
+from .room.switch_client import describe_handshake, probe
 from .runtime import KeeperRuntime
+from .switch_wiring import SwitchConfigError, build_switch_keeper, check_switch_config
 
 app = typer.Typer(add_completion=False, help="Hermit keeper for one host.")
 log = structlog.get_logger(__name__)
@@ -56,40 +63,58 @@ def _base_url(cfg: config_module.HostConfig) -> str:
     return f"http://127.0.0.1:{cfg.api.port}"
 
 
-def _build_runtime(cfg: config_module.HostConfig) -> KeeperRuntime:
+Closer = Callable[[], Awaitable[None]]
+
+
+async def _nothing_to_close() -> None:
+    return None
+
+
+def _build_runtime(
+    cfg: config_module.HostConfig,
+    *,
+    env: Mapping[str, str] | None = None,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> tuple[KeeperRuntime, Closer]:
     """Choose real or fake Switch, then assemble the keeper.
 
-    Only the ``fake`` strategy exists today. Phase 2 adds ``gateway`` (and the
-    fallbacks) behind the same ``SoulLease`` protocol, and nothing else here
-    changes.
+    ``agent_instructed`` builds the real path (``switch_wiring``): the Switch
+    room client, the ledger brain director and the ledger-observed soul lease,
+    sharing one HTTP client. If anything it needs is missing this exits with
+    what to fix. It **never** falls back to fake: a keeper that silently ran
+    offline while its owner believed it was in the group is worse than one
+    that refuses to start.
+
+    ``env`` and ``transport`` exist for tests; production passes neither.
     """
-    clock = RealClock()
     strategy = cfg.switch.lease_strategy
-
-    lease: SoulLease
-    room: RoomClient
-    if strategy == "fake":
-        hub = FakeRoomHub(clock=clock)
-        lease = FakeSoulLease(clock=clock)
-        room = hub.client(f"keeper-{cfg.host_id}")
-        brain = FakeBrain(
-            cfg.brain_agent,
-            cfg.brain_provider,
-            den=hub.client(cfg.brain_agent),
-            den_room=cfg.switch.den_room,
-        )
+    if strategy == "agent_instructed":
+        try:
+            built = build_switch_keeper(cfg, env=env, transport=transport)
+        except SwitchConfigError as exc:
+            typer.secho(str(exc), fg=typer.colors.RED)
+            raise typer.Exit(2) from None
         typer.secho(
-            "running with the FAKE Switch layer — nothing leaves this machine",
-            fg=typer.colors.YELLOW,
+            f"real Switch at {cfg.switch.server_url} as agent {cfg.switch.agent_id} "
+            f"(brain {cfg.brain_agent})",
+            fg=typer.colors.GREEN,
         )
-    else:
-        typer.secho(
-            f"lease_strategy '{strategy}' needs the Switch client, which lands in Phase 2. "
-            'Set lease_strategy = "fake" to run locally today.',
-            fg=typer.colors.RED,
-        )
-        raise typer.Exit(2)
+        return built.runtime, built.aclose
 
+    clock = RealClock()
+    hub = FakeRoomHub(clock=clock)
+    lease = FakeSoulLease(clock=clock)
+    room = hub.client(f"keeper-{cfg.host_id}")
+    brain = FakeBrain(
+        cfg.brain_agent,
+        cfg.brain_provider,
+        den=hub.client(cfg.brain_agent),
+        den_room=cfg.switch.den_room,
+    )
+    typer.secho(
+        "running with the FAKE Switch layer — nothing leaves this machine",
+        fg=typer.colors.YELLOW,
+    )
     presence = CompositePresence(
         for_this_platform(),
         clock,
@@ -97,7 +122,8 @@ def _build_runtime(cfg: config_module.HostConfig) -> KeeperRuntime:
         arrive_debounce_s=cfg.presence.arrive_debounce_s,
         sleep_gap_s=cfg.presence.sleep_gap_s,
     )
-    return KeeperRuntime(cfg, lease, room, brain, presence, clock=clock, bus=EventBus())
+    runtime = KeeperRuntime(cfg, lease, room, brain, presence, clock=clock, bus=EventBus())
+    return runtime, _nothing_to_close
 
 
 # -- commands ----------------------------------------------------------------
@@ -112,11 +138,13 @@ def version() -> None:
 @app.command()
 def check(
     config_path: Path = DEFAULT_CONFIG,
-    switch: bool = typer.Option(False, "--switch", help="print what Switch still needs proving"),
+    switch: bool = typer.Option(
+        False, "--switch", help="probe the real Switch server and say what is proven"
+    ),
 ) -> None:
     """Validate the config and report what is and isn't ready."""
     if switch:
-        typer.echo(describe_handshake())
+        _check_switch(config_path)
         return
     cfg = _load(config_path)
     typer.secho(
@@ -132,19 +160,51 @@ def check(
 
     if cfg.switch.lease_strategy == "fake":
         typer.secho("lease strategy: fake (offline, no Switch needed)", fg=typer.colors.YELLOW)
+        return
+    try:
+        check_switch_config(cfg)
+    except SwitchConfigError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED)
+        raise typer.Exit(2) from None
+    typer.secho(
+        f"lease strategy: agent_instructed — Switch at {cfg.switch.server_url}, agent "
+        f"{cfg.switch.agent_id}, key in ${cfg.switch.token_env}. "
+        "Run `check --switch` to probe the server.",
+        fg=typer.colors.GREEN,
+    )
+
+
+def _check_switch(config_path: Path) -> None:
+    """A real probe when there is a config; the static summary either way."""
+    report: dict[str, object] = {"handshake": json.loads(describe_handshake())}
+    ok = True
+    if config_path.exists():
+        cfg = config_module.load(config_path)
+        if cfg.switch.lease_strategy == "fake":
+            report["probe"] = "skipped: lease_strategy is 'fake' in this config"
+        else:
+            result = asyncio.run(
+                probe(
+                    cfg.switch.server_url,
+                    cfg.switch.agent_id,
+                    cfg.switch.token(),
+                    cfg.switch.rooms.get(cfg.switch.ledger_room),
+                )
+            )
+            report["probe"] = result
+            ok = bool(result["ok"])
     else:
-        typer.secho(
-            f"lease strategy: {cfg.switch.lease_strategy} — needs Switch at "
-            f"{cfg.switch.server_url} (Phase 2)",
-            fg=typer.colors.YELLOW,
-        )
+        report["probe"] = f"skipped: no config at {config_path}"
+    typer.echo(json.dumps(report, indent=2))
+    if not ok:
+        raise typer.Exit(1)
 
 
 @app.command()
 def run(config_path: Path = DEFAULT_CONFIG) -> None:
     """Run the keeper: presence, state machine and the local API."""
     cfg = _load(config_path)
-    runtime = _build_runtime(cfg)
+    runtime, close = _build_runtime(cfg)
 
     async def main() -> None:
         task = runtime.start()
@@ -157,6 +217,7 @@ def run(config_path: Path = DEFAULT_CONFIG) -> None:
         finally:
             task.cancel()
             await runtime.stop()
+            await close()
 
     try:
         asyncio.run(main())

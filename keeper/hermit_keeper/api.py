@@ -75,6 +75,7 @@ def create_app(runtime: KeeperRuntime | None = None) -> FastAPI:
         )
 
     @app.get("/v1/group")
+    @app.get("/v1/group/status")  # alias: the name the runbooks use
     async def group() -> dict[str, Any]:
         """Every laptop in the group, so a non-hosting critter knows what to show."""
         if runtime is None:
