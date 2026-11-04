@@ -169,8 +169,102 @@ voice. The keeper is a room member that writes the ledger and cues the brain.
 | `favor.switch_task_id` | — | Rename to `switch_document_id` |
 | Keeper claims the soul | Only the holding session can | Keeper cues; brain assumes |
 
+---
+
+# Verified against a running server
+
+Everything above was read from source. Everything below was **run** against a
+real Switch, `switch-v0.9.0`, brought up locally with
+`deploy/local/standalone-v0.9.0.yml` (project `hermit-switch`).
+
+## The handshake — settled
+
+**Auth:** `Authorization: Bearer <AGENT_REGISTRATION_TOKEN>`. An
+`X-Agent-Token` header is rejected.
+
+**Registering a keeper** — `POST /agents`:
+
+```json
+{
+  "name": "keeper-afreen",
+  "description": "...",
+  "connector_type": "custom",
+  "integration_profile": {
+    "connection_model": "always_on",
+    "message_exchange": true,
+    "pre_invocation_mediation": [],
+    "post_invocation_mediation": [],
+    "event_reporting": [],
+    "task_protocol": { "can_delegate": false, "can_accept": false }
+  }
+}
+```
+
+`connection_model` is one of `always_on`, `session_addressable`,
+`session_passive`, `auto_session`. Returns `{"id", "api_key"}` — the api_key is
+that agent's own credential, kept out of git.
+
+**Confirmed working:** `keeper-afreen` registered successfully.
+
+## ⚠ The finding that changes the design
+
+**There is no roles endpoint in the HTTP API.** The live `/openapi.json` has 39
+paths and not one of them mentions roles:
+
+```
+POST   /agents
+POST   /agents/{agent_id}/message
+GET    /agents/{agent_id}/rooms/{room_id}/history
+GET    /agents/{agent_id}/rooms/{room_id}/events     (SSE)
+GET    /agents/{agent_id}/events
+POST   /agents/{agent_id}/leases/renew
+POST   /agents/{agent_id}/watch/heartbeat
+GET,POST /agents/{agent_id}/tasks/...
+```
+
+`assume_role`, `release_role` and `list_roles` exist **only** in the agent
+operations layer that a coding agent reaches over MCP — not over HTTP. So:
+
+- `SwitchRoleReader.role_holder()` calling `list_roles` over HTTP **cannot
+  work**, and that code is wrong as written.
+- The keeper cannot read the soul holder from Switch directly at all.
+
+**What to do instead.** The keeper already learns the holder from the ledger:
+the brain ACKs `CLAIM_SOUL` there, and `SOUL_CLAIMED` / `SOUL_RELEASED` lines
+are written on every transition. Exclusivity is still enforced by Switch — a
+second `assume_role` on an exclusive role fails — we simply *observe* it
+through the room rather than query it. `GroupView` already folds exactly these
+events, so the shape we need is built; only `AgentInstructedLease.holder()`
+needs rewiring to read the ledger instead of calling `list_roles`.
+
+## Corrections to the source-reading above
+
+- **SP5 said "no agent operation exposes tasks at all."** Wrong about the HTTP
+  bridge: `/agents/{id}/tasks/delegate|accept|update|finalise` are all there.
+  The *conclusion* still stands for a different reason — a Task still needs a
+  performer agent up front, and a favor has none when it is written.
+- **There is no documents endpoint over HTTP either**, so room documents are
+  also operations-layer only. A favor's visible artifact has to be a message in
+  the den, written by the brain, with the ledger holding its state.
+
 ## Still open
 
 - [ ] Measure real lease-expiry latency after a disconnect → `expiry_delay_s`.
-- [ ] Confirm the agent-protocol handshake end to end with a live server.
-- [ ] Confirm Discord bridge setup (`list_bridges` exists; not yet exercised).
+      Needs a brain holding the role, which needs a coding agent connected.
+- [ ] Rewire `AgentInstructedLease.holder()` onto the ledger (above).
+- [ ] Confirm the Discord bridge setup.
+
+## Running it again
+
+```
+cd ../switch-826
+docker compose -f deploy/local/standalone-v0.9.0.yml --profile collab --profile gateway --project-directory . up -d
+```
+
+Gateway `:3000`, Switch API `:8000`, Mattermost `:8065`, Postgres on `:55432`
+(5432 was already taken). The working tree's own compose file does **not**
+work with the 0.9.0 images — the tree has since dropped Matrix, the released
+image still requires it, so the released compose and the released image must
+be used together.
+
+**`switch-826/.env` holds real secrets and must never be committed.**

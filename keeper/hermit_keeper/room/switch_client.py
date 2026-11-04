@@ -4,17 +4,20 @@ Speaks to Switch Core's agent bridge over HTTP as a registered agent, so the
 keeper sits in the same rooms as the coding agents. Shapes come from the Switch
 source, cited in `docs/switch-facts.md`.
 
-⚠ **Unverified against a live server.** Every call here is written from reading
-`core/switch_core/bridges/agent/`, which settles the semantics but not the
-handshake: registration, auth headers and the exact response envelopes need one
-session against a running Switch before this can be trusted. Until then
-`lease_strategy = "fake"` is the honest default and `sim live` is the way to
-exercise three keepers.
+**Paths verified against switch-v0.9.0** — see the "Verified against a running
+server" section of docs/switch-facts.md. Auth is
+`Authorization: Bearer <token>`; registration is `POST /agents`.
 
-What is already settled (switch-facts SP2/SP4): a role can only be assumed by
-the agent's own session, so this client never claims the soul. It reads who
-holds it with `list_roles`, and `AgentInstructedLease` cues the brain to take
-it. The keeper is a room member that writes the ledger and watches.
+⚠ **There is no roles endpoint over HTTP.** `assume_role` / `list_roles` live
+only in the agent operations layer a coding agent reaches over MCP. So this
+client cannot read the soul holder from Switch, and `list_roles` below is gone
+rather than left as a method that would 404 at the worst moment.
+
+The keeper learns the holder from the **ledger room** instead: the brain ACKs
+its claim there, and every transition writes a `SOUL_CLAIMED` /
+`SOUL_RELEASED` line. Switch still enforces exclusivity — a second
+`assume_role` on an exclusive role fails — we observe the result rather than
+query it.
 """
 
 from __future__ import annotations
@@ -193,11 +196,18 @@ def describe_handshake() -> str:
                 "list_roles().held_by names the live holder (SP4)",
                 "room Tasks cannot hold a favor; documents can (SP5)",
             ],
-            "needs_a_live_server": [
-                "agent registration and the auth header",
-                "exact paths for message / messages / roles / documents",
-                "SSE endpoint for room streaming",
+            "verified_against_switch_v0_9_0": [
+                "auth: Authorization: Bearer <token> (X-Agent-Token is rejected)",
+                "registration: POST /agents -> {id, api_key}",
+                "history: GET /agents/{id}/rooms/{room}/history",
+                "events: GET /agents/{id}/rooms/{room}/events (SSE)",
+                "NO roles endpoint over HTTP - read the holder from the ledger",
+                "NO documents endpoint over HTTP",
+            ],
+            "still_open": [
                 "measured lease expiry delay after a disconnect",
+                "AgentInstructedLease.holder() still calls list_roles; rewire to ledger",
+                "Discord bridge setup",
             ],
         },
         indent=2,
