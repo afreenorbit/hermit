@@ -9,6 +9,17 @@
   "properties": {
     "v": { "const": 1 },
     "generated_at": { "type": "string", "format": "date-time" },
+    "source": {
+      "description": "Optional, additive. Where this journey came from, so a page can label it honestly. Absent means a real export from the ledger. `simulation` must be shown with a SIMULATION badge (plan.md 9.2).",
+      "type": ["object", "null"],
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["real", "simulation", "sample"] },
+        "scenario": { "type": "string" },
+        "note": { "type": "string" }
+      }
+    },
     "hermit": {
       "type": "object",
       "required": ["current_host", "current_city", "since"],
