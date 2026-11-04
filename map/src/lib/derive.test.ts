@@ -78,3 +78,50 @@ describe('derive (wide sample)', () => {
     expect(d.current.host).toBeNull();
   });
 });
+
+describe('derive (simulator export)', () => {
+  const j = load('journey.three_cities.json');
+
+  it('is labelled as a simulation', () => {
+    expect(j.source?.kind).toBe('simulation');
+  });
+
+  it('links each piece to the stop whose favor grew it, and counts those favors done', () => {
+    const d = derive(j);
+    expect(d.favorsDone).toBe(j.stats.favors_done);
+    for (const [stopId, pid] of d.pieceOfStop) {
+      const stop = j.stops.find((s) => s.stop_id === stopId)!;
+      const piece = j.shell.find((p) => p.id === pid)!;
+      expect(piece.favor_id).toBe(stop.favor_received?.id);
+    }
+  });
+
+  it('copes with a raw export: repeated pieces, no stop links, stale statuses', () => {
+    const raw = {
+      ...j,
+      shell: [...j.shell, ...j.shell],
+      stops: j.stops.map((s) => ({
+        ...s,
+        shell_piece_id: null,
+        favor_received: s.favor_received ? { ...s.favor_received, status: 'open' as const } : null,
+      })),
+    };
+    const d = derive(raw);
+    expect(d.pieces).toHaveLength(j.shell.length);
+    expect(d.favorsDone).toBe(j.stats.favors_done);
+    expect(d.pieceOfStop.size).toBe(j.shell.length);
+  });
+
+  it('never upgrades an expired favor to done', () => {
+    const raw = {
+      ...j,
+      stops: j.stops.map((s) => ({
+        ...s,
+        favor_received: s.favor_received
+          ? { ...s.favor_received, status: 'expired' as const }
+          : null,
+      })),
+    };
+    expect(derive(raw).favorsDone).toBe(0);
+  });
+});

@@ -102,6 +102,61 @@ h3 {
   font: 600 13px/18px var(--font-ui);
 }
 
+/* Simulation: impossible to miss, impossible to crop out of a screenshot of
+   the page (plan.md 9.2: "watermarked SIMULATION in the corner"). */
+.ribbon--sim {
+  border: 2px solid #8e3f33;
+  background: #fbe3d7;
+  color: #3e2a1c;
+}
+.ribbon--sim strong {
+  border-color: #5b2a22;
+  background: #a3503f;
+  color: #fffaf1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+:root[data-theme='dark'] .ribbon--sim {
+  border-color: #f2a07f;
+  background: #4b3634;
+  color: #f7eddc;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .ribbon--sim {
+    border-color: #f2a07f;
+    background: #4b3634;
+    color: #f7eddc;
+  }
+}
+.sim-stamp {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 40;
+  padding: 6px 14px 7px;
+  border: 2.5px solid #5b2a22;
+  border-radius: 12px;
+  background: #a3503f;
+  color: #fffaf1;
+  font: 700 15px/1 var(--font-ui);
+  letter-spacing: 0.14em;
+  box-shadow: 0 4px 0 rgba(91, 42, 34, 0.35);
+  pointer-events: none;
+  transform: rotate(-3deg);
+}
+
+.picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 16px;
+}
+.picker__label {
+  color: var(--hm-muted);
+  font: 600 14px/1 var(--font-ui);
+}
+
 .masthead__row {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -196,7 +251,7 @@ h3 {
   letter-spacing: -0.02em;
 }
 .stage h1 span {
-  color: #8ea35f;
+  color: #6f8443;
 }
 :root[data-theme='dark'] .stage h1 span {
   color: #c9d69a;
@@ -222,8 +277,8 @@ h3 {
   text-decoration: none;
 }
 .stage__now {
-  display: inline-flex;
-  align-items: center;
+  display: flex;
+  align-items: baseline;
   gap: 10px;
   margin: 22px 0 0;
   color: var(--hm-muted);
@@ -233,6 +288,7 @@ h3 {
   color: var(--hm-fg);
 }
 .stage__dot {
+  flex: none;
   width: 10px;
   height: 10px;
   border-radius: 50%;
@@ -499,7 +555,7 @@ h3 {
   .panel--world {
     grid-area: world;
   }
-  .panel--shell {
+  .layout .panel--shell {
     grid-area: shell;
   }
   .panel--impact {
@@ -515,12 +571,33 @@ h3 {
     height: 560px;
   }
 }
+/* tablets: the shell sits beside its legend instead of alone in a wide box */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .layout .panel--shell {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
+    column-gap: 28px;
+    align-items: start;
+  }
+  .layout .panel--shell .shell__stage {
+    grid-row: 1 / 4;
+    margin: 6px 0 0;
+  }
+  .layout .panel--shell .shell__count {
+    justify-content: flex-start;
+    margin-top: 6px;
+  }
+  .layout .panel--shell .shell__hint {
+    text-align: left;
+  }
+}
 /* phones: impact reads before the shell (plan.md 7.1) */
 @media (max-width: 767px) {
   .panel--impact {
     order: 1;
   }
-  .panel--shell {
+  .layout .panel--shell {
     order: 2;
   }
   .log-wrap {
@@ -552,9 +629,23 @@ h3 {
 
 .notice {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 16px;
   margin-bottom: 24px;
+}
+.notice__text {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+.notice__text p {
+  margin: 0 0 12px;
+  font: 500 15px/1.55 var(--font-body);
+}
+.notice__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .loading {
   display: flex;
@@ -664,6 +755,32 @@ h3 {
     top 0.17s linear;
   filter: drop-shadow(0 2px 0 rgba(91, 61, 39, 0.25));
 }
+.world__walker.is-replay {
+  transition: none;
+}
+.world__hop {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  z-index: 3;
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  padding: 4px 12px 5px;
+  border: 2px solid #5b3d27;
+  border-radius: 999px;
+  background: #f8d98a;
+  color: #3e2a1c;
+  font: 600 13px/16px var(--font-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+@media (max-width: 767px) {
+  .world__hop {
+    top: 52px;
+    bottom: auto;
+  }
+}
 .world__tip {
   transform: translate(-50%, calc(-100% - 12px));
 }
@@ -684,6 +801,19 @@ h3 {
   background: #fffaf1;
   color: #483424;
   font: 600 13px/16px var(--font-ui);
+}
+.world__mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.world__sim {
+  padding: 1px 8px 2px;
+  border-radius: 999px;
+  background: #a3503f;
+  color: #fffaf1;
+  font-size: 11px;
+  letter-spacing: 0.1em;
 }
 .world__controls {
   position: absolute;
@@ -783,7 +913,7 @@ h3 {
 }
 .tip__quote {
   margin-top: 4px;
-  color: #8ea35f;
+  color: #6f8443;
   font-weight: 700;
 }
 .legend {
@@ -1057,10 +1187,15 @@ h3 {
   font: 600 12px/1 var(--font-ui);
 }
 .stop__left--abrupt {
-  color: #b9614f;
+  color: #a3503f;
 }
 :root[data-theme='dark'] .stop__left--abrupt {
-  color: #f2a07f;
+  color: #f6b89c;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .stop__left--abrupt {
+    color: #f6b89c;
+  }
 }
 
 /* ---------- footer ---------- */
@@ -1108,7 +1243,7 @@ h3 {
    The only live thing on the page. Styled to read as a different kind of
    information from the journey below it, which is history. */
 .live {
-  margin-block: var(--gap);
+  margin: 0 0 40px;
 }
 .live__head {
   display: flex;

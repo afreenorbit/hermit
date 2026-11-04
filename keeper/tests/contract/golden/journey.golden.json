@@ -1,0 +1,114 @@
+{
+  "v": 1,
+  "generated_at": "2026-11-05T20:30:00Z",
+  "hermit": {
+    "current_host": null,
+    "current_city": null,
+    "since": null
+  },
+  "hosts": [
+    {
+      "host_id": "afreen",
+      "display_name": "Afreen",
+      "city": "Indiranagar",
+      "lat": 12.97,
+      "lon": 77.64,
+      "brain_provider": "claude-code"
+    },
+    {
+      "host_id": "abhishek",
+      "display_name": "Abhishek",
+      "city": "Kengeri",
+      "lat": 12.91,
+      "lon": 77.48,
+      "brain_provider": "opencode"
+    },
+    {
+      "host_id": "akshay",
+      "display_name": "Akshay",
+      "city": "Yelahanka",
+      "lat": 13.1,
+      "lon": 77.59,
+      "brain_provider": "codex"
+    }
+  ],
+  "stops": [
+    {
+      "stop_id": "stop_01JC00000000000000000000A1",
+      "seq": 1,
+      "host": "afreen",
+      "arrived_at": "2026-11-05T03:00:00Z",
+      "left_at": "2026-11-05T03:41:00Z",
+      "departure": "graceful",
+      "weather": {
+        "temp_c": 24.0,
+        "code": 2
+      },
+      "favor_received": null,
+      "favor_left": {
+        "id": "fav_01JC0000000000000000000001",
+        "text": "the last song stuck in your head",
+        "left_by": "afreen",
+        "status": "open",
+        "for": "next"
+      },
+      "shell_piece_id": null
+    },
+    {
+      "stop_id": "stop_01JC00000000000000000000B1",
+      "seq": 2,
+      "host": "abhishek",
+      "arrived_at": "2026-11-05T03:42:00Z",
+      "left_at": "2026-11-05T05:10:00Z",
+      "departure": "abrupt",
+      "weather": {
+        "temp_c": 24.0,
+        "code": 2
+      },
+      "favor_received": {
+        "id": "fav_01JC0000000000000000000001",
+        "text": "the last song stuck in your head",
+        "left_by": "afreen",
+        "status": "open"
+      },
+      "favor_left": null,
+      "shell_piece_id": "pc_01JC0000000000000000000001"
+    },
+    {
+      "stop_id": "stop_01JC00000000000000000000C1",
+      "seq": 3,
+      "host": "akshay",
+      "arrived_at": "2026-11-05T05:10:00Z",
+      "left_at": "2026-11-05T20:00:00Z",
+      "departure": "bedtime",
+      "weather": null,
+      "favor_received": null,
+      "favor_left": null,
+      "shell_piece_id": null
+    }
+  ],
+  "shell": [
+    {
+      "v": 1,
+      "id": "pc_01JC0000000000000000000001",
+      "host": "abhishek",
+      "city": "Kengeri",
+      "brain_provider": "opencode",
+      "temp_c": 24.0,
+      "weather_code": 2,
+      "dwell_s": 1080,
+      "departure": "graceful",
+      "favor_id": "fav_01JC0000000000000000000001",
+      "created_at": "2026-11-05T04:00:00Z",
+      "seed": 123456
+    }
+  ],
+  "stats": {
+    "handoffs": 2,
+    "favors_done": 1,
+    "favors_left": 1,
+    "overlaps_suggested": 0,
+    "overlaps_taken": 0,
+    "median_handoff_ms": 60000
+  }
+}

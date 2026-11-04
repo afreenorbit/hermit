@@ -44,7 +44,9 @@ export function fitView(
   points: readonly LatLon[],
   w: number,
   h: number,
-  padPx = 36,
+  // Room for a house and its name tag: 36px on a desktop map, less on a
+  // phone, where a fixed 36px left the friends huddled in the middle.
+  padPx = Math.round(Math.max(14, Math.min(36, Math.min(w, h) * 0.22))),
   minSpanDeg = 0.05,
 ): View {
   if (points.length === 0) return { minLon: -180, maxLat: 90, deg: 360 / Math.max(1, w), w, h };

@@ -56,6 +56,12 @@ const POSE: Record<Mood, { motion: string; still: string }> = {
   offline: { motion: awayStill, still: awayStill },
 };
 
+/** The image URL for a mood — for canvases (the postcard) that cannot use <img>. */
+export function pocketHermitSrc(mood: Mood, still = true): string {
+  const pose = POSE[mood] ?? POSE.offline;
+  return still ? pose.still : pose.motion;
+}
+
 /** Said out loud by screen readers, and used as the default caption. */
 export const MOOD_LABEL: Record<Mood, string> = {
   visiting: 'Hermit is here with you',

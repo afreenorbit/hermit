@@ -6,7 +6,9 @@ Mirrors ``shared/schemas/host-config.schema.json``. The file is never committed;
 
 from __future__ import annotations
 
+import os
 import tomllib
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal
 
@@ -32,11 +34,34 @@ class BedtimeConfig(BaseModel):
 
 
 class SwitchConfig(BaseModel):
+    """How this keeper reaches Switch. The agent's api_key is never in here.
+
+    ``agent_id`` and ``rooms`` come from ``switch/scripts/bootstrap_rooms.py``
+    (or whoever registered the agents). The key itself is read from the
+    environment variable named by ``token_env``, so the config file stays safe
+    to show on screen.
+    """
+
     server_url: str
     den_room: str = "hermit-den"
     ledger_room: str = "hermit-ledger"
     token_env: str = "HERMIT_SWITCH_TOKEN"
     lease_strategy: LeaseStrategy = "agent_instructed"
+    #: This keeper's registered Switch agent uuid (``keeper-<host_id>``).
+    agent_id: str | None = None
+    #: Room name -> Switch room uuid. Switch addresses rooms by uuid only.
+    rooms: dict[str, str] = Field(default_factory=dict)
+    #: How long Switch takes to free the soul after the holding session dies.
+    #: 8 s is a GUESS until measured against a live server (switch-facts SP3).
+    lease_expiry_s: float = Field(default=8.0, gt=0)
+    #: Only needed if Switch reports message senders by uuid rather than by
+    #: name: the brain's agent uuid, so its ACKs are recognised.
+    brain_agent_id: str | None = None
+
+    def token(self, env: Mapping[str, str] | None = None) -> str | None:
+        """The agent api_key from the environment, or None if unset or blank."""
+        value = (os.environ if env is None else env).get(self.token_env, "")
+        return value.strip() or None
 
 
 class FeatureFlags(BaseModel):

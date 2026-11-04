@@ -50,6 +50,14 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Group" }
+  /v1/group/status:
+    get:
+      summary: Alias of /v1/group
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Group" }
   /v1/shell:
     get:
       summary: All shell pieces known to this host
@@ -117,7 +125,11 @@ components:
         self: { type: [string, "null"], description: the host serving this }
         soul_holder:
           type: [string, "null"]
-          description: null when free, or when the holder has gone stale
+          description: >
+            null when free, when the holder has gone stale, or when Switch is
+            unreachable (unknown — see `switch`)
+        switch:
+          $ref: "#/components/schemas/SwitchState"
         hosts:
           type: array
           items:
@@ -150,3 +162,14 @@ components:
           enum: [arriving, visiting, away, sleeping, waiting, offline]
         favor_pending: { type: [object, "null"] }
         last_line: { type: [string, "null"] }
+        switch:
+          $ref: "#/components/schemas/SwitchState"
+    SwitchState:
+      description: >
+        Additive. Whether this keeper can currently hear Switch. `online`: the
+        keeper's event poll is succeeding. `offline`: Switch is unreachable, so
+        nobody's claim can be verified — `soul_holder` is reported null
+        (unknown, not stale) and no host is reported `arriving`/`visiting`.
+        `fake`: this keeper runs the offline fake lease and no Switch is
+        involved. Absent from older keepers; treat absence as unknown.
+      enum: [online, offline, fake]

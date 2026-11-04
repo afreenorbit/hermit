@@ -1,0 +1,168 @@
+{
+  "v": 1,
+  "generated_at": "2026-11-06T00:00:00+00:00",
+  "source": {
+    "kind": "simulation",
+    "scenario": "three_cities_day",
+    "note": "python -m sim run sim/scenarios/three_cities_day.yaml, then map/scripts/build-demo-journey.mjs"
+  },
+  "hermit": {
+    "current_host": null,
+    "current_city": null,
+    "since": null
+  },
+  "hosts": [
+    {
+      "host_id": "afreen",
+      "display_name": "Afreen",
+      "city": "Bengaluru",
+      "lat": 12.97,
+      "lon": 77.59,
+      "brain_provider": "claude-code"
+    },
+    {
+      "host_id": "abhishek",
+      "display_name": "Abhishek",
+      "city": "Berlin",
+      "lat": 52.52,
+      "lon": 13.4,
+      "brain_provider": "opencode"
+    },
+    {
+      "host_id": "akshay",
+      "display_name": "Akshay",
+      "city": "Toronto",
+      "lat": 43.65,
+      "lon": -79.38,
+      "brain_provider": "codex"
+    }
+  ],
+  "stops": [
+    {
+      "stop_id": "stop_01M6M12BVTPKRVV6QWZ055Z0K1",
+      "seq": 1,
+      "host": "akshay",
+      "arrived_at": "2026-11-05T00:02:30Z",
+      "left_at": "2026-11-05T00:08:00Z",
+      "departure": "graceful",
+      "weather": {
+        "temp_c": 26,
+        "code": 1
+      },
+      "favor_received": null,
+      "favor_left": null,
+      "shell_piece_id": null
+    },
+    {
+      "stop_id": "stop_01M6M12BVVVNKHE9MQ59CCQH1E",
+      "seq": 2,
+      "host": "afreen",
+      "arrived_at": "2026-11-05T00:31:30Z",
+      "left_at": "2026-11-05T11:05:30Z",
+      "departure": "graceful",
+      "weather": {
+        "temp_c": 26,
+        "code": 1
+      },
+      "favor_received": null,
+      "favor_left": {
+        "id": "fav_01M6M12BWC38YTYW9Q3R79GJ86",
+        "text": "send the group a photo of your morning",
+        "left_by": "afreen",
+        "status": "done",
+        "for": "next"
+      },
+      "shell_piece_id": null
+    },
+    {
+      "stop_id": "stop_01M6M12BWC38YTYW9Q3R79GJ8B",
+      "seq": 3,
+      "host": "abhishek",
+      "arrived_at": "2026-11-05T11:06:30Z",
+      "left_at": "2026-11-05T17:05:30Z",
+      "departure": "graceful",
+      "weather": {
+        "temp_c": 26,
+        "code": 1
+      },
+      "favor_received": {
+        "id": "fav_01M6M12BWC38YTYW9Q3R79GJ86",
+        "text": "send the group a photo of your morning",
+        "left_by": "afreen",
+        "status": "done"
+      },
+      "favor_left": {
+        "id": "fav_01M6M12BWNBAV35GGMGCCF327G",
+        "text": "what did you eat today?",
+        "left_by": "abhishek",
+        "status": "done",
+        "for": "next"
+      },
+      "shell_piece_id": "pc_01M6M12BWZDNMNJZKV2PR66CMP"
+    },
+    {
+      "stop_id": "stop_01M6M12BWPZZEQZ55HESE7XZ46",
+      "seq": 4,
+      "host": "akshay",
+      "arrived_at": "2026-11-05T17:06:30Z",
+      "left_at": "2026-11-05T23:05:30Z",
+      "departure": "graceful",
+      "weather": {
+        "temp_c": 26,
+        "code": 1
+      },
+      "favor_received": {
+        "id": "fav_01M6M12BWNBAV35GGMGCCF327G",
+        "text": "what did you eat today?",
+        "left_by": "abhishek",
+        "status": "done"
+      },
+      "favor_left": {
+        "id": "fav_01M6M12BWYQAA8WQVZX0XPMB71",
+        "text": "recommend one thing worth ten minutes",
+        "left_by": "akshay",
+        "status": "open",
+        "for": "next"
+      },
+      "shell_piece_id": "pc_01M6M12BX0WKRZ028VJPTQNAA7"
+    }
+  ],
+  "shell": [
+    {
+      "v": 1,
+      "id": "pc_01M6M12BWZDNMNJZKV2PR66CMP",
+      "host": "abhishek",
+      "city": "Berlin",
+      "brain_provider": "opencode",
+      "temp_c": 26,
+      "weather_code": 1,
+      "dwell_s": 1800,
+      "departure": "graceful",
+      "favor_id": "fav_01M6M12BWC38YTYW9Q3R79GJ86",
+      "created_at": "2026-11-05T17:05:30Z",
+      "seed": 1082237294
+    },
+    {
+      "v": 1,
+      "id": "pc_01M6M12BX0WKRZ028VJPTQNAA7",
+      "host": "akshay",
+      "city": "Toronto",
+      "brain_provider": "codex",
+      "temp_c": 26,
+      "weather_code": 1,
+      "dwell_s": 1800,
+      "departure": "graceful",
+      "favor_id": "fav_01M6M12BWNBAV35GGMGCCF327G",
+      "created_at": "2026-11-05T23:05:30Z",
+      "seed": 1721364981
+    }
+  ],
+  "stats": {
+    "handoffs": 3,
+    "favors_done": 2,
+    "favors_left": 3,
+    "overlaps_suggested": 0,
+    "overlaps_taken": 0,
+    "median_handoff_ms": null
+  }
+}

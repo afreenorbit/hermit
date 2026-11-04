@@ -56,18 +56,24 @@ export function PixelToggleGroup({
   value,
   onValueChange,
   label,
+  required = false,
 }: {
   items: ToggleItem[];
   value: string;
   onValueChange: (v: string) => void;
   label: string;
+  /** Pressing the active item keeps it, instead of falling back to the first. */
+  required?: boolean;
 }) {
   return (
     <ToggleGroup.Root
       type="single"
       className="hm-toggles"
       value={value}
-      onValueChange={(v) => onValueChange(v || (items[0]?.value ?? ''))}
+      onValueChange={(v) => {
+        if (!v && required) return;
+        onValueChange(v || (items[0]?.value ?? ''));
+      }}
       aria-label={label}
     >
       {items.map((i) => (

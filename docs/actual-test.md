@@ -4,29 +4,31 @@ Use this runbook for the three-laptop live test. The local simulation can rehear
 
 ## Current checkpoint
 
-- The real `switch-v0.9.0` server has `hermit-den` and `hermit-ledger`. A ledger line was posted by one registered keeper agent and received by another through `/agents/{id}/events`. The [Switch findings](switch-facts.md) record the verified API details.
-- `SwitchRoomClient` implements that event polling, but `hermit-keeper run` still constructs fake room, lease and brain objects. Changing `lease_strategy` currently exits. The real client has not passed an end-to-end keeper test.
-- The exclusive `soul` role and agent-directed claim/release are still an integration gate. `AgentInstructedLease.holder()` calls a role endpoint absent from the live HTTP API.
-- A shared fake-lease simulation can run three keeper APIs on one computer. It proves screen transitions and state rules, but does not prove networking, real role exclusivity or laptop sleep recovery.
-- The dashboard's local live view must be checked against `/v1/group/status` on the running version. A public static map cannot read a laptop's loopback API.
+- **Verified against real `switch-v0.9.0`:** the server has `hermit-den` and `hermit-ledger`. A ledger line was posted by one registered keeper agent and received by another through `/agents/{id}/events`. The [Switch findings](switch-facts.md) record the verified API details.
+- **Built and proven against a stand-in, not yet against real Switch:** `hermit-keeper run` with `lease_strategy = "agent_instructed"` now runs the real path: `SwitchRoomClient` (one background poller, own-post echo by `event_id`, online/offline tracking), `LedgerBrainDirector` (cues and ACKs in the ledger), and `AgentInstructedLease`, which reads the holder from the ledger instead of the role endpoint that does not exist. Missing `switch.agent_id`, `switch.rooms` or the key in `HERMIT_SWITCH_TOKEN` stops startup with what to fix. It never falls back to fake. `/v1/status` and `/v1/group` (alias `/v1/group/status`) carry `switch: "online" | "offline" | "fake"`. When offline, the holder is `null` and nobody is `visiting`.
+- The integration tests in `keeper/tests/integration/test_switch_standin.py` run three keepers through the production builder over real HTTP against `sim/switch_standin.py`, a **stand-in** for Switch with stand-in brains. They prove one holder across 10 claim races, idle handoff, lid slam → expiry → abrupt departure, outage → offline → recovery, and favors crossing laptops. `python -m sim live --switch standin` runs the same path for manual checks. This is still not proof against real Switch: real role exclusivity, the real lease-expiry time, and real brains following stage directions remain open.
+- `bootstrap_rooms.py` now registers keeper agents and creates both rooms over HTTP, writing keys only to git-ignored `.switch-agents.json`. The `soul` role and room documents remain MCP-only. The script prints the instructions for a connected brain.
+- A shared fake-lease simulation (`python -m sim live`) can still run three keeper APIs on one computer for UI work.
+- The dashboard's local live view must be checked against `/v1/group` on the running version. A public static map cannot read a laptop's loopback API.
 
 ## Step 1 — finish real Switch room integration (Afreen)
 
 1. On the Switch host, start the released stack from the sibling `switch-826` checkout. Run `docker compose -f deploy/local/standalone-v0.9.0.yml --profile collab --profile gateway --project-directory . up -d`. Check `docker compose ... ps` and `http://127.0.0.1:8000/health`.
 2. Confirm the three keeper registrations, their individual agent UUIDs and API keys, and both room UUIDs. Store each key privately on its own host. Registration uses the shared registration token only for `POST /agents`; later calls use that agent's own API key. Never put keys in this runbook, screenshots or git.
-3. Exercise `SwitchRoomClient` against the live server. Post `HERMIT/1` to the ledger with one agent, drain `/agents/{id}/events` with another, and confirm the decoded line and event ID. Only one component per keeper may drain that agent's event queue.
-4. Wire the real room client into `hermit-keeper run`, with server URL, agent UUID, room UUIDs and API key from config/environment. Make a network failure visible as offline/unknown. Do not silently fall back to fake mode.
-5. Repeat the post/read test through the normal keeper entry point. Stop Switch temporarily and verify the keeper reports loss of connection. Restore Switch and verify recovery.
+   `HERMIT_SWITCH_REGISTRATION_TOKEN=... python switch/scripts/bootstrap_rooms.py --server http://127.0.0.1:8000` registers `keeper-<host>` agents and creates both rooms over HTTP. It is idempotent and writes keys only to git-ignored `.switch-agents.json`. It prints each host's `agent_id` / `[switch.rooms]` lines. Its `moderation/rooms` body is unverified, so read the server's reply if it fails.
+3. Exercise `SwitchRoomClient` against the live server. Stop any keeper using those agents first, then run `pytest -m live -s tests/switch_live` with the `HERMIT_LIVE_*` variables documented in that file. It posts with one agent, receives with another, checks the event ID, and **prints whether `/events` returns an agent's own posts and whether senders are names or UUIDs**. Record both answers in switch-facts.md.
+4. ~~Wire the real room client into `hermit-keeper run`~~ — done; proven against the stand-in only. Set `lease_strategy = "agent_instructed"`, `switch.agent_id`, `[switch.rooms]` and `HERMIT_SWITCH_TOKEN`, then run `python -m hermit_keeper check --switch` for a real probe. It checks `/health`, then makes an authenticated non-draining call with your agent key.
+5. Repeat the post/read test through the normal keeper entry point (two `hermit-keeper run` processes, compare `/v1/group`). Stop Switch temporarily. Both `/v1/status` responses must show `"switch": "offline"` and `"soul_holder": null`. Restore Switch and verify both return to `online`.
 
 **Gate:** Step 1 is done only when two separate keeper processes exchange a real ledger event through Switch and recover after a server interruption. The earlier API probe alone is not enough.
 
 ## Step 2 — finish exclusive soul integration (Afreen, then all three)
 
-1. Create the `soul` role in `hermit-den` with the room rules. Use `python switch/scripts/bootstrap_rooms.py --dry-run` to inspect the intended operations. The script's live execution is currently unfinished, so apply them through a connected Switch agent.
-2. Connect Afreen's brain to Switch. Have it call `assume_role("soul")`, then release it. Confirm its role instructions and write claim/release events to the ledger.
-3. Replace the unavailable HTTP role-holder lookup in `AgentInstructedLease` with a tested authority strategy. Ledger observation must handle stale claims and a brain dying without a release line. Do not allow two keepers to report Visiting based solely on optimistic ACKs.
-4. Connect Abhishek's and Akshay's brains. Race two claims ten times. Switch must reject the second every time. Kill a holder's session, measure actual lease expiry and prove another brain can claim afterward.
-5. Wire `lease_strategy = "agent_instructed"` into the normal CLI runtime. Run the Python suite, simulation suite and one live two-keeper handoff before expanding to three laptops.
+1. Create the `soul` role in `hermit-den` with the room rules. HTTP cannot do this. Give a connected brain the instructions that `bootstrap_rooms.py` prints at the end of a live run, or that `--dry-run` lists as `"via": "mcp"`. Make sure every `hermit-<host>` brain is a member of both rooms.
+2. Connect Afreen's brain to Switch with `switch/knowledge/stage-directions.md` attached. Have it call `assume_role("soul")`, then release it. Confirm its role instructions. Its ACKs must echo the cue's `id`.
+3. ~~Replace the HTTP role-holder lookup~~ — done (`lease/soul_ledger.py`). Stale claims, a dead brain and conflicting optimistic ACKs are all handled. This is proven against the stand-in; see switch-facts.md.
+4. Connect Abhishek's and Akshay's brains. Race two claims ten times. **Real** Switch must reject the second every time. The stand-in tests prove only that the keepers behave correctly when it does. Kill a holder's session, measure actual lease expiry, put the value in every host's `switch.lease_expiry_s`, and prove another brain can claim afterward.
+5. ~~Wire `agent_instructed` into the CLI~~ — done. Run the Python suite, simulation suite and one live two-keeper handoff before expanding to three laptops.
 
 **Gate:** exactly one brain holds the real Switch role at a time, and all keeper status responses converge on the same holder, including after abrupt loss.
 
@@ -84,4 +86,4 @@ Use `python -m hermit_keeper override awake`, `override asleep`, and `override a
 
 Pass only if the real role never has two holders, all three keeper status views agree, each critter shows the appropriate local state, an abrupt loss recovers, and the favor/ledger survives across hosts. Report the measured times and any failed case honestly.
 
-If Steps 1 or 2 are unfinished tomorrow, run `python -m sim live` on one computer and test the three local ports (47801–47803). Label the recording **simulation**. A static hosted dashboard can display the exported journey, while live group status requires a reachable backend designed for remote readers.
+If Steps 1 or 2 are unfinished tomorrow, run `python -m sim live --switch standin` on one computer. It runs the real keeper code over HTTP against the Switch stand-in. Test the three local ports (47801–47803) and the control port 47804 (`/lid-slam/<host>`, `/switch/down`, `/switch/up`). Label the recording **simulation (stand-in Switch)**. A static hosted dashboard can display the exported journey, while live group status requires a reachable backend designed for remote readers.
