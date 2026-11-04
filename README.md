@@ -251,7 +251,7 @@ Full setup, failure modes and what is not yet proven:
 [`docs/running-on-three-laptops.md`](docs/running-on-three-laptops.md).
 
 **Doing the real three-laptop test?** Follow
-[`docs/live-test.md`](docs/live-test.md) — Tailscale, the two integration steps
+[`docs/actual-test.md`](docs/actual-test.md) — Tailscale, the two integration steps
 that still have to happen first, who does what, and the seven runs to make.
 
 ## Privacy
