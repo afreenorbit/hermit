@@ -194,7 +194,13 @@ class KeeperRuntime:
             "present": self.presence.present,
             "soul_holder": holder_host,
             "since": self._since(),
-            "mood": mood_for(str(self.machine.state), self.presence.present, holder_host, host),
+            "mood": mood_for(
+                str(self.machine.state),
+                self.presence.present,
+                holder_host,
+                host,
+                self.machine.dwell_s if self.machine.holding else None,
+            ),
             "favor_pending": None,
             "last_line": self._last_line,
         }

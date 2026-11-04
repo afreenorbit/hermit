@@ -66,21 +66,43 @@ class HostView:
         }
 
 
-def mood_for(state: str | None, present: bool | None, holder: str | None, host: str) -> str:
+#: How long after a successful claim the arrival plays before settling.
+ARRIVING_WINDOW_S = 10.0
+
+
+def mood_for(
+    state: str | None,
+    present: bool | None,
+    holder: str | None,
+    host: str,
+    holding_for_s: float | None = None,
+) -> str:
     """The mascot this laptop should be showing.
 
     Local state decides most of it; the holder decides the rest. A laptop that
     does not hold the soul can never be `visiting`, which is what stops two
     screens claiming Hermit at once.
+
+    ``holding_for_s`` is how long this host has held the soul, and it separates
+    *arriving* from *visiting*. Arriving is deliberately tied to a **successful
+    claim**, not to reaching for one: when a soul frees, every awake laptop
+    tries, and showing them all `arriving` would have Hermit apparently landing
+    in two places at once. Only the winner arrives.
     """
     if state is None:
         return "offline"
     if state == "HOLDING":
         # Trust Switch over our own state if they disagree: the room is the
         # authority, and disagreeing here is exactly the double-Hermit bug.
-        return "visiting" if holder in (None, host) else "waiting"
+        if holder not in (None, host):
+            return "waiting"
+        if holding_for_s is not None and holding_for_s < ARRIVING_WINDOW_S:
+            return "arriving"
+        return "visiting"
     if state == "CLAIMING":
-        return "arriving"
+        # Reaching for the soul, not holding it. Everyone who is awake does
+        # this at the same moment; none of them has arrived anywhere yet.
+        return "waiting"
     if state == "DEPARTING":
         return "away"
     if state == "BEDTIME_LOCK":

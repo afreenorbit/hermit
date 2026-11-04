@@ -1,8 +1,8 @@
 """Run a Hermit scenario on one machine.
 
     python -m sim run sim/scenarios/one_timezone_day.yaml
-    python -m sim run sim/scenarios/*.yaml --quiet
-    python -m sim all
+    python -m sim all                 # every scenario, time-compressed
+    python -m sim live                # three real keepers, three ports
 
 Writes `sim/out/<scenario>/journey.json`, which the map can render directly —
 that is how to get a demo journey without three laptops and a weekend.
@@ -57,10 +57,15 @@ async def _run(paths: list[Path], quiet: bool) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["run", "all"])
+    parser.add_argument("command", choices=["run", "all", "live"])
     parser.add_argument("scenarios", nargs="*", type=Path)
     parser.add_argument("--quiet", action="store_true", help="hide the timeline")
     args = parser.parse_args(argv)
+
+    if args.command == "live":
+        from sim.live import main as live_main
+
+        return live_main([])
 
     paths = (
         sorted(SCENARIOS.glob("*.yaml")) if args.command == "all" else args.scenarios

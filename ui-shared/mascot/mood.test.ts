@@ -31,8 +31,25 @@ describe('moodFor', () => {
     );
   });
 
-  it('maps the handoff states the brief calls for', () => {
-    expect(moodFor({ ...base, state: 'CLAIMING' })).toBe('arriving');
+  it('shows arriving only after a claim succeeds, never while reaching', () => {
+    // Every awake laptop reaches at the same moment when a soul frees.
+    expect(moodFor({ ...base, state: 'CLAIMING' })).toBe('waiting');
+    expect(
+      moodFor({ ...base, state: 'HOLDING', soulHolder: 'afreen', holdingForS: 2 }),
+    ).toBe('arriving');
+    expect(
+      moodFor({ ...base, state: 'HOLDING', soulHolder: 'afreen', holdingForS: 60 }),
+    ).toBe('visiting');
+  });
+
+  it('never shows two laptops arriving at once during a scramble', () => {
+    const screens = ['afreen', 'abhishek', 'akshay'].map((host) =>
+      moodFor({ state: 'CLAIMING', present: true, soulHolder: null, host }),
+    );
+    expect(screens.filter((m) => m === 'arriving')).toHaveLength(0);
+  });
+
+  it('maps the remaining handoff states the brief calls for', () => {
     expect(moodFor({ ...base, state: 'DEPARTING' })).toBe('away');
     expect(moodFor({ ...base, state: 'BEDTIME_LOCK' })).toBe('sleeping');
     expect(moodFor({ ...base, state: 'ASLEEP', present: false })).toBe('sleeping');

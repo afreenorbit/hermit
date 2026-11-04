@@ -12,7 +12,8 @@
  * cannot reach shows `offline`. A blank screen on four of five machines was
  * the thing that made the companion feel broken.
  *
- * The one invariant: **only the soul holder is ever `visiting`.** Local
+ * Two invariants: **only the soul holder is ever `visiting`**, and **only the
+ * laptop that won the claim ever shows `arriving`.** Local
  * activity decides whether a laptop is eligible to host; the shared Switch
  * lease decides who actually does. Keeping those apart is what stops two
  * screens claiming Hermit at once.
@@ -41,7 +42,12 @@ export interface MoodInput {
   host: string;
   /** Can we currently reach this laptop's keeper? */
   connected?: boolean;
+  /** Seconds this host has held the soul, if it holds it. */
+  holdingForS?: number | null;
 }
+
+/** How long after a successful claim the arrival plays before settling. */
+export const ARRIVING_WINDOW_S = 10;
 
 export function moodFor({
   state,
@@ -49,17 +55,23 @@ export function moodFor({
   soulHolder,
   host,
   connected = true,
+  holdingForS = null,
 }: MoodInput): Mood {
   // Not knowing is its own answer. Never dress it up as "resting".
   if (!connected || state === null) return 'offline';
 
   switch (state) {
-    case 'HOLDING':
+    case 'HOLDING': {
       // If Switch disagrees with our own state, believe Switch. Disagreeing
       // here is precisely the two-Hermits bug.
-      return soulHolder === null || soulHolder === host ? 'visiting' : 'waiting';
+      if (soulHolder !== null && soulHolder !== host) return 'waiting';
+      return holdingForS !== null && holdingForS < ARRIVING_WINDOW_S ? 'arriving' : 'visiting';
+    }
     case 'CLAIMING':
-      return 'arriving';
+      // Reaching for the soul, not holding it. Every awake laptop does this at
+      // the same instant, and showing them all `arriving` would have Hermit
+      // apparently landing in two places at once. Only the winner arrives.
+      return 'waiting';
     case 'DEPARTING':
       return 'away';
     case 'BEDTIME_LOCK':
