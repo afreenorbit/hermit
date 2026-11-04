@@ -29,10 +29,14 @@ export interface Derived {
   rawPieces: ShellPieceT[];
   pieceIndex: Map<string, number>;
   stopByPiece: Map<string, StopT>;
+  /** stop_id → the shell piece that stop produced, if any. */
+  pieceOfStop: Map<string, string>;
   stopsNewestFirst: StopT[];
   perHost: Record<string, HostStats>;
   pairs: FavorPair[];
   favorsDone: number;
+  /** True when this stop's received favor was completed. */
+  receivedDone: (s: StopT) => boolean;
   friendsReached: number;
   longestChain: number;
   brains: BrainProvider[];
@@ -50,10 +54,37 @@ export function nameOf(d: Pick<Derived, 'hosts'>, hostId: string | null | undefi
 export function derive(j: JourneyT, now: number = Date.parse(j.generated_at)): Derived {
   const hosts = new Map(j.hosts.map((h) => [h.host_id, h]));
   const stops = [...j.stops].sort((a, b) => a.seq - b.seq);
-  const stopByPiece = new Map<string, StopT>();
-  for (const s of stops) if (s.shell_piece_id) stopByPiece.set(s.shell_piece_id, s);
+  // An export can repeat a piece; the shell is a set, so keep the first.
+  const shell = j.shell.filter((p, i, all) => all.findIndex((q) => q.id === p.id) === i);
+  const pieceByFavor = new Map<string, ShellPieceT>();
+  for (const p of shell)
+    if (p.favor_id && !pieceByFavor.has(p.favor_id)) pieceByFavor.set(p.favor_id, p);
 
-  const pieces: ShellPieceInput[] = j.shell.map((p) => {
+  // A stop names its piece directly, or (older exports) through the favor it
+  // completed: a piece carries the id of the favor that grew it.
+  const stopByPiece = new Map<string, StopT>();
+  const pieceOfStop = new Map<string, string>();
+  for (const s of stops) {
+    const fid = s.favor_received?.id;
+    const pid = s.shell_piece_id ?? (fid ? pieceByFavor.get(fid)?.id : undefined);
+    if (!pid || stopByPiece.has(pid)) continue;
+    stopByPiece.set(pid, s);
+    pieceOfStop.set(s.stop_id, pid);
+  }
+  /**
+   * Done if the export says so, or if this stop's own piece grew from it (an
+   * export that never updated the status). An explicit `expired` always wins.
+   */
+  const isDone = (s: StopT): boolean => {
+    const r = s.favor_received;
+    if (!r) return false;
+    if (r.status === 'done') return true;
+    if (r.status === 'expired' || !r.id) return false;
+    const pid = pieceOfStop.get(s.stop_id);
+    return !!pid && shell.some((p) => p.id === pid && p.favor_id === r.id);
+  };
+
+  const pieces: ShellPieceInput[] = shell.map((p) => {
     const stop = stopByPiece.get(p.id);
     const host = hosts.get(p.host);
     return {
@@ -67,7 +98,7 @@ export function derive(j: JourneyT, now: number = Date.parse(j.generated_at)): D
       local_hour: localHour(stop?.arrived_at ?? p.created_at, { lon: host?.lon ?? null }),
     };
   });
-  const pieceIndex = new Map(j.shell.map((p, i) => [p.id, i]));
+  const pieceIndex = new Map(shell.map((p, i) => [p.id, i]));
 
   const perHost: Record<string, HostStats> = {};
   for (const h of j.hosts)
@@ -91,9 +122,9 @@ export function derive(j: JourneyT, now: number = Date.parse(j.generated_at)): D
     stats.dwellS += Math.max(0, (end - Date.parse(s.arrived_at)) / 1000);
 
     const r = s.favor_received;
-    if (r?.status === 'done') {
+    if (isDone(s)) {
       chain += 1;
-      if (r.id && r.left_by && !doneFavors.has(r.id))
+      if (r?.id && r.left_by && !doneFavors.has(r.id))
         doneFavors.set(r.id, { from: r.left_by, to: s.host });
     } else {
       chain = 0;
@@ -112,7 +143,7 @@ export function derive(j: JourneyT, now: number = Date.parse(j.generated_at)): D
     if (perHost[to]) perHost[to].received += 1;
   }
 
-  const brains = [...new Set(j.shell.map((p) => p.brain_provider))];
+  const brains = [...new Set(shell.map((p) => p.brain_provider))];
   const places = new Set(stops.map((s) => hosts.get(s.host)?.city ?? s.host)).size;
   const first = stops[0];
   const last = stops[stops.length - 1];
@@ -122,13 +153,15 @@ export function derive(j: JourneyT, now: number = Date.parse(j.generated_at)): D
     hosts,
     hostIds: j.hosts.map((h) => h.host_id),
     pieces,
-    rawPieces: j.shell,
+    rawPieces: shell,
     pieceIndex,
     stopByPiece,
+    pieceOfStop,
     stopsNewestFirst: [...stops].reverse(),
     perHost,
     pairs: [...pairCounts.values()],
     favorsDone: doneFavors.size,
+    receivedDone: isDone,
     friendsReached: new Set([...doneFavors.values()].map((f) => f.to)).size,
     longestChain,
     brains,

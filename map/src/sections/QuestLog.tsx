@@ -42,7 +42,7 @@ export function QuestLog({
       derived.stopsNewestFirst.filter((s) => {
         if (friend && s.host !== friend) return false;
         if (brain !== 'all' && derived.hosts.get(s.host)?.brain_provider !== brain) return false;
-        if (doneOnly && s.favor_received?.status !== 'done') return false;
+        if (doneOnly && !derived.receivedDone(s)) return false;
         return true;
       }),
     [derived, friend, brain, doneOnly],
@@ -131,7 +131,7 @@ export function QuestLog({
               stop={s}
               derived={derived}
               generatedAt={generatedAt}
-              lit={!!activePiece && s.shell_piece_id === activePiece}
+              lit={!!activePiece && derived.pieceOfStop.get(s.stop_id) === activePiece}
               flash={flashStop === s.stop_id}
               delay={firstPaint.current ? i * 60 : 0}
             />
@@ -158,7 +158,8 @@ function StopCard({
   delay: number;
 }) {
   const host = derived.hosts.get(stop.host);
-  const idx = stop.shell_piece_id ? derived.pieceIndex.get(stop.shell_piece_id) : undefined;
+  const pid = derived.pieceOfStop.get(stop.stop_id);
+  const idx = pid ? derived.pieceIndex.get(pid) : undefined;
   const piece = idx != null ? derived.pieces[idx] : undefined;
   const mini = useMemo(() => (piece ? renderShellGrid([piece], { size: 24 }) : null), [piece]);
   const w = weatherInfo(stop.weather?.code);
@@ -217,7 +218,7 @@ function StopCard({
           compact
           text={recv.text}
           from={nameOf(derived, recv.left_by)}
-          status={recv.status ?? 'assigned'}
+          status={derived.receivedDone(stop) ? 'done' : (recv.status ?? 'assigned')}
         />
       ) : (
         <p className="stop__none">

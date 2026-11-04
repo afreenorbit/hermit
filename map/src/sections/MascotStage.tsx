@@ -85,9 +85,9 @@ export function MascotStage({ derived }: { derived: Derived | null }) {
           <span>A shell full of stories.</span>
         </h1>
         <p className="stage__lede">
-          Meet <strong>Hermit</strong>, Hermit’s wandering companion. Hermit lives on one friend’s
-          laptop at a time, borrows their AI as a voice, and moves on when they go quiet — carrying
-          a little favor to whoever is awake next.
+          Meet <strong>Hermit</strong>, a small wandering creature. It lives on one friend’s laptop
+          at a time, borrows their AI as a voice, and moves on when they go quiet — carrying a
+          little favor to whoever is awake next.
         </p>
         <div className="stage__cta">
           <a className="hm-btn hm-btn--lg" href="#journey">
@@ -100,10 +100,13 @@ export function MascotStage({ derived }: { derived: Derived | null }) {
         {host && (
           <p className="stage__now">
             <span className="stage__dot" aria-hidden />
-            Right now Hermit is with <strong>{host.display_name}</strong> in {host.city}
-            {derived?.current.dwellS != null
-              ? ` · ${formatDwell(derived.current.dwellS).toLowerCase()}`
-              : ''}
+            <span>
+              In this journey, Hermit was last with <strong>{host.display_name}</strong> in{' '}
+              {host.city}
+              {derived?.current.dwellS != null
+                ? ` · ${formatDwell(derived.current.dwellS).toLowerCase()}`
+                : ''}
+            </span>
           </p>
         )}
       </div>

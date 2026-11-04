@@ -1,19 +1,68 @@
-/** Logo, live ticker, data switch, sound and theme toggles. Owner: C. */
-import { formatDwell, PixelButton, PixelToggleGroup, PocketHermit, sound, Ticker } from '@hermit/ui';
+/** Logo, live ticker, journey picker, sound and theme toggles. Owner: C. */
+import {
+  formatDwell,
+  PixelButton,
+  PixelToggleGroup,
+  PocketHermit,
+  sound,
+  Ticker,
+} from '@hermit/ui';
+import type { JourneyT } from '@hermit/ui/contracts';
 import { useEffect, useState } from 'react';
 
 import type { Derived } from '../lib/derive';
-import type { JourneySource } from '../hooks/useJourney';
+import {
+  SCENARIOS,
+  type JourneyKind,
+  type JourneySource,
+  type ScenarioId,
+} from '../hooks/useJourney';
 
 interface Props {
   derived: Derived | null;
+  journey: JourneyT | null;
+  kind: JourneyKind | null;
   source: JourneySource | null;
+  scenario: ScenarioId;
   dark: boolean;
   onTheme: () => void;
-  onSource: (s: JourneySource) => void;
+  onScenario: (s: ScenarioId) => void;
 }
 
-export function Header({ derived, source, dark, onTheme, onSource }: Props) {
+/** What the ribbon says about where this journey came from. */
+function provenance(
+  kind: JourneyKind | null,
+  journey: JourneyT | null,
+  source: JourneySource | null,
+) {
+  if (kind === 'simulation') {
+    const scenario = journey?.source?.scenario;
+    return {
+      tag: 'Simulation',
+      text: `Not a real run: the simulator played${scenario ? ` ${scenario}` : ' a scenario'} with fake clocks and fake friends, then exported the journey.`,
+    };
+  }
+  if (kind === 'sample')
+    return {
+      tag: 'Sample data',
+      text:
+        source === 'wide'
+          ? 'A hand-made three-continent journey, to show the world view — not a real run.'
+          : 'A made-up journey in the shape of our Bengaluru group — not a real run.',
+    };
+  return null;
+}
+
+export function Header({
+  derived,
+  journey,
+  kind,
+  source,
+  scenario,
+  dark,
+  onTheme,
+  onScenario,
+}: Props) {
   const [on, setOn] = useState(sound.isEnabled());
   useEffect(() => sound.subscribe(setOn), []);
 
@@ -21,18 +70,14 @@ export function Header({ derived, source, dark, onTheme, onSource }: Props) {
   const ticker = cur?.host
     ? `Now with ${cur.host.display_name} · ${cur.host.city}${cur.dwellS != null ? ` · ${formatDwell(cur.dwellS).toLowerCase()}` : ''}`
     : 'Asleep · nobody is around';
-  const sample = source === 'sample' || source === 'wide';
+  const note = provenance(kind, journey, source);
 
   return (
     <header className="masthead">
-      {sample && (
-        <div className="ribbon" role="note">
-          <strong>Sample data</strong>
-          <span>
-            {source === 'wide'
-              ? 'A simulated three-timezone journey — not a real run.'
-              : 'A made-up journey in the shape of our Bengaluru pilot.'}
-          </span>
+      {note && (
+        <div className={`ribbon${kind === 'simulation' ? ' ribbon--sim' : ''}`} role="note">
+          <strong>{note.tag}</strong>
+          <span>{note.text}</span>
         </div>
       )}
       <div className="masthead__row">
@@ -42,28 +87,13 @@ export function Header({ derived, source, dark, onTheme, onSource }: Props) {
           </span>
           <span className="logo__text">
             <span className="logo__word">Hermit</span>
-            <span className="logo__sub">with Hermit, a creature with no home</span>
+            <span className="logo__sub">a creature with no home</span>
           </span>
         </a>
         <div className="masthead__ticker">
-          <Ticker live={!!cur?.host && source === 'live'}>{ticker}</Ticker>
+          <Ticker live={!!cur?.host && kind === 'real'}>{ticker}</Ticker>
         </div>
         <div className="masthead__tools">
-          {sample && (
-            <PixelToggleGroup
-              label="Sample journey"
-              value={source ?? 'sample'}
-              onValueChange={(v) => onSource(v as JourneySource)}
-              items={[
-                {
-                  value: 'sample',
-                  label: 'City',
-                  title: 'Three areas of Bengaluru (our pilot shape)',
-                },
-                { value: 'wide', label: 'World', title: 'Three timezones (simulation)' },
-              ]}
-            />
-          )}
           <PixelButton
             variant="ghost"
             size="sm"
@@ -81,6 +111,16 @@ export function Header({ derived, source, dark, onTheme, onSource }: Props) {
           />
         </div>
       </div>
+      <nav className="picker" aria-label="Which journey">
+        <span className="picker__label">Journey</span>
+        <PixelToggleGroup
+          label="Which journey"
+          required
+          value={scenario}
+          onValueChange={(v) => onScenario(v as ScenarioId)}
+          items={SCENARIOS.map((s) => ({ value: s.id, label: s.label, title: s.title }))}
+        />
+      </nav>
     </header>
   );
 }

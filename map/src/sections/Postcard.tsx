@@ -9,14 +9,15 @@ import {
   formatDay,
   formatHandoffMs,
   PixelButton,
+  pocketHermitSrc,
   renderShellGrid,
   sound,
-  tilliSvg,
   toCanvas,
 } from '@hermit/ui';
 import type { JourneyT } from '@hermit/ui/contracts';
 import { useState } from 'react';
 
+import type { JourneyKind } from '../hooks/useJourney';
 import type { Derived } from '../lib/derive';
 
 const CREAM = '#f8f1e5';
@@ -25,6 +26,7 @@ const INK = '#5b3d27';
 const TEXT = '#483424';
 const MUTED = '#74604a';
 const BUTTER = '#f8d98a';
+const BERRY = '#a3503f';
 const SAGE_SOFT = '#e7ecd3';
 const PEACH_SOFT = '#fbe3d7';
 const SKY_SOFT = '#e2f0f4';
@@ -51,19 +53,19 @@ function sticker(
   ctx.stroke();
 }
 
-function loadSvg(markup: string): Promise<HTMLImageElement> {
+function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
     img.onerror = reject;
-    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+    img.src = src;
   });
 }
 
 export async function drawPostcard(
   journey: JourneyT,
   d: Derived,
-  sample: boolean,
+  kind: JourneyKind,
 ): Promise<HTMLCanvasElement> {
   const W = 1200;
   const H = 630;
@@ -106,15 +108,19 @@ export async function drawPostcard(
   ctx.font = fredoka(18, 500);
   ctx.fillText('the shell we built', 112, 572);
 
-  // Hermit, celebrating, big
+  // Hermit arriving with a letter: the favor is the product
   ctx.fillStyle = '#fdf0c9';
   ctx.beginPath();
-  ctx.ellipse(420, 360, 200, 200, 0, 0, Math.PI * 2);
+  ctx.ellipse(588, 392, 168, 168, 0, 0, Math.PI * 2);
   ctx.fill();
   try {
-    const tilli = await loadSvg(tilliSvg({ mood: 'celebrate', title: '' }));
+    // Afreen's art, the same still the page shows; fit 320px tall, between the shell and the stats.
+    const art = await loadImage(pocketHermitSrc('arriving'));
+    const h = 320;
+    const w = (art.naturalWidth / art.naturalHeight) * h;
     ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(tilli, 238, 150, 400, 400);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(art, 588 - w / 2, 226, w, h);
   } catch {
     /* the card still works without the mascot */
   }
@@ -126,7 +132,7 @@ export async function drawPostcard(
   ctx.fillText('Hermit', 64, 132);
   ctx.font = fredoka(30, 500);
   ctx.fillStyle = MUTED;
-  ctx.fillText('with Hermit, a creature with no home', 66, 178);
+  ctx.fillText('a creature with no home', 66, 178);
   ctx.font = nunito(26, 700);
   ctx.fillStyle = TEXT;
   const friends = d.hostIds.length;
@@ -162,17 +168,21 @@ export async function drawPostcard(
   ctx.fillStyle = MUTED;
   ctx.fillText('built on Switch · Flip the Switch 2026', 862, 578);
 
-  if (sample) {
-    ctx.fillStyle = BUTTER;
+  if (kind !== 'real') {
+    // Honest labelling travels with the image, not just the page.
+    const sim = kind === 'simulation';
+    const label = sim ? 'SIMULATION' : 'Sample data';
+    ctx.font = fredoka(20, 600);
+    const w = ctx.measureText(label).width + 48;
+    ctx.fillStyle = sim ? BERRY : BUTTER;
     ctx.strokeStyle = INK;
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.roundRect(862, 50, 190, 44, 22);
+    ctx.roundRect(1136 - w, 50, w, 44, 22);
     ctx.fill();
     ctx.stroke();
-    ctx.font = fredoka(20, 600);
-    ctx.fillStyle = TEXT;
-    ctx.fillText('Sample data', 898, 80);
+    ctx.fillStyle = sim ? '#fffaf1' : TEXT;
+    ctx.fillText(label, 1136 - w + 24, 80);
   }
   return canvas;
 }
@@ -180,23 +190,23 @@ export async function drawPostcard(
 export function PostcardButton({
   journey,
   derived,
-  sample,
+  kind,
 }: {
   journey: JourneyT;
   derived: Derived;
-  sample: boolean;
+  kind: JourneyKind;
 }) {
   const [busy, setBusy] = useState(false);
   const make = async (): Promise<void> => {
     setBusy(true);
     try {
-      const canvas = await drawPostcard(journey, derived, sample);
+      const canvas = await drawPostcard(journey, derived, kind);
       const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'));
       if (!blob) return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `hermit-postcard-${journey.generated_at.slice(0, 10)}.png`;
+      a.download = `hermit-postcard-${kind === 'simulation' ? 'simulation-' : ''}${journey.generated_at.slice(0, 10)}.png`;
       document.body.appendChild(a);
       a.click();
       a.remove();

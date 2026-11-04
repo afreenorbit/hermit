@@ -2,7 +2,22 @@
  * The world: pastel pixel ground, dotted route, houses with pixel faces, and
  * Hermit waddling along the latest hop. Owner: C. plan.md §7.2.
  */
-import { BrainBadge, crispScale, formatDay, formatDwell, HOUSE, HOUSE_WINDOW, P, pixelAvatar, PixelButton, PocketHermit, RGB, toImageData, useDevicePixelRatio, useFrame } from '@hermit/ui';
+import {
+  BrainBadge,
+  crispScale,
+  formatDay,
+  formatDwell,
+  HOUSE,
+  HOUSE_WINDOW,
+  P,
+  pixelAvatar,
+  PixelButton,
+  PocketHermit,
+  RGB,
+  toImageData,
+  useDevicePixelRatio,
+  useFrame,
+} from '@hermit/ui';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 
 import { nameOf, type Derived } from '../lib/derive';
@@ -29,9 +44,13 @@ interface Props {
   currentHost: string | null;
   selectedHost: string | null;
   onSelectHost: (host: string | null) => void;
+  /** Stamp the map itself, so a cropped screenshot or video stays labelled. */
+  simulated?: boolean;
 }
 
 const MAX_ZOOM = 16;
+/** Route pixels' worth of time Hermit lingers at each house during a replay. */
+const REPLAY_PAUSE = 14;
 
 function putPx(img: ImageData, x: number, y: number, c: number): void {
   if (x < 0 || y < 0 || x >= img.width || y >= img.height) return;
@@ -51,6 +70,7 @@ export function WorldPanel({
   currentHost,
   selectedHost,
   onSelectHost,
+  simulated = false,
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -110,6 +130,66 @@ export function WorldPanel({
   }, [hosts, view]);
 
   const route = useMemo(() => buildRoute(stops, pos), [stops, pos]);
+
+  // --- replay: Hermit walks the whole journey, hop by hop, laying the trail --
+  // Timeline units are route pixels; each house adds a short pause.
+  const timeline = useMemo(() => {
+    let acc = 0;
+    return route.map((seg) => {
+      const start = acc;
+      acc += seg.points.length + REPLAY_PAUSE;
+      return { start, end: start + seg.points.length };
+    });
+  }, [route]);
+  const total = timeline.length ? timeline[timeline.length - 1]!.end + REPLAY_PAUSE : 0;
+  const [replayAt, setReplayAt] = useState<number | null>(null);
+  const raf = useRef(0);
+  const stopReplay = (): void => {
+    cancelAnimationFrame(raf.current);
+    setReplayAt(null);
+  };
+  const startReplay = (): void => {
+    if (reduced || total === 0) return;
+    cancelAnimationFrame(raf.current);
+    // ~8 s whatever the map size, never slower than a stroll
+    const speed = Math.max(28, total / 8);
+    const t0 = performance.now();
+    const step = (now: number): void => {
+      const at = ((now - t0) / 1000) * speed;
+      if (at >= total) {
+        setReplayAt(null);
+        return;
+      }
+      setReplayAt(at);
+      raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+  };
+  // A new journey or a re-fit invalidates the timeline.
+  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+  useEffect(() => {
+    cancelAnimationFrame(raf.current);
+    setReplayAt(null);
+  }, [route]);
+  // `?replay=1` plays once on load — for the demo video and README capture.
+  const autoplayed = useRef(false);
+  useEffect(() => {
+    if (autoplayed.current || reduced || total === 0) return;
+    if (typeof location === 'undefined' || !new URLSearchParams(location.search).has('replay'))
+      return;
+    // Flag it when it actually starts: StrictMode runs this effect twice.
+    const t = window.setTimeout(() => {
+      autoplayed.current = true;
+      startReplay();
+    }, 500);
+    return () => window.clearTimeout(t);
+  }, [total, reduced]);
+  const replayHop = useMemo(() => {
+    if (replayAt == null) return null;
+    let i = timeline.findIndex((_, k) => replayAt < (timeline[k + 1]?.start ?? Infinity));
+    if (i < 0) i = timeline.length - 1;
+    return i;
+  }, [replayAt, timeline]);
   const avatars = useMemo(
     () => new Map(hosts.map((h) => [h.host_id, pixelAvatar(h.host_id, { background: true })])),
     [hosts],
@@ -126,11 +206,14 @@ export function WorldPanel({
 
     // route: dots with a 1px ink shadow so they read on any ground
     const focus = selectedHost ?? hover;
-    route.forEach((seg) => {
+    route.forEach((seg, si) => {
       const dim = focus && seg.from !== focus && seg.to !== focus;
       const color = dim ? (dark ? P.night : P.dusk) : ROUTE_COLOR[seg.departure];
+      const tl = timeline[si];
+      // while replaying, only the trail walked so far is drawn
+      const limit = replayAt == null || !tl ? seg.points.length : Math.max(0, replayAt - tl.start);
       seg.points.forEach((p, i) => {
-        if (i % 2) return;
+        if (i % 2 || i >= limit) return;
         putPx(img, p.x + 1, p.y + 1, P.ink);
         putPx(img, p.x, p.y, color);
       });
@@ -173,10 +256,22 @@ export function WorldPanel({
     view,
     selectedHost,
     hover,
+    timeline,
+    replayAt,
   ]);
 
-  // Hermit walks the latest hop, then rests at the door.
+  // Hermit walks the latest hop, then rests at the door. During a replay it
+  // walks every hop instead.
   const walker = useMemo(() => {
+    if (replayAt != null && replayHop != null) {
+      const seg = route[replayHop];
+      const tl = timeline[replayHop];
+      if (seg && tl && seg.points.length) {
+        const k = Math.min(seg.points.length - 1, Math.max(0, Math.floor(replayAt - tl.start)));
+        const p = seg.points[k]!;
+        return { x: p.x, y: p.y, walking: replayAt < tl.end, left: false };
+      }
+    }
     const last = route[route.length - 1];
     if (!last || last.points.length < 2) return null;
     const n = last.points.length;
@@ -188,7 +283,7 @@ export function WorldPanel({
       walking: step < n - 1,
       left: last.points[n - 1]!.x < last.points[0]!.x,
     };
-  }, [route, tick, reduced]);
+  }, [route, tick, reduced, replayAt, replayHop, timeline]);
 
   // --- interaction -------------------------------------------------------
   const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
@@ -233,7 +328,6 @@ export function WorldPanel({
     return { km: nice, px: Math.round(nice / km) };
   }, [km]);
 
-  const city = hosts[0]?.city;
   const label = mode === 'city' ? `CITY VIEW · ${hosts.length} AREAS` : 'WORLD VIEW';
 
   return (
@@ -338,7 +432,7 @@ export function WorldPanel({
 
         {walker && (
           <div
-            className="world__walker"
+            className={`world__walker${replayAt != null ? ' is-replay' : ''}`}
             style={{ left: walker.x * css, top: walker.y * css }}
             aria-hidden
           >
@@ -350,7 +444,10 @@ export function WorldPanel({
           </div>
         )}
 
-        <span className="world__mode">{mode === 'city' && city ? `${label}` : label}</span>
+        <span className="world__mode">
+          {label}
+          {simulated && <b className="world__sim">SIMULATION</b>}
+        </span>
 
         <div className="world__controls">
           <PixelButton
@@ -372,12 +469,34 @@ export function WorldPanel({
           <PixelButton variant="ghost" size="sm" icon="fit" label="Fit all friends" onClick={reset}>
             FIT
           </PixelButton>
+          {!reduced && route.length > 0 && (
+            <PixelButton
+              variant="ghost"
+              size="sm"
+              icon={replayAt != null ? 'close' : 'play'}
+              aria-pressed={replayAt != null}
+              onClick={replayAt != null ? stopReplay : startReplay}
+            >
+              {replayAt != null ? 'STOP' : 'REPLAY'}
+            </PixelButton>
+          )}
         </div>
 
-        <div className="world__scale" aria-hidden>
-          <span className="world__bar" style={{ width: bar.px * css }} />
-          <span>{bar.km >= 1 ? `${bar.km} KM` : `${bar.km * 1000} M`}</span>
-        </div>
+        {replayHop != null && route[replayHop] && (
+          <span className="world__hop" aria-hidden>
+            Hop {replayHop + 1} of {route.length} · {nameOf(derived, route[replayHop]!.from)} →{' '}
+            {nameOf(derived, route[replayHop]!.to)}
+          </span>
+        )}
+
+        {/* A flat world map stretches distance with latitude, so a scale bar
+            would lie there; it is only shown at city scale. */}
+        {mode === 'city' && (
+          <div className="world__scale" aria-hidden>
+            <span className="world__bar" style={{ width: bar.px * css }} />
+            <span>{bar.km >= 1 ? `${bar.km} KM` : `${bar.km * 1000} M`}</span>
+          </div>
+        )}
       </div>
 
       <ul className="world__legend" aria-label="Route colours">

@@ -4,11 +4,18 @@
  * Where Hermit has been, what friends did for each other, and the shell they
  * built. Reads `data/journey.json` (falls back to the committed sample).
  */
-import { PixelBox, PocketHermit, sound, useMediaQuery, useReducedMotion } from '@hermit/ui';
+import {
+  PixelBox,
+  PixelButton,
+  PocketHermit,
+  sound,
+  useMediaQuery,
+  useReducedMotion,
+} from '@hermit/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { requestedKeeper, useGroup } from './hooks/useGroup';
-import { requestedSource, useJourney, type JourneySource } from './hooks/useJourney';
+import { requestedScenario, scenarioById, useJourney, type ScenarioId } from './hooks/useJourney';
 import { useTheme } from './hooks/useTheme';
 import { derive } from './lib/derive';
 import { Header } from './sections/Header';
@@ -20,9 +27,16 @@ import { QuestLog } from './sections/QuestLog';
 import { ShellPanel } from './sections/ShellPanel';
 import { WorldPanel } from './world/WorldPanel';
 
+/** The live panel only makes sense where a keeper could answer: this machine. */
+function onLoopback(): boolean {
+  if (typeof location === 'undefined') return false;
+  return ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+}
+
 export function App() {
-  const [want, setWant] = useState<JourneySource | null>(requestedSource);
-  const { journey, source, error } = useJourney(want);
+  const [want, setWant] = useState<ScenarioId | null>(requestedScenario);
+  const { journey, source, kind, error, loading, retry } = useJourney(want);
+  const scenario = scenarioById(want);
   // Live group status is a separate feed from the exported journey, on purpose.
   const keeper = requestedKeeper();
   const live = useGroup(keeper);
@@ -43,13 +57,14 @@ export function App() {
 
   useEffect(() => {
     if (journey)
-      document.title = `Hermit — ${journey.stops.length} stops, ${journey.stats.favors_done ?? 0} favors`;
-  }, [journey]);
+      document.title = `${kind === 'simulation' ? '[SIMULATION] ' : ''}Hermit — ${journey.stops.length} stops, ${derived?.favorsDone ?? 0} favors`;
+  }, [journey, kind, derived]);
 
-  const chooseSource = (s: JourneySource): void => {
+  const chooseScenario = (s: ScenarioId): void => {
     setWant(s);
     const url = new URL(location.href);
-    url.searchParams.set('data', s);
+    url.searchParams.delete('data');
+    url.searchParams.set('journey', s);
     history.replaceState(null, '', url);
   };
 
@@ -76,28 +91,50 @@ export function App() {
       <a className="skip" href="#log">
         Skip to the quest log
       </a>
+      {kind === 'simulation' && (
+        <div className="sim-stamp" aria-hidden>
+          SIMULATION
+        </div>
+      )}
       <Header
         derived={derived}
+        journey={journey}
+        kind={kind}
         source={source}
+        scenario={scenario.id}
         dark={dark}
         onTheme={toggle}
-        onSource={chooseSource}
+        onScenario={chooseScenario}
       />
 
       <MascotStage derived={derived} />
 
-      <LivePanel group={live.group} error={live.error} keeper={live.keeper} />
+      {(live.keeper || onLoopback()) && (
+        <LivePanel group={live.group} error={live.error} keeper={live.keeper} />
+      )}
 
-      {error && (
+      {error && !journey && (
         <PixelBox variant="quest" className="notice" role="alert">
-          <PocketHermit mood="waiting" size={96} label="" />
-          <p>
-            Hermit couldn’t find the journey. <code>{error}</code>
-          </p>
+          <PocketHermit mood="offline" size={96} label="" />
+          <div className="notice__text">
+            <p>
+              <strong>Hermit couldn’t find this journey.</strong> <code>{error}</code>
+            </p>
+            <div className="notice__actions">
+              <PixelButton size="sm" icon="fit" onClick={retry}>
+                Try again
+              </PixelButton>
+              {scenario.id !== 'bengaluru' && (
+                <PixelButton size="sm" variant="ghost" onClick={() => chooseScenario('bengaluru')}>
+                  Show the Bengaluru journey
+                </PixelButton>
+              )}
+            </div>
+          </div>
         </PixelBox>
       )}
 
-      {!journey && !error && (
+      {!journey && !error && loading && (
         <div className="loading" role="status">
           <PocketHermit mood="away" size={140} label="" />
           <span>Following Hermit’s footprints…</span>
@@ -128,6 +165,7 @@ export function App() {
               currentHost={journey.hermit.current_host}
               selectedHost={friend}
               onSelectHost={setFriend}
+              simulated={kind === 'simulation'}
             />
           </PixelBox>
 
@@ -152,7 +190,7 @@ export function App() {
           </div>
 
           <footer className="foot">
-            <PostcardButton journey={journey} derived={derived} sample={source !== 'live'} />
+            <PostcardButton journey={journey} derived={derived} kind={kind ?? 'sample'} />
             <p className="foot__privacy">
               <strong>Privacy:</strong> area-level places only, typed by each friend into their own
               config. No addresses, no tracking, and nothing from anyone’s window folder ever
