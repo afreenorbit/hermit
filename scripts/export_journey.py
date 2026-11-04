@@ -23,7 +23,7 @@ from typing import Any
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "keeper"))
 
-from hermit_keeper import ledger
+from hermit_keeper import ledger, metrics
 from hermit_keeper.events import Event, EventType
 
 DEFAULT_OUT = REPO / "map" / "public" / "data" / "journey.json"
@@ -45,7 +45,8 @@ def load_from_files(paths: list[Path]) -> list[Event]:
             )
             if event is not None:
                 events.append(event)
-    return sorted(events, key=lambda e: (e.ts, e.id))
+    # Two laptops' mirrors of the same ledger repeat every line; keep each once.
+    return metrics.dedupe(events)
 
 
 def _loads(line: str) -> Event | None:
@@ -59,6 +60,7 @@ def build_journey(
     events: list[Event], hosts: list[dict[str, Any]], generated_at: str
 ) -> dict[str, Any]:
     """Fold the event stream into the shape the map reads."""
+    events = metrics.dedupe(events)
     stops: list[dict[str, Any]] = []
     shell: list[dict[str, Any]] = []
     favors: dict[str, dict[str, Any]] = {}
@@ -135,6 +137,9 @@ def build_journey(
     # A stop still open at the end is where Hermit is now.
     current = stops[-1] if stops and stops[-1]["left_at"] is None else None
     host_index = {h["host_id"]: h for h in hosts}
+    # Release -> next claim where somebody was waiting (see metrics.py).
+    latencies = metrics.latency_samples(stops, events)
+    median = metrics.percentile(latencies, 50)
 
     return {
         "v": 1,
@@ -153,9 +158,12 @@ def build_journey(
             "handoffs": max(0, handoffs - 1),
             "favors_done": favors_done,
             "favors_left": favors_left,
-            "overlaps_suggested": 0,
+            "overlaps_suggested": sum(
+                1 for e in events if e.type is EventType.OVERLAP_SUGGESTED
+            ),
+            # Not tracked yet: needs the "did you call?" follow-up (plan 4.6).
             "overlaps_taken": 0,
-            "median_handoff_ms": None,
+            "median_handoff_ms": round(median * 1000) if median is not None else None,
         },
     }
 

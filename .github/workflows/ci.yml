@@ -22,6 +22,11 @@ jobs:
       - run: ruff format --check .
       - run: mypy
       - run: pytest -m "not live" -q
+      # Every scenario, fake Switch, fast-forwarded. Non-zero on any failed
+      # assertion; ends with the SIMULATION metrics table.
+      - name: sim scenarios
+        working-directory: .
+        run: python -m sim all --quiet
 
   ui:
     name: ui (node)

@@ -1,6 +1,7 @@
 # The holder vanishes mid-visit. Nobody says goodbye; Switch's lease expiry
 # frees the soul. The next host's arrival must record the previous stop as
-# abrupt, which is where the cracked shell piece comes from.
+# abrupt; the next host hears "I left in a hurry" and the shell gets a
+# cracked piece (stretch S3).
 name: lid_slam
 duration_s: 21600
 lease_expiry_s: 8
@@ -12,3 +13,5 @@ events:
 assertions:
   - never_two_holders
   - min_handoffs: 2
+  - cracked_pieces_at_least: 1
+  - hurry_line_delivered

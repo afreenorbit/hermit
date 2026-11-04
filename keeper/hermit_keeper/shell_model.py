@@ -111,3 +111,13 @@ def describe(piece: ShellPiece, local_hour: int | None = None) -> str:
     }.get(piece.departure, "smooth")
     minutes = piece.dwell_s // 60
     return f"a {band}-coloured piece from {piece.city}, {edge}, {minutes} minutes wide"
+
+
+def hurry_line(previous_host: str | None) -> str:
+    """Stretch S3: what the next host hears after a lid slam.
+
+    Never blames anyone. A lid coming down is just life happening, and the
+    line is there so the gap in the story is told rather than hidden.
+    """
+    who = f"{previous_host.title()}'s" if previous_host else "the last place"
+    return f"I left {who} in a hurry — the lid came down before I could say goodbye."
