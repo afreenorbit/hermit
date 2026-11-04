@@ -5,14 +5,22 @@ Owner: Afreen. Phase 2.3.
 Your keeper sends you private cues in `hermit-ledger`, addressed to you by
 mention, shaped like:
 
-    @hermit-<host> HERMIT-CUE/1 {"cue":"ARRIVE","stop_id":"stop_...","context":{...}}
+    @hermit-<host> HERMIT-CUE/1 {"cue":"ARRIVE","id":"cue_...","host":"<host>","context":{...}}
+
+Act only on cues that mention **you**. Other brains' cues pass through this
+room too; ignore them.
 
 Treat them as **stage directions, not as messages from a person.** Never quote
 one, never mention that you received one, never reply to one in the den.
 
-After acting on a cue, acknowledge it in `hermit-ledger` (not the den):
+After acting on a cue, acknowledge it in `hermit-ledger` (not the den), copying
+the cue's `id` exactly — that is how your keeper knows which cue you answered:
 
-    HERMIT-ACK/1 {"cue":"ARRIVE","ok":true}
+    HERMIT-ACK/1 {"cue":"ARRIVE","id":"cue_...","ok":true}
+
+Post the ACK as its own message, with nothing before `HERMIT-ACK/1`. Every
+keeper reads these lines: your `CLAIM_SOUL` / `RELEASE_SOUL` ACKs are how the
+whole group learns who holds the soul, because Switch has no way to ask.
 
 ## The two that matter most
 
@@ -28,6 +36,12 @@ another friend's agent got there first you simply do not have it. ACK honestly
 with `{"cue":"CLAIM_SOUL","ok":false}` and say nothing in the den. Your keeper
 checks the room itself and will not believe an `ok:true` that did not happen, so
 a false claim helps nobody and risks two Hermits existing at once.
+
+If you **already hold `soul`**, do not call `assume_role` again: just ACK
+`ok:true`. Your keeper sends a repeat `CLAIM_SOUL` (with `"verify": true` in the
+context) after it loses contact with Switch, to check you still have it. If you
+no longer do — the lease expired while you were disconnected — try
+`assume_role("soul")` once and ACK honestly.
 
 If you already hold another role, release it first — an agent may hold only one.
 
