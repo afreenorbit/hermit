@@ -46,8 +46,8 @@ people spend Nov 6 resolving merge conflicts instead of shipping.
 |---|---|---|---|
 | **Owns** | `switch/`, `sim/`, and in `keeper/hermit_keeper/`: `lease/`, `room/`, `brain/`, `presence/`, `statemachine.py`, `handoff.py`, `cli.py`, `config.py`, `clock.py`, `events.py`, `ids.py`, `ledger.py`, `api.py` | in `keeper/hermit_keeper/`: `favors.py`, `shell_model.py`, `bedtime.py`, `journal.py`, `overlap.py`, `nudge.py`, `context/`, `metrics.py`; plus `scripts/export_journey.py`, `scripts/make_fixtures.py`, `keeper/tests/` | `ui-shared/`, `critter/`, `map/`, `scripts/make_pixel_world.py` |
 | **Phases** | 0, 2, 3, 5, 8 | 4, 10 (pilot numbers, QA) | 6, 7, 9 (video, screenshots) |
-| **First thing** | Phase 0 spikes SP1–SP3 — *can the soul role be claimed and released from outside the agent?* Everything else waits on this answer. | Phase 1.3 fakes you depend on, then `favors.py` + `shell_model.py` against `FakeRoomHub` | Storybook + `renderShellGrid` + the map against the two committed fixtures |
-| **Blocked by** | nobody — start now | A's `room/fake.py` and `lease/fake.py` (Phase 1.3, tonight) | nobody — the fixtures are already committed |
+| **First thing** | ~~Phase 1.3 fakes~~ ✅ done. Now Phase 0 spikes SP1–SP3 — *can the soul role be claimed and released from outside the agent?* Everything else waits on this answer. | `favors.py` + `shell_model.py` against `FakeRoomHub` — **unblocked, the fakes are on `main`** | Storybook + `renderShellGrid` + the map against the two committed fixtures |
+| **Blocked by** | nobody — start now | nobody — `room/fake.py` and `lease/fake.py` are done | nobody — the fixtures are already committed |
 | **Never touches** | `ui-shared/`, `critter/`, `map/` | `switch/`, `lease/`, `room/` | `keeper/`, `switch/`, `sim/` |
 
 Why this split: Afreen has all three agents installed, so she is the only one who
@@ -761,30 +761,45 @@ Every module receives its dependencies through constructors (no globals). `cli.p
 **Goal:** everyone can build in parallel against fakes. **Lead:** A, with D. **Time box:** Nov 4 night → Nov 5, 11:00.
 
 ### 1.1 Repository
-- [ ] Create repo with the layout in §4 (empty files with docstrings are fine).
-- [ ] `CODEOWNERS` per §1 roles. Protect `main` (PR + 1 review + green CI).
-- [ ] `pull_request_template.md` (see §18).
-- [ ] `.github/workflows/ci.yml`: ruff, mypy, pytest (`-m "not live"`), `pnpm -r lint typecheck test`, Storybook build, JSON schema validation of `map/public/data/journey.sample.json` and `keeper/tests/contract/fixtures/*`.
-- [ ] `keeper/pyproject.toml` with dependencies from §3.5; `pnpm-workspace.yaml` + `ui-shared`, `critter`, `map` packages (TS strict, ESLint, Prettier, Tailwind v4); root `.editorconfig`, `.gitignore` (ignore `hermit.config.toml`, `*.jsonl`, `.env`).
+- [x] Create repo with the layout in §4 (empty files with docstrings are fine).
+- [x] `CODEOWNERS` per §1 roles. Protect `main` (PR + 1 review + green CI).
+- [x] `pull_request_template.md` (see §18).
+- [x] `.github/workflows/ci.yml`: ruff, mypy, pytest (`-m "not live"`), `pnpm -r lint typecheck test`, Storybook build, JSON schema validation of `map/public/data/journey.sample.json` and `keeper/tests/contract/fixtures/*`.
+- [x] `keeper/pyproject.toml` with dependencies from §3.5; `pnpm-workspace.yaml` + `ui-shared`, `critter`, `map` packages (TS strict, ESLint, Prettier, Tailwind v4); root `.editorconfig`, `.gitignore` (ignore `hermit.config.toml`, `*.jsonl`, `.env`).
 
 ### 1.2 Contracts
-- [ ] Write all schemas in `shared/schemas/` exactly as in §5.
-- [ ] Generate pydantic models from them (or hand-write in `events.py` and keep a contract test that round-trips fixtures through both).
-- [ ] Write `keeper-api.openapi.yaml`.
-- [ ] Write `map/public/data/journey.sample.json`: 3 hosts, 8 stops, 7 shell pieces, all departure types. C builds the UI against this.
+- [x] Write all schemas in `shared/schemas/` exactly as in §5.
+- [x] Generate pydantic models from them (or hand-write in `events.py` and keep a contract test that round-trips fixtures through both).
+- [x] Write `keeper-api.openapi.yaml`.
+- [x] Write `map/public/data/journey.sample.json`: 3 hosts, 8 stops, 7 shell pieces, all departure types. C builds the UI against this.
 
 ### 1.3 Fakes (critical for parallel work)
-- [ ] `lease/fake.py` — `FakeSoulLease`: shared in-memory state across many keepers in one process; atomic `claim` (asyncio lock); `expire(holder)` to simulate session death with configurable delay; `watch()` yields changes.
-- [ ] `room/fake.py` — `FakeRoomHub`: rooms, ordered history, tasks with assignee/status, `stream()` fan-out.
-- [ ] `brain/fake.py` — `FakeBrain`: records cues, posts canned den lines per provider ("lyrical" for claude-code, "terse" for codex, "chaotic" for opencode), auto-ACKs.
-- [ ] `presence/fake.py` — `ScriptedPresence`: driven by a timeline `[(t_seconds, present_bool)]` against a `FakeClock`.
-- [ ] `clock.py` — `RealClock`, `FakeClock` (advance manually; `sleep` resolves when advanced).
+- [x] `lease/fake.py` — `FakeSoulLease`: shared in-memory state across many keepers in one process; atomic `claim` (asyncio lock); `expire(holder)` to simulate session death with configurable delay; `watch()` yields changes.
+- [x] `room/fake.py` — `FakeRoomHub`: rooms, ordered history, tasks with assignee/status, `stream()` fan-out.
+- [x] `brain/fake.py` — `FakeBrain`: records cues, posts canned den lines per provider ("lyrical" for claude-code, "terse" for codex, "chaotic" for opencode), auto-ACKs.
+- [x] `presence/fake.py` — `ScriptedPresence`: driven by a timeline `[(t_seconds, present_bool)]` against a `FakeClock`.
+- [x] `clock.py` — `RealClock`, `FakeClock` (advance manually; `sleep` resolves when advanced).
 
 ### 1.4 Acceptance criteria
-- `pytest` runs (even with few tests) and CI is green.
-- Two fake keepers can be instantiated in one test and share one `FakeSoulLease`.
-- Schemas validate the sample fixtures.
-- **Contracts frozen.** Announce in team chat with the commit hash.
+- [x] `pytest` runs and CI is green — **34 tests**, `ruff` + `mypy --strict` clean.
+- [x] Two fake keepers share one `FakeSoulLease` —
+      `tests/unit/test_soul_invariant.py::test_two_keepers_share_one_lease`.
+- [x] Schemas validate the sample fixtures — both `journey.sample.json` and
+      `journey.wide.sample.json`.
+- [x] The one-soul invariant has a hypothesis property test, and it was
+      mutation-checked: breaking `claim()` turns it red.
+- [x] All four fakes compose into a working handoff —
+      `tests/integration/test_handoff_with_fakes.py` runs a three-host day,
+      including a lid slam, in milliseconds.
+- [ ] **Contracts frozen.** Announce in team chat with the commit hash.
+
+**Status: Phase 1 is done except the freeze announcement.** Abhishek and Akshay
+are unblocked — the fakes they build against are on `main`.
+
+One contract change landed with the fakes: `State` now matches §3.2
+(`ASLEEP`, `AWAKE_WAITING`, `CLAIMING`, `HOLDING`, `DEPARTING`, `BEDTIME_LOCK`)
+in both `statemachine.py` and `keeper-api.openapi.yaml`. The stub had drifted.
+Anything else in `shared/` now needs two approvals.
 
 ---
 
@@ -948,9 +963,32 @@ python -m hermit_keeper depart
 - **Property test (hypothesis):** N keepers (2–5), random presence timelines, random lease-expiry delays → assert the invariant **at no instant are there two holders**, and **if anyone is present for > (debounce + 10s) while the soul is free, someone claims it**.
 
 ### 3.6 Acceptance criteria
-- With fakes: 3 keepers in one process pass a scripted day (Phase 5's `three_cities_day.yaml`) with correct handoffs.
-- With real Switch on one machine: 2 keepers with manual overrides move the soul back and forth 10 times without a double holder.
-- Handoff latency (release → next claim) is logged per handoff.
+- [x] With fakes: 3 keepers in one process pass a scripted day with correct
+      handoffs — `tests/integration/test_keeper_day.py`.
+- [x] Safety + liveness property tests over random presence timelines and
+      random expiry delays — `tests/unit/test_statemachine_properties.py`.
+      Mutation-checked: ignoring a claim rejection, or failing to notice a lost
+      lease, both turn the suite red.
+- [x] A real keeper runs on real input idle time and serves the local API.
+      Verified end to end on Windows: `ASLEEP → AWAKE_WAITING → CLAIMING →
+      HOLDING` in 66 s, then `POST /v1/depart` → `DEPARTING` → soul free, and
+      `/v1/events` streams schema-valid envelopes.
+- [ ] With real Switch on one machine: 2 keepers with manual overrides move the
+      soul back and forth 10 times without a double holder. **Blocked on Phase 2.**
+- [ ] Handoff latency (release → next claim) logged per handoff — needs
+      `metrics.py` (Abhishek).
+
+**Status: Phase 3 is done except the two items above.** The previous host and
+the abrupt-departure flag are read from the ledger, not from local memory — a
+keeper has never seen another laptop's stops, so the room is the only shared
+memory. A host who announced an arrival but never wrote `SOUL_RELEASED` is
+recorded as `abrupt`, which is where stretch S3's cracked shell piece comes from.
+
+**For Akshay:** the keeper API is real now, not a mock. `hermit-keeper run` with
+`lease_strategy = "fake"` serves `/v1/status`, `/v1/events` (SSE), `/v1/depart`
+and `/v1/presence/override` on `127.0.0.1:47800`, driven by actual keyboard idle
+time. `mock-keeper.ts` is still fine for pure UI work, but the real thing is
+there when you want it.
 
 ---
 

@@ -100,7 +100,7 @@ components:
       properties:
         host: { type: string }
         state:
-          enum: [IDLE_AWAY, WAITING, CLAIMING, HOLDING, DEPARTING, ASLEEP]
+          enum: [ASLEEP, AWAKE_WAITING, CLAIMING, HOLDING, DEPARTING, BEDTIME_LOCK]
         present: { type: boolean }
         soul_holder: { type: [string, "null"] }
         since: { type: [string, "null"], format: date-time }
