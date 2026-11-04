@@ -124,25 +124,32 @@ host serves it (GitHub Pages, Netlify, `npx serve map/dist`). Two caveats:
 
 ## Three real laptops
 
-**Not yet.** It needs one Switch server all three can reach, which is still the
-open decision (Tailscale on a machine that does not sleep, or a small VPS).
+**Not run yet.** The plan is one Switch server on Afreen's laptop, reached
+over Tailscale. Follow [`switch-setup.md`](switch-setup.md) for the server,
+Switch Console and the rooms, then [`actual-test.md`](actual-test.md) for the
+test itself. In short:
 
-When that exists:
-
-1. Bring up Switch, then create the rooms and the `soul` role:
-   `python switch/scripts/bootstrap_rooms.py --dry-run` prints the exact calls.
-2. Each laptop sets `lease_strategy = "agent_instructed"` and
-   `switch.server_url`, and exports its token:
-   `export HERMIT_SWITCH_TOKEN=...`
-3. `python -m hermit_keeper run` on each.
+1. Bring up Switch. `python switch/scripts/bootstrap_rooms.py` registers the
+   keepers and creates both rooms over HTTP. The `soul` role must be defined
+   by a connected brain, and `--dry-run` prints the exact call.
+2. Each laptop sets `lease_strategy = "agent_instructed"`,
+   `switch.server_url`, `switch.agent_id` and `[switch.rooms]`, and exports
+   its token: `export HERMIT_SWITCH_TOKEN=...`
+3. `python -m hermit_keeper check --switch`, then `python -m hermit_keeper run`
+   on each.
 
 The keeper never claims the soul itself — it cues the brain, which calls
 `assume_role("soul")`, because no external path can assume a role on an
 agent's behalf (`docs/switch-facts.md` SP2).
 
-**The Switch client is written from the Switch source but has never spoken to a
-running server.** `python -m hermit_keeper check --switch` prints exactly what
-is settled and what still needs one live session.
+**What is proven.** Against a real `switch-v0.9.0`, the Switch client
+registers, posts, and receives another keeper's ledger line. The full
+`agent_instructed` path (claims, lid slam, outage, favors) is proven only
+against `sim/switch_standin.py`, a stand-in. Try it on one machine with
+`python -m sim live --switch standin`. Real role exclusivity with real brains
+and the real lease-expiry time are still open (switch-facts "Still open").
+`python -m hermit_keeper check --switch` prints what is settled and what still
+needs a live session.
 
 ## Verified
 

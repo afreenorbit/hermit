@@ -3,9 +3,12 @@
 The runbook for the real test. Follow it top to bottom; nothing here is
 optional until the section that says it is.
 
-**Read this first:** two things are **not built yet** and must be done before
-the test can happen. They are Step 1 and Step 2 below, and they are Afreen's.
-Everything after that is setup anyone can do.
+**Read this first:** the keeper's real Switch path is now **built**, but it
+has only been proven against a stand-in server, not against real Switch with
+real brains. Steps 1 and 2 below are the live checks that close that gap, and
+they are Afreen's. Everything after that is setup anyone can do. The concrete
+server and Console setup is in [`switch-setup.md`](switch-setup.md), and the
+day-of runbook is [`actual-test.md`](actual-test.md).
 
 | | Who | When |
 |---|---|---|
@@ -19,12 +22,18 @@ Everything after that is setup anyone can do.
 
 ## Where we actually are
 
-Phases 0–7 are built. Switch runs locally and a keeper agent registers against
-it. **But Hermit still runs on fakes** — every keeper uses
-`lease_strategy = "fake"`, so today you could delete Switch and Hermit would
-behave identically. Steps 1 and 2 are what change that.
+Phases 0–7 are built. Against a real `switch-v0.9.0` (one machine), keeper
+agents register and one keeper's ledger line reaches another through
+`/agents/{id}/events`.
 
-Be honest about this in the README until it is done.
+`lease_strategy = "agent_instructed"` now runs the real path
+(`switch_wiring.py`): one room-client poller, cues and ACKs in the ledger, and
+the soul holder folded from the ledger (`lease/soul_ledger.py`). It refuses to
+start without `switch.agent_id`, the room uuids and `HERMIT_SWITCH_TOKEN`, and
+it never falls back to fake. **That path is proven over real HTTP against
+`sim/switch_standin.py`, a stand-in, not against real Switch.** Real role
+exclusivity with real brains, the real lease-expiry time, and three real
+laptops are still open. Keep saying so in the README until Steps 1 and 2 pass.
 
 ---
 
@@ -56,9 +65,11 @@ killing the server visibly stops Hermit.
 
 3. Create `hermit-den` and `hermit-ledger` on the server, and keep the room ids.
 
-4. Point the keeper's room client at real Switch: set
-   `lease_strategy = "agent_instructed"` and `switch.server_url`, and export
-   `HERMIT_SWITCH_TOKEN` with that host's `api_key`.
+4. Point the keeper at real Switch: set `lease_strategy = "agent_instructed"`,
+   `switch.server_url`, `switch.agent_id` and the `[switch.rooms]` uuids, and
+   export `HERMIT_SWITCH_TOKEN` with that host's `api_key`. Then run
+   `python -m hermit_keeper check --switch`. The room client is already
+   wired into `hermit-keeper run`.
 
 **Done when:** a keeper writes a `HERMIT/1 {...}` line that you can read back
 out of `hermit-ledger`, and stopping the Switch container makes the keeper
@@ -88,9 +99,9 @@ from our code — the strongest thing in the project.
    until the role frees. Put the real number in `expiry_delay_s` and in the
    README — right now it is a guess of 8 s.
 
-5. Rewire `AgentInstructedLease.holder()` to read the holder from the ledger.
-   It currently calls `list_roles` over HTTP, which **does not exist** and will
-   fail. Tracked in switch-facts.
+5. ~~Rewire `AgentInstructedLease.holder()` to read the holder from the
+   ledger.~~ Done: `lease/soul_ledger.py` folds it, and nothing calls
+   `list_roles` over HTTP any more.
 
 **Done when:** two brains try to claim and Switch refuses the second.
 
@@ -163,7 +174,10 @@ py -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -e "keeper[dev]"
 pytest keeper -m "not live" -q
 ```
 
-Expect **121 passed**. Then:
+Expect everything to pass: **257 passed, 1 skipped, 2 deselected** on
+Windows when this was written. The skip is a symlink test that needs extra
+privileges, and the 2 deselected tests are the `live` ones. Linux and macOS
+run the symlink test too. Then:
 
 ```bash
 corepack enable pnpm; pnpm install
@@ -186,6 +200,11 @@ Then, once Step 3 is done:
 [switch]
 server_url     = "http://100.x.y.z:8000"
 lease_strategy = "agent_instructed"
+agent_id       = "<your keeper-<host> agent uuid>"
+
+[switch.rooms]
+hermit-den    = "<den room uuid>"
+hermit-ledger = "<ledger room uuid>"
 ```
 
 Export your own api_key (Afreen sends it to you privately — **not in the group
@@ -200,7 +219,7 @@ mkdir ~/HermitWindow
 ```
 
 ```bash
-python -m hermit_keeper check
+python -m hermit_keeper check --switch
 ```
 
 ### 4.4 Start your keeper and critter
@@ -315,9 +334,12 @@ footage for the video.
 | Hermit never leaves | `min_dwell_s` has not elapsed, or you keep touching the keyboard |
 
 **Fallback if the server will not come up on the day:** run
-`python -m sim live` on one laptop. Three keepers share one soul on three
-ports, and all the mascot transitions work. It proves the behaviour, not the
-network — label it as a simulation in anything you record.
+`python -m sim live --switch standin` on one laptop. It runs three keepers on
+the real keeper code path, over HTTP, against the Switch stand-in on ports
+47801–47803, with a control port on 47804 (`/lid-slam/<host>`,
+`/switch/down`, `/switch/up`). Plain `python -m sim live` shares one fake
+lease instead. Either way it proves the behaviour, not real Switch or the
+network, so label it **simulation (stand-in Switch)** in anything you record.
 
 ---
 
@@ -325,7 +347,9 @@ network — label it as a simulation in anything you record.
 
 > *Would the project stop working without Switch?*
 
-After Steps 1 and 2: yes, visibly. Hermit's memory is a Switch room, its
-identity is a Switch role, and only one agent can hold that role.
-
-Before Steps 1 and 2: no. That is why they come first.
+By design, yes. On `agent_instructed` the keeper has no fallback. Hermit's
+shared memory is a Switch room, its identity is the `soul` role's
+instructions, and only one agent can hold that role. Until Steps 1 and 2 pass
+on real Switch, say "by design, proven against a stand-in" rather than
+"proven". The offline `fake` strategy still exists for UI work and the
+simulator, and everything it produces is labelled SIMULATION.
