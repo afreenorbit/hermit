@@ -1,156 +1,259 @@
-"""The real lease strategy: the brain holds the soul, the room is the authority.
+"""The real lease strategy: the brain holds the soul, the ledger is the witness.
 
-The rule under test throughout: **never believe the brain, always check the
-room.** A coding agent reporting success it did not achieve is the most likely
-way two friends end up each thinking they have Hermit.
+The rule under test throughout: **never believe an ACK alone.** A coding agent
+reporting success it did not achieve is the most likely way two friends end
+up each thinking they have Hermit, so success needs the brain's ``ok:true``
+*and* the ledger fold naming us.
+
+These run over the in-memory room hub; ``tests/integration/test_switch_standin.py``
+runs the same classes over real HTTP.
 """
 
 from __future__ import annotations
 
-from typing import Any
+import asyncio
+from collections.abc import Callable
+from datetime import timedelta
 
-from hermit_keeper.brain.fake import FakeBrain
-from hermit_keeper.clock import FakeClock
-from hermit_keeper.lease.agent_instructed import AgentInstructedLease, SwitchRoleReader
+from hermit_keeper.brain.ledger_director import LedgerBrainDirector
+from hermit_keeper.brain.protocol import format_ack, format_cue, parse_cue
+from hermit_keeper.clock import RealClock
+from hermit_keeper.events import Event, EventType
+from hermit_keeper.lease.agent_instructed import AgentInstructedLease
+from hermit_keeper.ledger import decode, encode
+from hermit_keeper.room.fake import FakeRoomHub
 
+LEDGER = "hermit-ledger"
 
-class StubRooms:
-    """A room whose answer about the soul holder we control."""
-
-    def __init__(self, holder: str | None = None) -> None:
-        self.holder_value = holder
-        self.calls = 0
-        #: What the brain's cue will actually do, if anything.
-        self.on_claim: str | None = None
-        self.raises = False
-
-    async def role_holder(self, room: str, role: str) -> str | None:
-        self.calls += 1
-        if self.raises:
-            raise RuntimeError("switch unreachable")
-        return self.holder_value
+Verdict = Callable[[str], bool | None]  # cue -> ok, or None to stay silent
 
 
-def build(holder: str | None = None) -> tuple[AgentInstructedLease, StubRooms, FakeBrain]:
-    rooms = StubRooms(holder)
-    brain = FakeBrain("hermit-afreen", "claude-code")
-    lease = AgentInstructedLease(brain, rooms, clock=FakeClock(), ack_timeout_s=0.0)
-    return lease, rooms, brain
+class BrainBot:
+    """A brain in the fake hub: answers its own cues according to ``verdict``."""
+
+    def __init__(self, hub: FakeRoomHub, host: str, verdict: Verdict) -> None:
+        self.room = hub.client(f"hermit-{host}")
+        self.name = f"hermit-{host}"
+        self.verdict = verdict
+        self.cues: list[str] = []
+        self.before_ack: Callable[[str], object] | None = None
+        self._task = asyncio.create_task(self._run())
+
+    async def _run(self) -> None:
+        async for message in self.room.stream(LEDGER):
+            cue = parse_cue(message.text)
+            if cue is None or cue.to != self.name:
+                continue
+            self.cues.append(cue.cue)
+            ok = self.verdict(cue.cue)
+            if ok is None:
+                continue
+            if self.before_ack is not None:
+                result = self.before_ack(cue.cue)
+                if asyncio.iscoroutine(result):
+                    await result
+            await self.room.post(LEDGER, format_ack(cue.cue, ok, cue.id))
+
+    def stop(self) -> None:
+        self._task.cancel()
 
 
-async def test_claim_cues_the_brain_and_confirms_against_the_room() -> None:
-    lease, rooms, brain = build(holder=None)
+def build(
+    hub: FakeRoomHub, host: str = "afreen", verdict: Verdict = lambda _c: True
+) -> tuple[AgentInstructedLease, BrainBot]:
+    room = hub.client(f"keeper-{host}")
+    director = LedgerBrainDirector(room, f"hermit-{host}", host)
+    lease = AgentInstructedLease(
+        director,
+        room,
+        host,
+        clock=RealClock(),
+        ack_timeout_s=0.5,
+        settle_s=0.05,
+        heartbeat_s=1.0,
+        lease_expiry_s=1.0,
+    )
+    return lease, BrainBot(hub, host, verdict)
 
-    async def cue(name: str, context: dict[str, Any] | None = None) -> None:
-        await FakeBrain.cue(brain, name, context)
-        if name == "CLAIM_SOUL":
-            rooms.holder_value = "hermit-afreen"  # the brain really took it
 
-    brain.cue = cue  # type: ignore[method-assign]
+def ledger_events(hub: FakeRoomHub) -> list[Event]:
+    return [e for e in (decode(m.text) for m in hub.rooms.get(LEDGER, [])) if e is not None]
+
+
+async def test_claim_cues_the_brain_and_records_the_acked_claim() -> None:
+    hub = FakeRoomHub()
+    lease, brain = build(hub)
+    await asyncio.sleep(0)
 
     result = await lease.claim("hermit-afreen")
 
-    assert result.ok is True
-    assert result.holder == "hermit-afreen"
-    assert "CLAIM_SOUL" in [c for c, _ in brain.cues]
+    assert result.ok and result.holder == "hermit-afreen"
+    assert brain.cues == ["CLAIM_SOUL"]
+    claimed = [e for e in ledger_events(hub) if e.type is EventType.SOUL_CLAIMED]
+    assert claimed and claimed[0].data["ack"] == lease.heartbeat_data()["soul"]["ack"]
+    assert await lease.holder() == "hermit-afreen"
+    brain.stop()
 
 
-async def test_a_brain_that_acks_without_taking_the_role_is_not_believed() -> None:
-    """The ACK says yes; the room says nobody holds it. The room wins."""
-    lease, _rooms, _brain = build(holder=None)  # stays None: claim silently failed
-
-    result = await lease.claim("hermit-afreen")
-
-    assert result.ok is False, "an unconfirmed claim must never be reported as success"
-    assert result.holder is None
-
-
-async def test_claim_short_circuits_when_someone_else_already_holds_it() -> None:
-    lease, _rooms, brain = build(holder="hermit-akshay")
+async def test_an_honest_refusal_is_not_a_claim() -> None:
+    hub = FakeRoomHub()
+    lease, brain = build(hub, verdict=lambda c: c != "CLAIM_SOUL")
+    await asyncio.sleep(0)
 
     result = await lease.claim("hermit-afreen")
 
     assert result.ok is False
-    assert result.holder == "hermit-akshay"
-    assert brain.cues == [], "must not bother the brain for a soul that is taken"
-
-
-async def test_claiming_a_soul_we_already_hold_succeeds_without_a_cue() -> None:
-    lease, _rooms, brain = build(holder="hermit-afreen")
-
-    result = await lease.claim("hermit-afreen")
-
-    assert result.ok is True
-    assert brain.cues == []
-
-
-async def test_release_cues_the_brain_only_when_we_hold_it() -> None:
-    lease, _rooms, brain = build(holder="hermit-akshay")
-
-    await lease.release("hermit-afreen")
-
-    assert brain.cues == [], "releasing a soul we do not hold must do nothing"
-
-
-async def test_release_warns_but_does_not_lie_when_the_brain_hangs_on() -> None:
-    """A stuck Hermit is a bad evening. A second Hermit is a broken product."""
-    lease, _rooms, brain = build(holder="hermit-afreen")  # never changes
-
-    await lease.release("hermit-afreen")
-
-    assert "RELEASE_SOUL" in [c for c, _ in brain.cues]
-    assert await lease.holder() == "hermit-afreen", "we report the truth, not the wish"
-
-
-async def test_an_unreachable_switch_reads_as_unknown_not_as_free() -> None:
-    """If we cannot see the room, we must not conclude the soul is free."""
-    lease, rooms, _brain = build(holder="hermit-akshay")
-    rooms.raises = True
-
     assert await lease.holder() is None
+    assert lease.heartbeat_data() == {"soul": None}
+    brain.stop()
+
+
+async def test_a_silent_brain_times_out_as_a_failed_claim() -> None:
+    hub = FakeRoomHub()
+    lease, brain = build(hub, verdict=lambda _c: None)
+    await asyncio.sleep(0)
+
     result = await lease.claim("hermit-afreen")
-    assert result.ok is False, "a failed lookup must not become a successful claim"
+
+    assert result.ok is False
+    brain.stop()
 
 
-# -- the adapter over Switch's list_roles shape ------------------------------
+async def test_no_cue_is_sent_for_a_soul_somebody_else_holds() -> None:
+    hub = FakeRoomHub()
+    other = hub.client("hermit-akshay")
+    akshay = hub.client("keeper-akshay")
+    await akshay.post(LEDGER, format_cue("hermit-akshay", "CLAIM_SOUL", "cue_a", "akshay", {}))
+    await other.post(LEDGER, format_ack("CLAIM_SOUL", True, "cue_a"))
+    lease, brain = build(hub)
+    await asyncio.sleep(0)
+
+    result = await lease.claim("hermit-afreen")
+
+    assert result.ok is False and result.holder == "hermit-akshay"
+    assert brain.cues == []
+    brain.stop()
 
 
-class StubSwitchClient:
-    def __init__(self, roles: list[dict[str, Any]]) -> None:
-        self._roles = roles
+async def test_release_cues_the_brain_and_names_the_claim_it_ends() -> None:
+    hub = FakeRoomHub()
+    lease, brain = build(hub)
+    await asyncio.sleep(0)
+    assert (await lease.claim("hermit-afreen")).ok
 
-    async def list_roles(self, room: str) -> list[dict[str, Any]]:
-        return self._roles
+    await lease.release("hermit-afreen")
+
+    assert brain.cues == ["CLAIM_SOUL", "RELEASE_SOUL"]
+    released = [e for e in ledger_events(hub) if e.type is EventType.SOUL_RELEASED]
+    assert released[-1].data["confirmed"] is True
+    assert released[-1].data["releases"]
+    assert await lease.holder() is None
+    brain.stop()
 
 
-async def test_role_reader_pulls_the_holder_out_of_switchs_shape() -> None:
-    reader = SwitchRoleReader(
-        StubSwitchClient(
-            [
-                {"name": "greeter", "held_by": [{"name": "hermit-akshay"}]},
-                {
-                    "name": "soul",
-                    "exclusive": True,
-                    "held_by": [
-                        {"name": "hermit-abhishek", "present_here": True, "session_room": None}
-                    ],
-                },
-            ]
+async def test_releasing_a_soul_we_do_not_hold_does_nothing() -> None:
+    hub = FakeRoomHub()
+    lease, brain = build(hub)
+    await asyncio.sleep(0)
+
+    await lease.release("hermit-afreen")
+
+    assert brain.cues == []
+    brain.stop()
+
+
+async def test_losing_a_ledger_race_concedes_even_after_an_ok_ack() -> None:
+    """Our brain says yes, but an earlier claim surfaces during the settle window."""
+    hub = FakeRoomHub()
+    lease, brain = build(hub)
+    akshay_keeper = hub.client("keeper-akshay")
+
+    async def earlier_rival(cue: str) -> None:
+        if cue != "CLAIM_SOUL":
+            return
+        # A claim whose ACK is older than ours appears in the ledger.
+        ts = (RealClock().now() - timedelta(seconds=0.2)).isoformat()
+        await akshay_keeper.post(
+            LEDGER,
+            encode(
+                Event(
+                    type=EventType.SOUL_CLAIMED,
+                    host="akshay",
+                    ts=RealClock().now(),
+                    data={"holder": "akshay", "ack": "$rival", "ack_ts": ts},
+                )
+            ),
         )
-    )
 
-    assert await reader.role_holder("hermit-den", "soul") == "hermit-abhishek"
+    brain.before_ack = earlier_rival
+    await asyncio.sleep(0)
+
+    result = await lease.claim("hermit-afreen")
+
+    assert result.ok is False, "an ok ACK that loses in the ledger must not make us Hermit"
+    assert result.holder == "hermit-akshay"
+    assert brain.cues == ["CLAIM_SOUL", "RELEASE_SOUL"], "the loser tells its brain to let go"
+    assert lease.heartbeat_data() == {"soul": None}
+    brain.stop()
 
 
-async def test_role_reader_reports_a_free_soul_as_none() -> None:
-    reader = SwitchRoleReader(
-        StubSwitchClient([{"name": "soul", "exclusive": True, "held_by": []}])
-    )
+async def test_a_late_ack_after_a_timeout_is_released_as_an_orphan() -> None:
+    hub = FakeRoomHub()
+    lease, brain = build(hub)
+    keeper = hub.client("keeper-afreen")
+    # Our brain's ACK for a cue this keeper never saw confirmed.
+    await keeper.post(LEDGER, format_cue("hermit-afreen", "CLAIM_SOUL", "cue_old", "afreen", {}))
+    await hub.client("hermit-afreen").post(LEDGER, format_ack("CLAIM_SOUL", True, "cue_old"))
+    await asyncio.sleep(0)
 
-    assert await reader.role_holder("hermit-den", "soul") is None
+    assert await lease.holder() == "hermit-afreen"
+    for _ in range(50):
+        if "RELEASE_SOUL" in brain.cues:
+            break
+        await asyncio.sleep(0.02)
+    assert "RELEASE_SOUL" in brain.cues
+    for _ in range(50):
+        if await lease.holder() is None:
+            break
+        await asyncio.sleep(0.02)
+    assert await lease.holder() is None
+    await lease.aclose()
+    brain.stop()
 
 
-async def test_role_reader_handles_a_room_with_no_soul_role_yet() -> None:
-    reader = SwitchRoleReader(StubSwitchClient([]))
+class OfflineRoom:
+    """A room client that has lost the server."""
 
-    assert await reader.role_holder("hermit-den", "soul") is None
+    online = False
+    listening_since = None
+
+    def __init__(self, inner) -> None:
+        self._inner = inner
+
+    async def post(self, room: str, text: str) -> str:
+        raise AssertionError("must not post while offline")
+
+    async def history(self, room, since=None, limit=200):
+        return await self._inner.history(room, since, limit)
+
+
+async def test_offline_means_unknown_never_free_and_never_claim() -> None:
+    hub = FakeRoomHub()
+    room = OfflineRoom(hub.client("keeper-afreen"))
+    director = LedgerBrainDirector(room, "hermit-afreen", "afreen")
+    lease = AgentInstructedLease(director, room, "afreen", ack_timeout_s=0.1)
+
+    assert lease.switch_state == "offline"
+    result = await lease.claim("hermit-afreen")
+    assert result.ok is False
+
+
+async def test_heartbeat_data_names_the_claim_we_hold() -> None:
+    hub = FakeRoomHub()
+    lease, brain = build(hub)
+    await asyncio.sleep(0)
+    assert lease.heartbeat_data() == {"soul": None}
+    assert (await lease.claim("hermit-afreen")).ok
+    soul = lease.heartbeat_data()["soul"]
+    assert soul["ack"] and soul["ack_ts"]
+    brain.stop()
