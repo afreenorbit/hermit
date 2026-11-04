@@ -25,9 +25,11 @@ from .group import GroupView, mood_for
 from .handoff import Handoff
 from .lease.base import SoulLease
 from .ledger import decode, encode
+from .overlap import HostSchedule
 from .presence.composite import CompositePresence, Override
 from .room.base import RoomClient
 from .statemachine import SPEAKING_STATES, KeeperStateMachine
+from .stretch import StretchRunner
 
 log = structlog.get_logger(__name__)
 
@@ -88,6 +90,7 @@ class KeeperRuntime:
             context=context,
             den_room=config.switch.den_room,
             ledger_room=config.switch.ledger_room,
+            brain_provider=config.brain_provider,
         )
         self.machine = KeeperStateMachine(
             host=config.host_id,
@@ -111,6 +114,19 @@ class KeeperRuntime:
         self._last_heartbeat = 0.0
         self._last_group_read = 0.0
         self._ledger_cursor: datetime | None = None
+        #: Stretch S1/S2. Does nothing unless features.overlap / features.nudge.
+        self.stretch = StretchRunner(
+            config.host_id,
+            room,
+            brain,
+            self.clock,
+            self.bus,
+            overlap=config.features.overlap,
+            nudge=config.features.nudge,
+            ledger_room=config.switch.ledger_room,
+            schedule=HostSchedule(config.timezone, config.bedtime.start, config.bedtime.end),
+            known_hosts=known_hosts,
+        )
 
     # -- the loop ------------------------------------------------------------
 
@@ -134,6 +150,9 @@ class KeeperRuntime:
                     # Hear how the group is. Cheap, and must keep running even
                     # while this laptop is doing nothing interesting.
                     await self.refresh_group()
+                    await self.stretch.tick(
+                        holding=self.machine.holding, present=self.presence.present
+                    )
                 except Exception:
                     log.exception("tick failed", host=self.config.host_id)
                 await self.clock.sleep(self._tick_s)
