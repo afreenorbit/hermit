@@ -32,15 +32,21 @@ log = structlog.get_logger(__name__)
 #: slow tick would be mistaken for the laptop having been asleep.
 TICK_S = 5.0
 
-#: state -> what the critter should show. Deliberately not the state name: the
-#: creature has moods, not an enum.
+#: state -> mascot. These are exactly the four artwork states in
+#: `map/public/pocket-hermit/`, so the critter can render `mood` directly
+#: without a second lookup table that could drift from the art.
+#:
+#:   arriving  - peeking out of the shell, holding a letter
+#:   visiting  - out of the shell, happy: Hermit is here
+#:   away      - tucked in, walking off: with someone else, or nobody
+#:   sleeping  - eyes shut: past this host's bedtime
 _MOOD = {
     State.ASLEEP: "away",
     State.AWAKE_WAITING: "away",
     State.CLAIMING: "arriving",
-    State.HOLDING: "curious",
-    State.DEPARTING: "leaving",
-    State.BEDTIME_LOCK: "sleepy",
+    State.HOLDING: "visiting",
+    State.DEPARTING: "away",
+    State.BEDTIME_LOCK: "sleeping",
 }
 
 

@@ -28,7 +28,9 @@ server_url     = "http://127.0.0.1:8080"   # VERIFY in Phase 0
 den_room       = "hermit-den"
 ledger_room    = "hermit-ledger"
 token_env      = "HERMIT_SWITCH_TOKEN"     # token lives in the environment, not here
-lease_strategy = "fake"                    # gateway | agent_instructed | task_lock | fake
+lease_strategy = "fake"                    # agent_instructed | fake
+# agent_instructed: your brain assumes the "soul" role itself when cued.
+# fake: offline, nothing leaves this machine. Good for UI work and demos.
 
 [features]
 overlap = false

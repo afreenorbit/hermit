@@ -5,3 +5,5 @@
 export { renderShellGrid } from './shell/renderShellGrid';
 export type { ShellGrid } from './shell/renderShellGrid';
 export * from './lib/format';
+export { PocketHermit, MOOD_LABEL } from './components/PocketHermit';
+export type { Mood, PocketHermitProps } from './components/PocketHermit';

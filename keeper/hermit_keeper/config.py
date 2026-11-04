@@ -13,7 +13,9 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 BrainProvider = Literal["claude-code", "codex", "opencode", "other"]
-LeaseStrategy = Literal["gateway", "agent_instructed", "task_lock", "fake"]
+#: Only two exist. There is no way to assume a role from outside the
+#: holding agent's own session - see docs/switch-facts.md SP2.
+LeaseStrategy = Literal["agent_instructed", "fake"]
 
 
 class PresenceConfig(BaseModel):
@@ -34,7 +36,7 @@ class SwitchConfig(BaseModel):
     den_room: str = "hermit-den"
     ledger_room: str = "hermit-ledger"
     token_env: str = "HERMIT_SWITCH_TOKEN"
-    lease_strategy: LeaseStrategy = "gateway"
+    lease_strategy: LeaseStrategy = "agent_instructed"
 
 
 class FeatureFlags(BaseModel):

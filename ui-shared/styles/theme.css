@@ -1,36 +1,38 @@
-/* Cozy pixel RPG tokens (plan.md §3.6). Palette: Sweetie 16 (Lospec).
-   Owner: C. Verify every hex against the palette file before the art is made. */
+/* "Pocket hermit" design tokens (plan.md 3.6).
+   Taken from the mascot art in map/public/pocket-hermit/ — soft, rounded,
+   pastel. Not pixel art: no hard edges, no image-rendering: pixelated. */
 @import 'tailwindcss';
 
 @theme {
-  --color-ink: #1a1c2c;
-  --color-night: #333c57;
-  --color-dusk: #566c86;
-  --color-paper: #f4f4f4;
-  --color-mist: #94b0c2;
-  --color-ember: #ef7d57;
-  --color-sun: #ffcd75;
-  --color-leaf: #38b764;
-  --color-sea: #41a6f6;
-  --color-berry: #b13e53;
-  --color-dream: #5d275d;
+  --color-cream: #f5e9c8;
+  --color-sage: #a8b88a;
+  --color-deep-sage: #7e9065;
+  --color-blush: #f2b5a0;
+  --color-warm-brown: #8a6a4f;
+  --color-off-white: #fdfbf5;
+  --color-ink: #4a3a2c;
 
-  --radius-pixel: 0px;
-  --spacing-px4: 4px;
+  --radius-soft: 16px;
 }
 
 :root {
-  --px: 4px;
-  --shadow-pixel: 4px 4px 0 var(--color-ink);
-  color-scheme: light dark;
+  --color-cream: #f5e9c8;
+  --color-sage: #a8b88a;
+  --color-deep-sage: #7e9065;
+  --color-blush: #f2b5a0;
+  --color-warm-brown: #8a6a4f;
+  --color-off-white: #fdfbf5;
+  --shadow-soft: 0 4px 16px rgb(138 106 79 / 0.12);
+  color-scheme: light;
 }
 
-/* Pixels stay crisp, always. Integer scaling only. */
-img[data-pixel],
-canvas[data-pixel] {
-  image-rendering: pixelated;
+body {
+  background: var(--color-off-white);
+  color: var(--color-warm-brown);
+  font-family: var(--font-body, system-ui, sans-serif);
 }
 
+/* Motion only on real events, and never for anyone who asked us not to. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

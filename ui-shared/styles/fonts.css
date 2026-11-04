@@ -1,9 +1,9 @@
-/* Press Start 2P: logo + big numbers only. Pixelify Sans: headings, labels, buttons.
-   Inter: any sentence longer than ~6 words. Never below 14px. Owner: C. */
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400..700&family=Inter:wght@400..700&display=swap');
+/* Friendly rounded sans throughout. Press Start 2P is gone: it fought the art
+   (plan.md 3.6, changed Nov 4). */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Inter:wght@400..700&display=swap');
 
 :root {
-  --font-display: 'Press Start 2P', monospace;
-  --font-ui: 'Pixelify Sans', system-ui, sans-serif;
+  --font-display: 'Nunito', system-ui, sans-serif;
+  --font-ui: 'Nunito', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
 }

@@ -44,7 +44,7 @@
         "den_room": { "type": "string" },
         "ledger_room": { "type": "string" },
         "token_env": { "type": "string", "default": "HERMIT_SWITCH_TOKEN" },
-        "lease_strategy": { "enum": ["gateway", "agent_instructed", "task_lock", "fake"] }
+        "lease_strategy": { "enum": ["agent_instructed", "fake"], "default": "agent_instructed", "description": "agent_instructed: the brain assumes the soul role itself. No external path exists - see docs/switch-facts.md SP2." }
       }
     },
     "features": {

@@ -260,7 +260,48 @@ This mix — off-the-shelf coding agents plus a custom protocol agent in the sam
 | Networking between laptops | Tailscale (if Switch server runs on one laptop) or a small Linux VPS | Decided in Phase 0. |
 | CI | GitHub Actions: ruff, mypy, pytest, vitest, schema validation | |
 
-### 3.6 Design system — "cozy pixel RPG"
+### 3.6 Design system — "pocket hermit"
+
+> ⚠ **Changed Nov 4.** This section used to specify pixel art (Sweetie 16,
+> 32×32 sprites, `image-rendering: pixelated`, Press Start 2P). **The real
+> mascot art is not pixel art** — it is soft, rounded, pastel, hand-drawn, with
+> anti-aliased edges and a warm cream/sage/blush palette. The art exists and is
+> good, so the art wins and the spec below follows it. Anything still saying
+> "pixel" further down is stale; treat this block as the truth.
+>
+> **The mascot is in `map/public/pocket-hermit/`** as `.png`, `.svg` and
+> `.webp`, in exactly four states, and those four names are also the `mood`
+> values the keeper API returns — so the critter renders `mood` directly with
+> no lookup table to drift:
+>
+> | File | State | Drawn as |
+> |---|---|---|
+> | `arriving` | `CLAIMING` | peeking out of the shell, **holding a letter** |
+> | `visiting` | `HOLDING` | out of the shell, arms up, delighted |
+> | `away` | `ASLEEP`, `AWAKE_WAITING`, `DEPARTING` | tucked in, walking off |
+> | `sleeping` | `BEDTIME_LOCK` | curled in the shell, eyes shut |
+>
+> **The letter is the product.** `arriving` carries an envelope, which is
+> exactly the favor being delivered: the friend who went to sleep left a note,
+> and Hermit hands it to whoever woke up. Lead the README and the video with
+> that image rather than with an architecture diagram.
+>
+> **Revised tokens:** cream `#F5E9C8`, sage `#A8B88A`, deep sage `#7E9065`,
+> blush `#F2B5A0`, warm brown `#8A6A4F` (outlines and text), off-white
+> `#FDFBF5`. Rounded corners (12–16px), soft shadows, no hard pixel edges, no
+> `image-rendering: pixelated`. Use **Inter** or another friendly rounded sans
+> throughout; drop Press Start 2P entirely — it fights the art.
+>
+> **Keep from the old spec:** motion only on real events (arrive, leave, favor
+> done), `prefers-reduced-motion` respected, generated avatars not photos,
+> city/area-level locations only.
+>
+> `renderShellGrid` still makes sense as a concept — the shell grows — but it
+> should produce soft shapes layered on the shell, not a pixel spiral. Akshay's
+> call on the form; the four encoding axes (arrival hour, brain, dwell,
+> departure) stay.
+
+#### Superseded: the original pixel spec
 
 The look should feel like a small, warm handheld game: crisp pixels, chunky borders, RPG dialog boxes, a little creature with personality. Every UI surface (critter, panel, map, postcard, README GIFs) uses this one system, so the project reads as one product.
 
@@ -756,6 +797,25 @@ Every module receives its dependencies through constructors (no globals). `cli.p
 
 ---
 
+**Status: Phase 0's spikes are DONE.** Every ⚠ VERIFY about roles, leases,
+tasks and the agent protocol is answered with a citation in
+`docs/switch-facts.md`, read straight from the Switch source rather than
+guessed. Three findings changed the build:
+
+1. **No external path can assume a role.** `lease_strategy = "gateway"` does not
+   exist; `agent_instructed` is the only real strategy. `lease/gateway.py` and
+   `lease/task_lock.py` are deleted.
+2. **Lease liveness follows the holding session**, so a closed lid frees the
+   soul with no keeper involved. The lid-slam handoff is native Switch
+   behaviour, not something we built.
+3. **Favors cannot be room Tasks** — a Task needs a performer up front, and a
+   favor has none by definition. They are room documents plus ledger events.
+   `favor.switch_task_id` → `switch_document_id`.
+
+Still open: measure the real expiry latency, and the live-server handshake.
+
+---
+
 ## Phase 1 — Contracts, scaffolding & fakes
 
 **Goal:** everyone can build in parallel against fakes. **Lead:** A, with D. **Time box:** Nov 4 night → Nov 5, 11:00.
@@ -886,6 +946,19 @@ hosts:
 - From a clean machine: `docker` + Console + `bootstrap_rooms.py` produce both rooms, the role and the agents.
 - All `live` tests pass against the real server.
 - A brain, when cued manually with `ARRIVE`, posts a greeting in the den that follows the voice card.
+
+---
+
+**Status: Phase 2 is done except the live handshake.** Built:
+`lease/agent_instructed.py` (the brain assumes the soul; the keeper confirms
+against the room and never believes an ACK), the `soul` role's instructions in
+`switch/rules/hermit-identity.md`, the cue contract in
+`switch/knowledge/stage-directions.md`, and `switch/scripts/bootstrap_rooms.py`
+whose `--dry-run` emits the exact `create_room` / `create_room_document` calls.
+
+Blocked on a live server: executing that plan, and `room/switch_client.py`.
+Both need the agent-protocol handshake, which is the one thing reading the
+source cannot settle.
 
 ---
 

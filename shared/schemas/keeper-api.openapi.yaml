@@ -104,6 +104,10 @@ components:
         present: { type: boolean }
         soul_holder: { type: [string, "null"] }
         since: { type: [string, "null"], format: date-time }
-        mood: { enum: [arriving, curious, sleepy, leaving, away] }
+        mood:
+          description: >
+            Which mascot to draw. Matches the filenames in
+            map/public/pocket-hermit/ exactly.
+          enum: [arriving, visiting, away, sleeping]
         favor_pending: { type: [object, "null"] }
         last_line: { type: [string, "null"] }
