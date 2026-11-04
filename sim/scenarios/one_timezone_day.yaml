@@ -1,41 +1,39 @@
-# PRIMARY scenario — this is our actual group: three friends in Bengaluru.
-# Owner: D. Shape is provisional until Phase 5.1.
+# PRIMARY scenario — our actual group: three friends in Bengaluru.
 #
 # Hermit follows attention, not daylight. Nobody crosses a timezone here; the
-# soul moves because one of us is in class, one is commuting, one is up at 2am.
-# Handoffs are rarer than in three_cities_day and that is the honest result —
-# report the real number in the README.
+# soul moves because one of us is in class, one is commuting, one is up late.
+# Handoffs are rarer than three_cities_day and that is the honest result.
 name: one_timezone_day
-speed: 600                 # 600 simulated seconds per real second
-duration_s: 86400          # local day starts 00:00 Asia/Kolkata
-timezone: Asia/Kolkata
+duration_s: 86400
+lease_expiry_s: 8
 hosts:
   - host_id: afreen
-    area: Indiranagar
+    brain_provider: claude-code
+    city: Indiranagar
+    timezone: Asia/Kolkata
     lat: 12.9719
     lon: 77.6412
-    timezone: Asia/Kolkata
-    brain_provider: claude-code
-    # night owl: up until 02:00, back after noon
     presence: [[0, true], [7200, false], [46800, true], [72000, false]]
   - host_id: abhishek
-    area: Kengeri
+    brain_provider: opencode
+    city: Kengeri
+    timezone: Asia/Kolkata
     lat: 12.9166
     lon: 77.4826
-    timezone: Asia/Kolkata
-    brain_provider: opencode
-    # early riser, long commute gap in the evening
     presence: [[21600, true], [61200, false], [75600, true], [82800, false]]
   - host_id: akshay
-    area: TBD              # confirm with Akshay
+    brain_provider: codex
+    city: Koramangala
+    timezone: Asia/Kolkata
     lat: 12.9352
     lon: 77.6245
-    timezone: Asia/Kolkata
-    brain_provider: codex
-    # office hours, then gone
     presence: [[32400, true], [64800, false]]
-expect:
-  - never_two_souls
-  - handoffs_at_least: 2
+events:
+  - { at: 3600,  host: afreen,   action: favor_reply, text: "the last song stuck in your head" }
+  - { at: 50000, host: abhishek, action: favor_reply, text: "a photo of whatever is outside your window" }
+  - { at: 60000, host: akshay,   action: favor_reply, text: "one thing you are proud of this week" }
+assertions:
+  - never_two_holders
+  - min_handoffs: 2
   - favors_left_at_least: 2
-  - nobody_awake_gap_handled    # 02:00-06:00 nobody is up; the soul must rest, not thrash
+  - favors_completed_at_least: 1

@@ -1,2 +1,14 @@
-# TODO(D): Phase 5.2 — scenario "lid_slam"
+# The holder vanishes mid-visit. Nobody says goodbye; Switch's lease expiry
+# frees the soul. The next host's arrival must record the previous stop as
+# abrupt, which is where the cracked shell piece comes from.
 name: lid_slam
+duration_s: 21600
+lease_expiry_s: 8
+hosts:
+  - { host_id: afreen,   brain_provider: claude-code, city: Indiranagar, timezone: Asia/Kolkata, presence: [[0, true]] }
+  - { host_id: abhishek, brain_provider: opencode,    city: Kengeri,     timezone: Asia/Kolkata, presence: [[0, true]] }
+events:
+  - { at: 3600, host: afreen, action: lid_slam }
+assertions:
+  - never_two_holders
+  - min_handoffs: 2

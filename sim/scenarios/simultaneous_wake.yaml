@@ -1,2 +1,12 @@
-# TODO(D): Phase 5.2 — scenario "simultaneous_wake"
+# Three laptops wake in the same second. Exactly one Hermit must exist.
+# This is the race the exclusive Switch role is there to settle.
 name: simultaneous_wake
+duration_s: 7200
+lease_expiry_s: 8
+hosts:
+  - { host_id: afreen,   brain_provider: claude-code, city: Indiranagar, timezone: Asia/Kolkata, presence: [[0, true]] }
+  - { host_id: abhishek, brain_provider: opencode,    city: Kengeri,     timezone: Asia/Kolkata, presence: [[0, true]] }
+  - { host_id: akshay,   brain_provider: codex,       city: Koramangala, timezone: Asia/Kolkata, presence: [[0, true]] }
+assertions:
+  - never_two_holders
+  - min_handoffs: 1

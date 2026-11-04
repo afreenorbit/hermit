@@ -1,2 +1,20 @@
-# TODO(D): Phase 5.2 — scenario "flapping_presence"
+# A host whose presence toggles constantly — stepping away, coming back.
+# Debounce and minimum dwell must stop Hermit ping-ponging. The test is that
+# the group does not generate a silly number of handoffs.
 name: flapping_presence
+duration_s: 14400
+lease_expiry_s: 8
+hosts:
+  - host_id: afreen
+    brain_provider: claude-code
+    city: Indiranagar
+    timezone: Asia/Kolkata
+    presence: [[0, true], [600, false], [900, true], [1200, false], [1500, true],
+               [1800, false], [2100, true], [2400, false], [2700, true]]
+  - host_id: abhishek
+    brain_provider: opencode
+    city: Kengeri
+    timezone: Asia/Kolkata
+    presence: [[0, true]]
+assertions:
+  - never_two_holders

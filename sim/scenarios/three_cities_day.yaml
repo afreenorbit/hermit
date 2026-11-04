@@ -1,33 +1,42 @@
-# CAPABILITY scenario — the same code with three timezones.
-# Owner: D. Shape is provisional until Phase 5.1.
+# CAPABILITY scenario — the same code across three timezones.
 #
-# Our real group is all in Bengaluru (see one_timezone_day.yaml, the primary
-# scenario). These cities are DELIBERATELY FICTIONAL: they demonstrate that
-# Hermit handles a scattered group, which is what it is built for.
+# Our real group is all in Bengaluru (one_timezone_day.yaml is the primary
+# scenario). These cities are DELIBERATELY FICTIONAL: they show that Hermit
+# handles a scattered group, which is what it is built for.
 #
 # RULE FOR THE DEMO VIDEO: label this as the simulation on screen. Never cut it
-# beside real pilot footage as though it were the same run. Judges forgive a
-# small pilot; they do not forgive a staged one.
+# beside real pilot footage as though it were the same run.
 name: three_cities_day
-speed: 600            # 600 simulated seconds per real second
 duration_s: 86400
+lease_expiry_s: 8
 hosts:
   - host_id: afreen
+    brain_provider: claude-code
     city: Bengaluru
     timezone: Asia/Kolkata
-    brain_provider: claude-code
+    lat: 12.97
+    lon: 77.59
     presence: [[0, true], [39600, false], [75600, true]]
   - host_id: abhishek
-    city: Berlin          # fictional, for the timezone demo
-    timezone: Europe/Berlin
     brain_provider: opencode
+    city: Berlin
+    timezone: Europe/Berlin
+    lat: 52.52
+    lon: 13.40
     presence: [[25200, true], [61200, false]]
   - host_id: akshay
-    city: Toronto         # fictional, for the timezone demo
-    timezone: America/Toronto
     brain_provider: codex
+    city: Toronto
+    timezone: America/Toronto
+    lat: 43.65
+    lon: -79.38
     presence: [[46800, true], [82800, false]]
-expect:
-  - never_two_souls
-  - handoffs_at_least: 2
+events:
+  - { at: 20000, host: afreen,   action: favor_reply, text: "send the group a photo of your morning" }
+  - { at: 40000, host: abhishek, action: favor_reply, text: "what did you eat today?" }
+  - { at: 70000, host: akshay,   action: favor_reply, text: "recommend one thing worth ten minutes" }
+assertions:
+  - never_two_holders
+  - min_handoffs: 3
   - favors_left_at_least: 2
+  - favors_completed_at_least: 1

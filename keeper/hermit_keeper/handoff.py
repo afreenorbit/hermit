@@ -34,8 +34,8 @@ FAVOR_WAIT_S = 90.0
 class FavorStore(Protocol):
     """Implemented by ``favors.py`` (Abhishek). Phase 4.1."""
 
-    async def carried(self) -> dict[str, Any] | None:
-        """The open favor Hermit is carrying, if any."""
+    async def carried(self, for_host: str) -> dict[str, Any] | None:
+        """The open favor Hermit is carrying into ``for_host``, if any."""
         ...
 
     async def assign(self, favor_id: str, host: str) -> None: ...
@@ -109,7 +109,7 @@ class Handoff:
         if self._context is not None:
             context.update(await self._context.arrival_context())
 
-        favor = await self._favors.carried() if self._favors is not None else None
+        favor = await self._favors.carried(self.host) if self._favors is not None else None
         if favor is not None:
             await self._favors.assign(favor["id"], self.host)  # type: ignore[union-attr]
             context["favor"] = favor

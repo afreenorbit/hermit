@@ -14,6 +14,9 @@ dependencies = [
     "tomli>=2.0; python_version < '3.11'",
     "sse-starlette>=2.1",
     "PyYAML>=6.0",
+    # Windows ships no system tz database, and every host config names an
+    # IANA zone. Without this, zoneinfo raises on Windows only.
+    "tzdata>=2024.1; sys_platform == 'win32'",
 ]
 
 [project.optional-dependencies]
@@ -42,6 +45,8 @@ include = ["hermit_keeper*", "sim*"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+# Akshay's art pipeline has its own style; we lint our code, not his.
+extend-exclude = ["../scripts/animate_pocket_hermit.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ASYNC", "RUF"]

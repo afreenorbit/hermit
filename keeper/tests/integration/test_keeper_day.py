@@ -36,8 +36,11 @@ class StubFavors:
         self.assigned: list[tuple[str, str]] = []
         self.left: list[dict[str, Any]] = []
 
-    async def carried(self) -> dict[str, Any] | None:
-        return self.carried_favor
+    async def carried(self, for_host: str) -> dict[str, Any] | None:
+        favor = self.carried_favor
+        if favor is not None and favor.get("left_by") == for_host:
+            return None  # nobody is handed back their own note
+        return favor
 
     async def assign(self, favor_id: str, host: str) -> None:
         self.assigned.append((favor_id, host))

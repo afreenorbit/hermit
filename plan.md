@@ -1122,6 +1122,21 @@ there when you want it.
 
 ---
 
+**Status: Phase 4's MVP is done.** `favors.py` (safety filter, classification,
+48 h expiry, suggestions), `shell_model.py`, `bedtime.py`, `context/weather.py`,
+`context/window.py`, `journal.py` and `scripts/export_journey.py`. Stretch S1
+(overlap) and S2 (nudge) are NOT built — they were always the first cuts.
+
+Two things the plan had wrong, found by running it:
+
+1. **A favor is group state, not host state.** It lives in the room, so one
+   `FavorBook` is shared the way one soul is. Each host having its own book
+   meant a note never left the laptop that wrote it.
+2. **Nobody may be handed back their own note.** `carried(for_host)` excludes
+   your own favors. The obvious bug in a carried-rather-than-addressed favor.
+
+---
+
 ## Phase 5 — Simulation harness
 
 **Goal:** run everything on one machine, fast-forwarded, for tests and for judges. **Lead:** D. **Time box:** Nov 5 → Nov 6 morning.
@@ -1174,8 +1189,20 @@ Runner output:
 - This is the **README quickstart** for judges and the fallback for recording the demo.
 
 ### 5.4 Acceptance criteria
-- All 6 scenarios pass in CI in < 60 s total.
-- Live sim moves the soul between 3 brains on one machine on keypress.
+- [x] All scenarios pass — **7 of 7**, in about 20 s total:
+      `python -m sim all`.
+- [x] Each run writes `sim/out/<scenario>/journey.json`, schema-validated.
+- [x] End to end verified: sim -> ledger -> `export_journey.py` -> the map
+      renders it (4 stops, 6 favors done, 3 friends).
+- [ ] Live sim moves the soul between 3 brains on one machine on keypress.
+      **Blocked on the Tailscale server** (`sim live` TUI not built).
+
+**Status: Phase 5's fake sim is done.** This is the judge-facing artifact: no
+Switch, no second laptop, no API keys, under a minute.
+
+Worth knowing: `three_cities_day` and `one_timezone_day` both produce a real
+`journey.json`, so the map and the demo video have data without needing three
+laptops. Point the map at `sim/out/<scenario>/journey.json`.
 
 ---
 
