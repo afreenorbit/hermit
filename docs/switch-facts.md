@@ -247,11 +247,62 @@ needs rewiring to read the ledger instead of calling `list_roles`.
   also operations-layer only. A favor's visible artifact has to be a message in
   the den, written by the brain, with the ledger holding its state.
 
+## Done since: the keeper's real path, proven against a STAND-IN
+
+`AgentInstructedLease.holder()` no longer calls `list_roles`; `SwitchRoleReader`
+is deleted. The holder is folded from the ledger by
+`keeper/hermit_keeper/lease/soul_ledger.py`: claims come from the brains'
+`HERMIT-ACK/1 CLAIM_SOUL ok:true` lines (ordered by the ACK's server timestamp,
+so no laptop's clock can reorder them), restated by `SOUL_CLAIMED` and by
+heartbeats; releases come from `RELEASE_SOUL` ACKs and the lease's own
+`SOUL_RELEASED {releases: <claim>}`. Two claims with no release between them
+resolve to the earlier one unless its host had already gone silent for longer
+than `2 × heartbeat + lease_expiry_s`; the loser's keeper cues its brain to let
+go. `hermit-keeper run` builds this path for `agent_instructed`
+(`switch_wiring.py`) and refuses to start, never falls back, if the agent uuid,
+room uuids or key are missing.
+
+**What was proven, and against what.** `keeper/tests/integration/` runs three
+keepers built by that same production builder against
+`sim/switch_standin.py` — a **stand-in** that implements only the HTTP surface
+verified above — over real loopback HTTP, with stand-in brains that follow
+stage-directions.md and take the soul through an in-process exclusive role with
+session leases. Proven there: one holder across 10 three-way claim races (with
+and without own-message echo), an idle handoff, lid slam → expiry → another
+host claims and the stop is recorded `abrupt`, a Switch outage reported as
+`switch: "offline"` with the holder unknown and no second visitor, then
+recovery, a favor crossing laptops, and brains that lie about claiming still
+converging on one holder. `python -m sim live --switch standin` runs the same
+thing for a person to poke at.
+
+**None of that is real Switch.** It proves the keeper's own code does the
+right thing *if* Switch and the brains behave as documented.
+
 ## Still open
 
-- [ ] Measure real lease-expiry latency after a disconnect → `expiry_delay_s`.
-      Needs a brain holding the role, which needs a coding agent connected.
-- [ ] Rewire `AgentInstructedLease.holder()` onto the ledger (above).
+- [ ] **Real role exclusivity**, with real brains over MCP: two brains race
+      `assume_role("soul")` ten times, Switch rejects the second every time
+      (docs/actual-test.md Step 2.4). The stand-in's registry models this; only
+      the real server proves it.
+- [ ] **Measure real lease-expiry latency** after a disconnect and put it in
+      `switch.lease_expiry_s` (default 8 is still a guess). Needs a brain
+      holding the role, which needs a coding agent connected.
+- [ ] **Does `/events` return an agent's own posts?** Unknown. The client is
+      correct either way (echo by `event_id`); `pytest -m live
+      tests/switch_live` prints the answer against a real server.
+- [ ] **Are senders names or uuids?** The stand-in sends names. If Switch sends
+      uuids, set `switch.brain_agent_id`; the same live test prints the answer.
+- [ ] **How long does real `/events` hold an empty poll?** A hold beyond the
+      client's 25 s timeout is handled (read timeout ≠ outage) but unmeasured.
+- [ ] **What happens to a held lease across a Switch restart?** The stand-in
+      keeps leases; after any reconnect the holding keeper re-asks its brain
+      (`CLAIM_SOUL` with `verify`), so either answer is handled — but the real
+      behaviour is unmeasured.
+- [ ] **`POST /agents/{id}/moderation/rooms` body.** `bootstrap_rooms.py` now
+      registers keepers and creates rooms live, but the body it sends was not
+      recorded from the live run; the script prints the server's reply.
+- [ ] Defining the `soul` role and room documents stay MCP-only:
+      `bootstrap_rooms.py` prints the exact instructions for a connected brain.
 - [ ] Confirm the Discord bridge setup.
 
 ## Running it again
