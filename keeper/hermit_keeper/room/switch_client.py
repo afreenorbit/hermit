@@ -267,7 +267,7 @@ class SwitchRoomClient:
                 content = payload.get("content") or payload.get("body") or ""
                 if not content:
                     continue
-                event_id = str(payload.get("event_id") or "")
+                event_id = str(payload.get("event_id") or payload.get("message_id") or "")
                 ts = _timestamp(payload, self._now)
                 if event_id and event_id in self._by_id:
                     # Our own post, handed back by the server: adopt the

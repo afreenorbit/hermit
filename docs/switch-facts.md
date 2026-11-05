@@ -287,11 +287,15 @@ right thing *if* Switch and the brains behave as documented.
 - [ ] **Measure real lease-expiry latency** after a disconnect and put it in
       `switch.lease_expiry_s` (default 8 is still a guess). Needs a brain
       holding the role, which needs a coding agent connected.
-- [ ] **Does `/events` return an agent's own posts?** Unknown. The client is
-      correct either way (echo by `event_id`); `pytest -m live
-      tests/switch_live` prints the answer against a real server.
-- [ ] **Are senders names or uuids?** The stand-in sends names. If Switch sends
-      uuids, set `switch.brain_agent_id`; the same live test prints the answer.
+- [x] **Does `/events` return an agent's own posts?** The November 5 live
+      exchange returned no own echo. A recipient did receive the post. The
+      event payload identifies it as `message_id`, equal to the send response's
+      `event_id`; the client accepts both fields.
+- [x] **Are senders names or uuids?** The received sender was a Matrix-style
+      `@switch-agent-...:localhost` ID, not the keeper's display name or agent
+      UUID. Configure `switch.brain_agent_id` with the real sender ID once the
+      brain posts its first message. Verify brain cue/ACK matching on real
+      Switch before the handoff test.
 - [ ] **How long does real `/events` hold an empty poll?** A hold beyond the
       client's 25 s timeout is handled (read timeout ≠ outage) but unmeasured.
 - [ ] **What happens to a held lease across a Switch restart?** The stand-in
