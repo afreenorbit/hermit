@@ -160,6 +160,22 @@ export function CritterWindow() {
       if (!down.current) bridge.setMouseOver(false);
     },
   };
+  // Belt and braces: a transparent always-on-top window can miss the leave
+  // event on the sprite, and then it keeps swallowing clicks for the whole
+  // desktop. Releasing on window-leave means the worst case is one stuck
+  // frame, not an unusable screen. (pointerleave-window)
+  useEffect(() => {
+    const release = (): void => {
+      if (!down.current) bridge.setMouseOver(false);
+    };
+    window.addEventListener('pointerleave', release);
+    window.addEventListener('blur', release);
+    return () => {
+      window.removeEventListener('pointerleave', release);
+      window.removeEventListener('blur', release);
+    };
+  }, []);
+
   const onDown = (e: PointerEvent): void => {
     down.current = { x: e.screenX, y: e.screenY };
     bridge.dragStart();
@@ -226,7 +242,7 @@ export function CritterWindow() {
         <span>{locationDetail}</span>
       </div>
       {line && (
-        <div className="bubble" {...hover}>
+        <div className="bubble" aria-live="polite">
           <DialogBox
             text={line}
             name="HERMIT"

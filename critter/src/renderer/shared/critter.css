@@ -66,7 +66,12 @@ html.critter-root {
   cursor: grabbing;
 }
 
+/* Decorative only. It used to take the mouse, which made the window opaque
+   over whatever was behind it: clicking the speech bubble grabbed the critter
+   and you could not click the app underneath. Only the creature is
+   interactive now. */
 .bubble {
+  pointer-events: none;
   position: absolute;
   right: 8px;
   bottom: 156px;
