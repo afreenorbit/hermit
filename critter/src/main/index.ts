@@ -10,7 +10,18 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, screen, shell, Tray, type Rectangle } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  globalShortcut,
+  ipcMain,
+  Menu,
+  nativeImage,
+  screen,
+  shell,
+  Tray,
+  type Rectangle,
+} from 'electron';
 
 const KEEPER_BASE_URL = process.env.HERMIT_KEEPER_URL ?? 'http://127.0.0.1:47800';
 const CRITTER = { w: 320, h: 300 };
@@ -67,10 +78,21 @@ function savePosition(): void {
   }
 }
 
+/**
+ * Move the creature without ever changing its size. On Windows at 125%/150%
+ * display scaling, `setPosition` rounds DIPs to pixels and grows a transparent
+ * window a little on every call — dragging stretched it sideways until it
+ * covered (and swallowed clicks for) half the screen. `setBounds` with the
+ * size pinned does not drift.
+ */
+function moveCritter(x: number, y: number): void {
+  critter?.setBounds({ x: Math.round(x), y: Math.round(y), width: CRITTER.w, height: CRITTER.h });
+}
+
 function snapOnScreen(): void {
   if (critter && !onScreen(critter.getBounds())) {
     const p = defaultPosition();
-    critter.setPosition(p.x, p.y);
+    moveCritter(p.x, p.y);
     savePosition();
   }
 }
@@ -109,6 +131,10 @@ function createCritterWindow(): BrowserWindow {
     show: false,
     webPreferences,
   });
+  // resizable:false is not enough for a transparent window under display
+  // scaling; pin the size so nothing (DPI rounding, a monitor change) grows it.
+  win.setMinimumSize(CRITTER.w, CRITTER.h);
+  win.setMaximumSize(CRITTER.w, CRITTER.h);
   win.setAlwaysOnTop(true, 'floating');
   if (process.platform === 'darwin')
     win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -328,25 +354,45 @@ ipcMain.on('hermit:visible', (_e, visible: boolean) => {
   applyVisibility();
 });
 
+/** A drag that never hears its end must not follow the cursor forever. */
+const DRAG_MAX_MS = 15_000;
+let dragStopTimer: NodeJS.Timeout | undefined;
+
+function endDrag(): void {
+  const wasDragging = !!dragTimer;
+  clearInterval(dragTimer);
+  clearTimeout(dragStopTimer);
+  dragTimer = undefined;
+  dragStopTimer = undefined;
+  if (!critter || critter.isDestroyed()) return;
+  // Always hand the desktop its clicks back; the renderer's heartbeat takes the
+  // grip again only while the pointer is really over the creature.
+  releaseGrip();
+  if (wasDragging) {
+    snapOnScreen();
+    savePosition();
+  }
+}
+
 ipcMain.on('hermit:drag-start', () => {
   if (!critter) return;
   const start = screen.getCursorScreenPoint();
-  const [wx, wy] = critter.getPosition();
-  const dx = start.x - wx!;
-  const dy = start.y - wy!;
+  const b = critter.getBounds();
+  const dx = start.x - b.x;
+  const dy = start.y - b.y;
+  let last = { x: start.x, y: start.y };
   clearInterval(dragTimer);
+  clearTimeout(dragStopTimer);
   dragTimer = setInterval(() => {
     const p = screen.getCursorScreenPoint();
-    critter?.setPosition(p.x - dx, p.y - dy);
+    if (p.x === last.x && p.y === last.y) return;
+    last = p;
+    moveCritter(p.x - dx, p.y - dy);
   }, 16);
+  dragStopTimer = setTimeout(endDrag, DRAG_MAX_MS);
 });
 
-ipcMain.on('hermit:drag-end', () => {
-  clearInterval(dragTimer);
-  dragTimer = undefined;
-  snapOnScreen();
-  savePosition();
-});
+ipcMain.on('hermit:drag-end', endDrag);
 
 ipcMain.on('hermit:panel', (_e, open: boolean) => {
   if (open) openPanel();
@@ -379,6 +425,7 @@ if (!app.requestSingleInstanceLock()) {
     if (process.platform === 'darwin') app.dock?.hide();
     console.log('keeper at', KEEPER_BASE_URL);
     critter = createCritterWindow();
+    critter.on('hide', endDrag);
     tray = new Tray(trayIcon(true));
     tray.on('click', openPanel);
     rebuildTray();

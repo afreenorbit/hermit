@@ -31,7 +31,6 @@ import { useKeeper } from '../shared/store';
 const WALK_PX = 220;
 const SPRITE = 150;
 
-
 export function CritterWindow() {
   const k = useKeeper();
   const reduced = useReducedMotion();
@@ -181,16 +180,60 @@ export function CritterWindow() {
     };
   }, []);
 
-  const onDown = (e: PointerEvent): void => {
-    down.current = { x: e.screenX, y: e.screenY };
-    bridge.dragStart();
-  };
-  const onUp = (e: PointerEvent): void => {
-    const d = down.current;
+  // A click opens the menu; only a real drag moves the window. Starting the
+  // drag on pointerdown meant every click set the window chasing the cursor,
+  // and a missed pointerup left it under the pointer eating every click.
+  const dragging = useRef(false);
+  const DRAG_THRESHOLD_PX = 4;
+  const endPress = (openMenu: boolean): void => {
+    const wasDragging = dragging.current;
     down.current = null;
-    bridge.dragEnd();
-    if (d && Math.abs(e.screenX - d.x) + Math.abs(e.screenY - d.y) < 4) bridge.panel(true);
+    dragging.current = false;
+    if (wasDragging) bridge.dragEnd();
+    if (openMenu && !wasDragging) bridge.panel(true);
   };
+  const onDown = (e: PointerEvent<HTMLDivElement>): void => {
+    if (e.button !== 0) return;
+    down.current = { x: e.screenX, y: e.screenY };
+    dragging.current = false;
+    // Keep the press's pointerup coming to us even if the window moves.
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onMove = (e: PointerEvent<HTMLDivElement>): void => {
+    // Also the grip heartbeat (see `hover`): this handler replaces hover's own
+    // onPointerMove on the sprite, so it must keep re-asserting the grip.
+    bridge.setMouseOver(true);
+    const d = down.current;
+    if (!d || dragging.current) return;
+    if (Math.abs(e.screenX - d.x) + Math.abs(e.screenY - d.y) >= DRAG_THRESHOLD_PX) {
+      dragging.current = true;
+      bridge.dragStart();
+    }
+  };
+  const onUp = (e: PointerEvent<HTMLDivElement>): void => {
+    if (!down.current) return;
+    if (e.currentTarget.hasPointerCapture(e.pointerId))
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    endPress(true);
+    // Still over the creature after the press: keep it clickable.
+    bridge.setMouseOver(true);
+  };
+  const onCancel = (): void => {
+    if (down.current) endPress(false);
+  };
+  // Window-level safety net for a press that ends somewhere we never hear.
+  useEffect(() => {
+    const stop = (): void => {
+      if (down.current) endPress(false);
+    };
+    window.addEventListener('blur', stop);
+    window.addEventListener('pointerup', stop);
+    return () => {
+      window.removeEventListener('blur', stop);
+      window.removeEventListener('pointerup', stop);
+    };
+    // endPress only touches refs and the bridge, so mounting once is enough.
+  }, []);
 
   // Every laptop keeps a presence, not just the host: a blank screen on the
   // other machines was what made the companion feel broken. A non-hosting
@@ -215,9 +258,7 @@ export function CritterWindow() {
   // you", which read as the mascot being broken.
   const holdsIt = !!k.soulHolder && k.soulHolder === k.hostId;
   const acted: Mood | null =
-    act.mood && !(holdsIt && (act.mood === 'away' || act.mood === 'offline'))
-      ? act.mood
-      : null;
+    act.mood && !(holdsIt && (act.mood === 'away' || act.mood === 'offline')) ? act.mood : null;
   const mood: Mood = acted ?? (holdsIt && base === 'away' ? 'visiting' : base);
   const hostName = (k.hostId ?? 'this laptop').replace(/^./, (c) => c.toUpperCase());
   const holderName = k.soulHolder?.replace(/^./, (c) => c.toUpperCase());
@@ -262,11 +303,15 @@ export function CritterWindow() {
         ref={spriteRef}
         className="creature"
         style={{ transform: `translateX(${x}px)`, width: SPRITE, height: SPRITE }}
+        {...hover}
+        // after the spread: onMove is the heartbeat AND the drag detector
         onPointerDown={onDown}
+        onPointerMove={onMove}
         onPointerUp={onUp}
+        onPointerCancel={onCancel}
+        onLostPointerCapture={onCancel}
         role="button"
         aria-label={`${moodLine(mood, k.soulHolder, k.hostId ?? '')} Click for the menu.`}
-        {...hover}
       >
         {k.quest && here && (
           <span className="quest-mark" aria-label="Hermit is carrying a favor for you">
@@ -279,7 +324,11 @@ export function CritterWindow() {
             <PixelCanvas grid={shellGrid} scale={2} label={`Shell: ${pieces.length} pieces`} />
           </span>
         )}
-        <PocketHermit mood={mood} size={SPRITE} label={moodLine(mood, k.soulHolder, k.hostId ?? '')} />
+        <PocketHermit
+          mood={mood}
+          size={SPRITE}
+          label={moodLine(mood, k.soulHolder, k.hostId ?? '')}
+        />
         {effect === 'dust' && (
           <span className="fx fx--dust" aria-hidden>
             <i />
