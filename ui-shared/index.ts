@@ -52,3 +52,5 @@ export { PocketHermit, MOODS, MOOD_LABEL, pocketHermitSrc } from './components/P
 export type { Mood, PocketHermitProps } from './components/PocketHermit';
 export { moodFor, moodLine } from './mascot/mood';
 export type { KeeperState, MoodInput } from './mascot/mood';
+export { soulAction, soulStatus } from './mascot/soulAction';
+export type { SoulAction, SoulActionInput, SoulActionKind } from './mascot/soulAction';

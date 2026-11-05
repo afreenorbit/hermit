@@ -448,3 +448,14 @@ html.panel-root body {
     height: 112px;
   }
 }
+
+/* The line under the one big button: where Hermit is, or why the button is
+   locked. A greyed-out control with no explanation is its own kind of broken. */
+.panel__hint {
+  margin: 8px 14px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.75;
+  text-align: center;
+  min-height: 1.4em;
+}

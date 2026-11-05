@@ -8,7 +8,7 @@
  * The desktop critter does not need this page. It talks to its own keeper
  * directly, and works with the browser closed.
  */
-import { PixelBox, PixelButton, PocketHermit, moodLine } from '@hermit/ui';
+import { PixelBox, PixelButton, PocketHermit, moodLine, soulAction } from '@hermit/ui';
 import { useState } from 'react';
 
 import { secondsSince, type Group, type GroupHost } from '../hooks/useGroup';
@@ -39,7 +39,6 @@ export function LivePanel({ group, error, keeper }: Props) {
   // to the keeper this page is already watching, which is always a loopback
   // one - so it only ever claims for the machine you are sitting at.
   const self = group?.self ?? null;
-  const canTake = !unreachable && !!group && holder === null && !!self;
 
   return (
     <PixelBox as="section" tab="Right now" className="panel live" id="live">
@@ -69,7 +68,9 @@ export function LivePanel({ group, error, keeper }: Props) {
         <p className="live__off">Waiting for the first heartbeat…</p>
       )}
 
-      {canTake && <TakeHermit keeper={keeper} self={self} />}
+      {self && (
+        <TakeHermit keeper={keeper} self={self} hosts={hosts} holder={holder} />
+      )}
 
       <p className="live__note">
         Live. Everything else on this page is the exported journey — history, not a feed.
@@ -78,17 +79,43 @@ export function LivePanel({ group, error, keeper }: Props) {
   );
 }
 
-function TakeHermit({ keeper, self }: { keeper: string; self: string }) {
+function TakeHermit({
+  keeper,
+  self,
+  hosts,
+  holder,
+}: {
+  keeper: string;
+  self: string;
+  hosts: GroupHost[];
+  holder: string | null;
+}) {
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string | null>(null);
 
-  const take = async (): Promise<void> => {
+  const me = hosts.find((h) => h.host_id === self) ?? null;
+  // Same derivation the desktop panel uses, so the two never disagree about
+  // whether you can press it.
+  const action = soulAction({
+    connected: !!me && !me.stale,
+    state: me?.state ?? null,
+    soulHolder: holder,
+    host: self,
+    busy,
+  });
+
+  const run = async (): Promise<void> => {
+    if (busy || action.kind !== 'take') return;
     setBusy(true);
     setSaid(null);
     try {
       const res = await fetch(`${keeper}/v1/claim`, { method: 'POST' });
       const body = (await res.json()) as { ok?: boolean; reason?: string };
-      setSaid(body.ok ? 'Asked — Hermit is on its way.' : (body.reason ?? 'Someone beat you to it.'));
+      setSaid(
+        body.ok
+          ? 'Asked — watch for Hermit arriving.'
+          : (body.reason ?? 'Someone got there first.'),
+      );
     } catch {
       setSaid('Could not reach your keeper.');
     } finally {
@@ -98,10 +125,15 @@ function TakeHermit({ keeper, self }: { keeper: string; self: string }) {
 
   return (
     <div className="live__take">
-      <PixelButton variant="primary" disabled={busy} onClick={() => void take()}>
-        {busy ? 'Asking…' : `Take Hermit (${titleCase(self)})`}
+      <PixelButton
+        variant={action.tone}
+        disabled={action.disabled || action.kind !== 'take'}
+        title={action.hint ?? undefined}
+        onClick={() => void run()}
+      >
+        {action.kind === 'take' ? action.label : action.label}
       </PixelButton>
-      {said && <span className="live__said">{said}</span>}
+      <span className="live__said">{said ?? action.hint ?? ''}</span>
     </div>
   );
 }
