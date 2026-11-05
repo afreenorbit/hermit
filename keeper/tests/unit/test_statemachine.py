@@ -284,3 +284,65 @@ async def test_override_asleep_releases_the_soul() -> None:
 
     await settle(machine, clock, 1)
     assert await lease.holder() is None
+
+
+# -- standing aside after a handoff ------------------------------------------
+
+
+async def test_saying_go_hands_hermit_on_instead_of_taking_it_straight_back() -> None:
+    """ "I'm busy, go" must not bounce back to the same laptop.
+
+    The departing host is usually still the most eligible — present, awake,
+    sitting right there — so without this it reclaims within seconds and the
+    button looks broken.
+    """
+    machine, clock, lease, _ = build()
+    machine._others_available = lambda: True  # someone else is awake
+    await reach_holding(machine, clock)
+
+    machine.manual_depart = True
+    await settle(machine, clock, 1)
+    await settle(machine, clock, 1)
+    assert await lease.holder() is None, "the soul is free for someone else"
+
+    # Well inside the stand-aside window: it must not take it back while
+    # another host could have it.
+    for _ in range(10):
+        await settle(machine, clock, 15)
+        assert not machine.holding, "took Hermit straight back after handing it on"
+
+
+async def test_it_takes_hermit_back_rather_than_strand_it() -> None:
+    """Standing aside only makes sense while somebody else could host."""
+    machine, clock, _lease, _ = build()
+    machine._others_available = lambda: False  # nobody else is around
+    await reach_holding(machine, clock)
+
+    machine.manual_depart = True
+    await settle(machine, clock, 1)
+    await settle(machine, clock, 1)
+
+    for _ in range(40):
+        await settle(machine, clock, 15)
+        if machine.holding:
+            break
+
+    assert machine.holding, "Hermit was left with nowhere to go"
+
+
+async def test_the_stand_aside_ends_once_someone_else_has_it() -> None:
+    clock = FakeClock()
+    lease = FakeSoulLease(clock=clock)
+    machine, _, _, _ = build("afreen", lease=lease, clock=clock)
+    machine._others_available = lambda: True
+    await reach_holding(machine, clock)
+
+    machine.manual_depart = True
+    await settle(machine, clock, 1)
+    await settle(machine, clock, 1)
+
+    await lease.claim("hermit-akshay")
+    # Past the short backoff, so the waiting tick actually looks at the holder.
+    await settle(machine, clock, 60)
+
+    assert machine._yield_until == 0.0, "handover done; normal fairness resumes"

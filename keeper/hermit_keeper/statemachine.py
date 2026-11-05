@@ -87,6 +87,8 @@ class KeeperStateMachine:
         is_bedtime: Callable[[datetime], bool] | None = None,
         min_dwell_s: float = 600.0,
         claim_delay_s: float = 0.0,
+        yield_s: float = 300.0,
+        others_available: Callable[[], bool] | None = None,
         claim_jitter_s: float = 3.0,
         backoff_s: float = 30.0,
         on_claimed: Hook | None = None,
@@ -105,6 +107,13 @@ class KeeperStateMachine:
 
         self._min_dwell_s = min_dwell_s
         self._claim_delay_s = claim_delay_s
+        #: After handing Hermit on, stand aside this long while anyone else
+        #: could take it. Bounded, so Hermit is never stranded.
+        self._yield_s = yield_s
+        #: "Is another laptop awake and able to host?" Supplied by the runtime
+        #: from the group view; without it we assume we are alone.
+        self._others_available = others_available or (lambda: False)
+        self._yield_until: float = 0.0
         self._claim_jitter_s = claim_jitter_s
         self._backoff_s = backoff_s
         self._on_claimed = on_claimed or _noop
@@ -188,7 +197,17 @@ class KeeperStateMachine:
         holder = await self._lease.holder()
         if holder is not None:
             self._free_seen_at = None
+            # Somebody else took it: we have handed over for real, so the
+            # stand-aside has done its job and normal fairness resumes.
+            self._yield_until = 0.0
             return
+
+        if self._now() < self._yield_until:
+            if self._others_available():
+                return
+            # Nobody else can host. Standing aside now would just leave
+            # Hermit nowhere, so take it back rather than strand it.
+            self._yield_until = 0.0
 
         # The soul is free. Wait out the fairness delay before reaching for it,
         # so the host who hosted least recently gets first go.
@@ -237,6 +256,11 @@ class KeeperStateMachine:
         elif self._presence.present:
             self.state = State.AWAKE_WAITING
             self._backoff_until = self._now() + self._backoff_s
+            # You just said "go". Taking it straight back because you happen
+            # to be the most eligible makes the button look broken, so stand
+            # aside for a while — but only while somebody else could actually
+            # take it, or Hermit would have nowhere to go.
+            self._yield_until = self._now() + self._yield_s
         else:
             self.state = State.ASLEEP
 

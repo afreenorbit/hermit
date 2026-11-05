@@ -98,6 +98,9 @@ class KeeperRuntime:
             ledger_room=config.switch.ledger_room,
             brain_provider=config.brain_provider,
         )
+        #: Everyone's last known state, folded from the shared ledger. Built
+        #: before the machine because the machine asks it who else could host.
+        self.group = GroupView(hosts=known_hosts or [config.host_id])
         self.machine = KeeperStateMachine(
             host=config.host_id,
             agent=f"hermit-{config.host_id}",
@@ -109,14 +112,14 @@ class KeeperRuntime:
             min_dwell_s=config.presence.min_dwell_s,
             on_claimed=self.handoff.on_claimed,
             on_departing=self.handoff.on_departing,
+            yield_s=max(60.0, float(config.presence.min_dwell_s)),
+            others_available=self._others_available,
             **(machine_options or {}),
         )
         self._task: asyncio.Task[None] | None = None
         self._last_line: str | None = None
         self._room = room
         self._ledger_room = config.switch.ledger_room
-        #: Everyone's last known state, folded from the shared ledger.
-        self.group = GroupView(hosts=known_hosts or [config.host_id])
         self._last_heartbeat = 0.0
         self._last_group_read = 0.0
         self._ledger_cursor: datetime | None = None
@@ -202,6 +205,25 @@ class KeeperRuntime:
             except asyncio.CancelledError:
                 pass
             self._task = None
+
+    def _others_available(self) -> bool:
+        """Is another laptop awake and able to take Hermit?
+
+        Read from the group view, which every keeper folds from the same
+        ledger. Used to decide whether standing aside after a handoff would
+        leave Hermit with nowhere to go.
+        """
+        snapshot = self.group.snapshot(self.clock.now(), self_host=self.config.host_id)
+        for host in snapshot["hosts"]:
+            if host["host_id"] == self.config.host_id:
+                continue
+            if host["stale"]:
+                continue
+            # Asleep laptops cannot host; anything else might.
+            if host["present"] is False:
+                continue
+            return True
+        return False
 
     # -- telling the group we are here ---------------------------------------
 
