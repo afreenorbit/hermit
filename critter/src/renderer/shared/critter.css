@@ -7,7 +7,11 @@
   box-sizing: border-box;
 }
 
-/* ---------- creature window: fully transparent ---------- */
+/* ---------- creature window: fully transparent ----------
+   Keyed on the class AND unconditionally below, because this is the rule
+   whose failure is worst: an opaque always-on-top window is a cream slab
+   across the desktop that you cannot click past. It must not depend on one
+   class attribute surviving. */
 html.critter-root,
 html.critter-root body {
   margin: 0;
@@ -20,6 +24,13 @@ html.critter-root body {
 /* match any embedder so a browser never paints an opaque backdrop behind us */
 html.critter-root {
   color-scheme: normal !important;
+}
+
+/* Last line of defence: even with no class and no stylesheet ordering luck,
+   the creature window never paints a background. */
+html:has(.stage),
+html:has(.stage) body {
+  background: transparent !important;
 }
 
 .stage {

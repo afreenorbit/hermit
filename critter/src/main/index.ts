@@ -10,17 +10,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  app,
-  BrowserWindow,
-  ipcMain,
-  Menu,
-  nativeImage,
-  screen,
-  shell,
-  Tray,
-  type Rectangle,
-} from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, screen, shell, Tray, type Rectangle } from 'electron';
 
 const KEEPER_BASE_URL = process.env.HERMIT_KEEPER_URL ?? 'http://127.0.0.1:47800';
 const CRITTER = { w: 320, h: 300 };
@@ -288,10 +278,49 @@ function rebuildTray(): void {
   );
 }
 
+/** Hide or show the companion outright, from the panic key or the tray. */
+function togglePanic(): void {
+  wantVisible = !wantVisible;
+  if (!wantVisible) {
+    // Give the mouse back on the way out, so a stuck grip cannot survive
+    // being hidden.
+    critter?.setIgnoreMouseEvents(true, { forward: true });
+  }
+  applyVisibility();
+  rebuildTray();
+}
+
 // ---------------------------------------------------------------------------
 // ipc
+// The companion is allowed to take the mouse only while the pointer is
+// genuinely over the sprite, and only for as long as the renderer keeps
+// saying so. A transparent always-on-top window that holds the mouse and
+// never gives it back makes the whole desktop unclickable, which happened:
+// no scrolling, no clicking, nothing. One missed `leave` event must never
+// cost somebody their machine.
+//
+// So capture is a dead-man's switch. The renderer re-asserts it while
+// hovering; if it goes quiet for GRIP_MS - crashed, reloaded, missed the
+// event, anything - the main process hands the mouse back on its own.
+const GRIP_MS = 1500;
+let gripTimer: NodeJS.Timeout | null = null;
+
+function releaseGrip(): void {
+  if (gripTimer) {
+    clearTimeout(gripTimer);
+    gripTimer = null;
+  }
+  critter?.setIgnoreMouseEvents(true, { forward: true });
+}
+
 ipcMain.on('hermit:mouse', (_e, over: boolean) => {
-  critter?.setIgnoreMouseEvents(!over, { forward: true });
+  if (!over) {
+    releaseGrip();
+    return;
+  }
+  critter?.setIgnoreMouseEvents(false, { forward: true });
+  if (gripTimer) clearTimeout(gripTimer);
+  gripTimer = setTimeout(releaseGrip, GRIP_MS);
 });
 
 ipcMain.on('hermit:visible', (_e, visible: boolean) => {
@@ -353,6 +382,15 @@ if (!app.requestSingleInstanceLock()) {
     tray = new Tray(trayIcon(true));
     tray.on('click', openPanel);
     rebuildTray();
+    // Panic key. If the companion ever misbehaves - holds the mouse, draws
+    // somewhere it should not, sits over something you need - this hides it
+    // instantly without hunting for the tray icon or killing the process.
+    const PANIC = 'CommandOrControl+Alt+H';
+    if (globalShortcut.register(PANIC, togglePanic)) {
+      console.log(`panic key: ${PANIC} hides or shows Hermit`);
+    }
+    app.on('will-quit', () => globalShortcut.unregisterAll());
+
     screen.on('display-removed', snapOnScreen);
     screen.on('display-metrics-changed', snapOnScreen);
   });

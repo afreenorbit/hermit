@@ -154,8 +154,13 @@ export function CritterWindow() {
 
   // --- pointer: click-through off over the sprite, drag, click for the menu ----
   const down = useRef<{ x: number; y: number } | null>(null);
+  // Capture is a dead-man's switch in the main process: it expires unless we
+  // keep saying the pointer is still here. onPointerMove is the heartbeat, so
+  // a missed `leave` costs at most a second of grip instead of locking the
+  // desktop.
   const hover = {
     onPointerEnter: () => bridge.setMouseOver(true),
+    onPointerMove: () => bridge.setMouseOver(true),
     onPointerLeave: () => {
       if (!down.current) bridge.setMouseOver(false);
     },
