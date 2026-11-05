@@ -68,10 +68,9 @@ export function CritterWindow() {
     return () => window.clearInterval(id);
   }, []);
 
-  // show the window whenever there is something to show
+  // Every laptop shows its local state, including waiting, sleeping and offline.
   useEffect(() => {
-    bridge.setVisible(k.phase !== 'waiting');
-    if (k.phase === 'waiting') bridge.setMouseOver(false);
+    bridge.setVisible(true);
   }, [k.phase]);
 
   // --- arrival ---------------------------------------------------------------
