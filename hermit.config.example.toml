@@ -15,7 +15,9 @@ window_dir     = "~/HermitWindow"     # the only folder Hermit's brain can see
 [presence]
 idle_threshold_s   = 300              # no input for 5 min => idle
 arrive_debounce_s  = 60               # must be present 60s before claiming the soul
-min_dwell_s        = 600              # hold at least 10 min before a voluntary handoff
+min_dwell_s        = 600
+yield_s            = 300      # after handing Hermit on, stand aside this long
+                              # instead of taking it straight back              # hold at least 10 min before a voluntary handoff
 sleep_gap_s        = 90               # heartbeat gap bigger than this => the machine slept
 
 [bedtime]

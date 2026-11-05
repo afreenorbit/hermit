@@ -21,6 +21,11 @@ LeaseStrategy = Literal["agent_instructed", "keeper_claimed", "fake"]
 
 
 class PresenceConfig(BaseModel):
+    #: After handing Hermit on - especially via "I'm busy, go" - stand aside
+    #: this long rather than taking it straight back. Only applies while
+    #: another laptop could actually host; otherwise Hermit would be stranded.
+    yield_s: float = 300.0
+
     idle_threshold_s: int = 300
     arrive_debounce_s: int = 60
     min_dwell_s: int = 600

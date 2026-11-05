@@ -2,72 +2,197 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hermit.dev/schemas/host-config.schema.json",
   "title": "HostConfig",
-  "description": "hermit.config.toml — one per laptop, never committed.",
+  "description": "hermit.config.toml \u2014 one per laptop, never committed.",
   "type": "object",
-  "required": ["host_id", "display_name", "city", "lat", "lon", "timezone", "brain_agent", "brain_provider", "window_dir", "switch"],
+  "required": [
+    "host_id",
+    "display_name",
+    "city",
+    "lat",
+    "lon",
+    "timezone",
+    "brain_agent",
+    "brain_provider",
+    "window_dir",
+    "switch"
+  ],
   "additionalProperties": false,
   "properties": {
-    "host_id": { "type": "string", "pattern": "^[a-z0-9-]{2,24}$" },
-    "display_name": { "type": "string" },
-    "city": { "type": "string" },
-    "lat": { "type": "number", "minimum": -90, "maximum": 90 },
-    "lon": { "type": "number", "minimum": -180, "maximum": 180 },
-    "timezone": { "type": "string", "description": "IANA tz, e.g. Asia/Kolkata" },
-    "brain_agent": { "type": "string" },
-    "brain_provider": { "enum": ["claude-code", "codex", "opencode", "other"] },
-    "window_dir": { "type": "string" },
+    "host_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]{2,24}$"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "lat": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90
+    },
+    "lon": {
+      "type": "number",
+      "minimum": -180,
+      "maximum": 180
+    },
+    "timezone": {
+      "type": "string",
+      "description": "IANA tz, e.g. Asia/Kolkata"
+    },
+    "brain_agent": {
+      "type": "string"
+    },
+    "brain_provider": {
+      "enum": [
+        "claude-code",
+        "codex",
+        "opencode",
+        "other"
+      ]
+    },
+    "window_dir": {
+      "type": "string"
+    },
     "presence": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "idle_threshold_s": { "type": "integer", "minimum": 10, "default": 300 },
-        "arrive_debounce_s": { "type": "integer", "minimum": 0, "default": 60 },
-        "min_dwell_s": { "type": "integer", "minimum": 0, "default": 600 },
-        "sleep_gap_s": { "type": "integer", "minimum": 10, "default": 90 }
+        "idle_threshold_s": {
+          "type": "integer",
+          "minimum": 10,
+          "default": 300
+        },
+        "arrive_debounce_s": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 60
+        },
+        "min_dwell_s": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 600
+        },
+        "sleep_gap_s": {
+          "type": "integer",
+          "minimum": 10,
+          "default": 90
+        },
+        "yield_s": {
+          "type": "number",
+          "minimum": 0,
+          "default": 300,
+          "description": "After handing Hermit on, stand aside this long rather than reclaiming it. Only applies while another host could take it, so Hermit is never stranded."
+        }
       }
     },
     "bedtime": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "start": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
-        "end": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
-        "grace_idle_s": { "type": "integer", "minimum": 0, "default": 120 }
+        "start": {
+          "type": "string",
+          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        },
+        "end": {
+          "type": "string",
+          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        },
+        "grace_idle_s": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 120
+        }
       }
     },
     "switch": {
       "type": "object",
-      "required": ["server_url", "den_room", "ledger_room"],
+      "required": [
+        "server_url",
+        "den_room",
+        "ledger_room"
+      ],
       "additionalProperties": false,
       "properties": {
-        "server_url": { "type": "string", "format": "uri" },
-        "den_room": { "type": "string" },
-        "ledger_room": { "type": "string" },
-        "token_env": { "type": "string", "default": "HERMIT_SWITCH_TOKEN" },
-        "lease_strategy": { "enum": ["agent_instructed", "fake"], "default": "agent_instructed", "description": "agent_instructed: the brain assumes the soul role itself. No external path exists - see docs/switch-facts.md SP2." },
-        "agent_id": { "type": "string", "minLength": 1, "description": "This keeper's registered Switch agent uuid. Required for agent_instructed. The api_key is read from the env var named by token_env, never from this file." },
+        "server_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "den_room": {
+          "type": "string"
+        },
+        "ledger_room": {
+          "type": "string"
+        },
+        "token_env": {
+          "type": "string",
+          "default": "HERMIT_SWITCH_TOKEN"
+        },
+        "lease_strategy": {
+          "enum": [
+            "agent_instructed",
+            "fake"
+          ],
+          "default": "agent_instructed",
+          "description": "agent_instructed: the brain assumes the soul role itself. No external path exists - see docs/switch-facts.md SP2."
+        },
+        "agent_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "This keeper's registered Switch agent uuid. Required for agent_instructed. The api_key is read from the env var named by token_env, never from this file."
+        },
         "rooms": {
           "type": "object",
           "description": "Room name -> Switch room uuid, e.g. {\"hermit-den\": \"<uuid>\", \"hermit-ledger\": \"<uuid>\"}. Switch addresses rooms by uuid only.",
-          "additionalProperties": { "type": "string", "minLength": 1 }
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
         },
-        "lease_expiry_s": { "type": "number", "exclusiveMinimum": 0, "default": 8, "description": "How long Switch takes to free the soul after the holding session dies. 8 is a guess until measured against a live server." },
-        "brain_agent_id": { "type": "string", "minLength": 1, "description": "Optional: the brain's agent uuid, only needed if Switch reports message senders by uuid rather than by name." }
+        "lease_expiry_s": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 8,
+          "description": "How long Switch takes to free the soul after the holding session dies. 8 is a guess until measured against a live server."
+        },
+        "brain_agent_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional: the brain's agent uuid, only needed if Switch reports message senders by uuid rather than by name."
+        }
       }
     },
     "features": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "overlap": { "type": "boolean", "default": false },
-        "nudge": { "type": "boolean", "default": false },
-        "critter": { "type": "boolean", "default": true }
+        "overlap": {
+          "type": "boolean",
+          "default": false
+        },
+        "nudge": {
+          "type": "boolean",
+          "default": false
+        },
+        "critter": {
+          "type": "boolean",
+          "default": true
+        }
       }
     },
     "api": {
       "type": "object",
       "additionalProperties": false,
-      "properties": { "port": { "type": "integer", "minimum": 1024, "maximum": 65535, "default": 47800 } }
+      "properties": {
+        "port": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 65535,
+          "default": 47800
+        }
+      }
     }
   }
 }

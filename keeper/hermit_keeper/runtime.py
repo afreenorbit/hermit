@@ -112,7 +112,7 @@ class KeeperRuntime:
             min_dwell_s=config.presence.min_dwell_s,
             on_claimed=self.handoff.on_claimed,
             on_departing=self.handoff.on_departing,
-            yield_s=max(60.0, float(config.presence.min_dwell_s)),
+            yield_s=float(config.presence.yield_s),
             others_available=self._others_available,
             **(machine_options or {}),
         )
