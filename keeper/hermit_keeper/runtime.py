@@ -344,6 +344,13 @@ class KeeperRuntime:
     def set_override(self, mode: str) -> None:
         self.presence.set_override(Override(mode))
 
+    def request_claim(self) -> bool:
+        """The host asked to take Hermit. False if somebody already has it."""
+        if self.machine.holding:
+            return False
+        self.machine.manual_claim = True
+        return True
+
     def request_depart(self) -> None:
         """The critter's "I'm busy" button."""
         self.machine.manual_depart = True

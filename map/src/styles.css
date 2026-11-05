@@ -1312,3 +1312,16 @@ h3 {
 .live__note {
   margin: 0.75rem 0 0;
 }
+
+/* "Take Hermit" — only shown while nobody holds it. */
+.live__take {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+.live__said {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}

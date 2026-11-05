@@ -22,6 +22,8 @@ import {
 interface Actions {
   start: () => () => void;
   depart: () => Promise<void>;
+  /** Take Hermit if it is free. Resolves false when somebody beat you to it. */
+  claim: () => Promise<boolean>;
   arrived: () => void;
   left: () => void;
 }
@@ -103,6 +105,13 @@ export const useKeeper = create<CritterState & Actions>()((set, get) => {
         window.clearTimeout(retryTimer);
         window.clearInterval(poll);
       };
+    },
+
+    claim: async () => {
+      const response = await fetch(`${base}/v1/claim`, { method: 'POST' });
+      if (!response.ok) throw new Error('Claim request failed');
+      const body = (await response.json()) as { ok?: boolean };
+      return !!body.ok;
     },
 
     depart: async () => {

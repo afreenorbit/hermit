@@ -126,6 +126,10 @@ class KeeperStateMachine:
         self._departure_reason: str | None = None
         #: Set when the host asks to leave through the API.
         self.manual_depart = False
+        #: Set when the host asks to TAKE Hermit through the API. Skips the
+        #: fairness delay and the stand-aside: someone pressing the button has
+        #: said what they want more clearly than any heuristic can infer.
+        self.manual_claim = False
 
     # -- reads ---------------------------------------------------------------
 
@@ -178,6 +182,12 @@ class KeeperStateMachine:
     # -- per-state -----------------------------------------------------------
 
     async def _tick_asleep(self) -> None:
+        # Pressing the button is proof somebody is at this laptop, so it does
+        # not have to wait for presence to settle first. Bedtime still wins:
+        # Hermit refuses to be a reason to stay up, button or no button.
+        if self.manual_claim and not self._is_bedtime(self._clock.now()):
+            self.state = State.AWAKE_WAITING
+            return
         if self._presence.settled():
             self.state = (
                 State.BEDTIME_LOCK if self._is_bedtime(self._clock.now()) else State.AWAKE_WAITING
@@ -191,6 +201,19 @@ class KeeperStateMachine:
         if self._is_bedtime(self._clock.now()):
             self.state = State.BEDTIME_LOCK
             return
+        if self.manual_claim:
+            holder = await self._lease.holder()
+            if holder is None:
+                self.manual_claim = False
+                self._free_seen_at = None
+                self._yield_until = 0.0
+                self._backoff_until = 0.0
+                self.state = State.CLAIMING
+                return
+            # Taken already. Drop the request rather than queue it, so a
+            # forgotten press cannot grab Hermit off someone minutes later.
+            self.manual_claim = False
+
         if self._now() < self._backoff_until:
             return
 

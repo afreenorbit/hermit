@@ -14,6 +14,8 @@ import { useKeeper } from '../shared/store';
 export function PanelWindow() {
   const k = useKeeper();
   const [departing, setDeparting] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+
   const [actionError, setActionError] = useState<string | null>(null);
   const depart = async (): Promise<void> => {
     if (departing) return;
@@ -49,6 +51,18 @@ export function PanelWindow() {
 
   const pieces = useMemo(() => toPieceInputs(k.shell), [k.shell]);
   const mine = k.hostId != null && k.soulHolder === k.hostId;
+  // Nobody has Hermit: anyone awake can simply ask for it. Waiting for the
+  // fairness delay to elapse felt like nothing was happening.
+  const freeToTake = k.connected && !k.soulHolder && !mine;
+  const claim = async (): Promise<void> => {
+    if (claiming) return;
+    setClaiming(true);
+    try {
+      await k.claim();
+    } finally {
+      setClaiming(false);
+    }
+  };
   const myBrain: BrainProvider =
     [...k.shell].reverse().find((p) => p.host === k.hostId)?.brain_provider ?? 'other';
   const ticker = !k.connected
@@ -268,14 +282,25 @@ export function PanelWindow() {
         >
           Open chat
         </PixelButton>
-        <PixelButton
-          variant="danger"
-          icon="play"
-          disabled={!mine || departing || !k.connected}
-          onClick={() => void depart()}
-        >
-          {departing ? 'Saying goodbye…' : 'I’m busy — go'}
-        </PixelButton>
+        {freeToTake ? (
+          <PixelButton
+            variant="primary"
+            icon="play"
+            disabled={claiming}
+            onClick={() => void claim()}
+          >
+            {claiming ? 'Asking…' : 'Take Hermit'}
+          </PixelButton>
+        ) : (
+          <PixelButton
+            variant="danger"
+            icon="play"
+            disabled={!mine || departing || !k.connected}
+            onClick={() => void depart()}
+          >
+            {departing ? 'Saying goodbye…' : 'I’m busy — go'}
+          </PixelButton>
+        )}
       </footer>
     </div>
   );

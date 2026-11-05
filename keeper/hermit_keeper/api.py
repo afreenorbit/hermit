@@ -99,6 +99,21 @@ def create_app(runtime: KeeperRuntime | None = None) -> FastAPI:
             runtime.set_override(mode)
         return {"ok": True, "mode": mode}
 
+    @app.post("/v1/claim")
+    async def claim() -> dict[str, Any]:
+        """Take Hermit, if it is free.
+
+        Skips the fairness delay and the stand-aside: a person pressing a
+        button has said what they want more plainly than any heuristic could
+        infer. It cannot take Hermit off somebody - only an unheld soul can
+        be claimed - so the worst case is being told no.
+        """
+        if runtime is None:
+            return {"ok": False, "reason": "no keeper running"}
+        if not runtime.request_claim():
+            return {"ok": False, "reason": "you already have Hermit"}
+        return {"ok": True}
+
     @app.post("/v1/depart")
     async def depart(body: dict[str, str] | None = None) -> dict[str, Any]:
         if runtime is not None:

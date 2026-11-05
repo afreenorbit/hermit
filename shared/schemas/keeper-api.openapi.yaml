@@ -84,6 +84,22 @@ paths:
                 mode: { enum: [auto, awake, asleep] }
       responses:
         "200": { description: applied }
+  /v1/claim:
+    post:
+      summary: Take Hermit, if it is free
+      description: >
+        Skips the fairness delay and the post-handover stand-aside. Cannot
+        take Hermit from a current holder - only a free soul is claimable -
+        so the worst outcome is being told no.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  reason: { type: string }
   /v1/depart:
     post:
       summary: Trigger a graceful departure ("I'm busy")

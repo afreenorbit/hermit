@@ -8,7 +8,8 @@
  * The desktop critter does not need this page. It talks to its own keeper
  * directly, and works with the browser closed.
  */
-import { PixelBox, PocketHermit, moodLine } from '@hermit/ui';
+import { PixelBox, PixelButton, PocketHermit, moodLine } from '@hermit/ui';
+import { useState } from 'react';
 
 import { secondsSince, type Group, type GroupHost } from '../hooks/useGroup';
 
@@ -33,6 +34,12 @@ export function LivePanel({ group, error, keeper }: Props) {
   const hosts = group?.hosts ?? [];
   const holder = group?.soul_holder ?? null;
   const unreachable = !!error;
+
+  // Nobody has Hermit, so this laptop can simply ask for it. The button talks
+  // to the keeper this page is already watching, which is always a loopback
+  // one - so it only ever claims for the machine you are sitting at.
+  const self = group?.self ?? null;
+  const canTake = !unreachable && !!group && holder === null && !!self;
 
   return (
     <PixelBox as="section" tab="Right now" className="panel live" id="live">
@@ -62,10 +69,40 @@ export function LivePanel({ group, error, keeper }: Props) {
         <p className="live__off">Waiting for the first heartbeat…</p>
       )}
 
+      {canTake && <TakeHermit keeper={keeper} self={self} />}
+
       <p className="live__note">
         Live. Everything else on this page is the exported journey — history, not a feed.
       </p>
     </PixelBox>
+  );
+}
+
+function TakeHermit({ keeper, self }: { keeper: string; self: string }) {
+  const [busy, setBusy] = useState(false);
+  const [said, setSaid] = useState<string | null>(null);
+
+  const take = async (): Promise<void> => {
+    setBusy(true);
+    setSaid(null);
+    try {
+      const res = await fetch(`${keeper}/v1/claim`, { method: 'POST' });
+      const body = (await res.json()) as { ok?: boolean; reason?: string };
+      setSaid(body.ok ? 'Asked — Hermit is on its way.' : (body.reason ?? 'Someone beat you to it.'));
+    } catch {
+      setSaid('Could not reach your keeper.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="live__take">
+      <PixelButton variant="primary" disabled={busy} onClick={() => void take()}>
+        {busy ? 'Asking…' : `Take Hermit (${titleCase(self)})`}
+      </PixelButton>
+      {said && <span className="live__said">{said}</span>}
+    </div>
   );
 }
 

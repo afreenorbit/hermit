@@ -346,3 +346,53 @@ async def test_the_stand_aside_ends_once_someone_else_has_it() -> None:
     await settle(machine, clock, 60)
 
     assert machine._yield_until == 0.0, "handover done; normal fairness resumes"
+
+
+# -- taking Hermit on purpose ------------------------------------------------
+
+
+async def test_the_take_button_skips_the_wait() -> None:
+    """Pressing "take" says what you want more plainly than a heuristic can."""
+    machine, clock, lease, _ = build(claim_delay_s=60.0)
+    machine._others_available = lambda: True
+    for _ in range(6):  # become eligible, but the fairness delay is long
+        await settle(machine, clock, 10)
+    assert not machine.holding
+
+    machine.manual_claim = True
+    for _ in range(4):  # waiting -> claiming -> holding
+        await settle(machine, clock, 1)
+
+    assert machine.holding, "the button should not wait out the fairness delay"
+    assert await lease.holder() == "hermit-afreen"
+
+
+async def test_the_take_button_overrides_a_stand_aside() -> None:
+    machine, clock, lease, _ = build()
+    machine._others_available = lambda: True
+    await reach_holding(machine, clock)
+    machine.manual_depart = True
+    await settle(machine, clock, 1)
+    await settle(machine, clock, 1)
+    assert await lease.holder() is None
+
+    machine.manual_claim = True
+    for _ in range(4):
+        await settle(machine, clock, 1)
+
+    assert machine.holding, "an explicit ask beats standing aside"
+
+
+async def test_the_take_button_cannot_steal_from_a_holder() -> None:
+    clock = FakeClock()
+    lease = FakeSoulLease(clock=clock)
+    machine, _, _, _ = build("afreen", lease=lease, clock=clock)
+    await lease.claim("hermit-akshay")
+
+    machine.manual_claim = True
+    for _ in range(10):
+        await settle(machine, clock, 15)
+
+    assert not machine.holding
+    assert await lease.holder() == "hermit-akshay", "Hermit is not takeable from a host"
+    assert machine.manual_claim is False, "a dropped request must not linger"
