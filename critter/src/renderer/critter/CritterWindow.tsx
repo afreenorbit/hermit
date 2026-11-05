@@ -188,10 +188,43 @@ export function CritterWindow() {
   const phased: Mood | null =
     k.phase === 'arriving' ? 'arriving' : k.phase === 'leaving' ? 'away' : null;
   const base: Mood = here && sleepy ? 'sleeping' : (phased ?? derived);
-  const mood: Mood = act.mood ?? base;
+  // The keeper is the authority on whether Hermit is on THIS laptop. An
+  // animation beat may colour the moment, but it must never contradict that:
+  // the walk-in used to leave `away` on screen while the banner said "with
+  // you", which read as the mascot being broken.
+  const holdsIt = !!k.soulHolder && k.soulHolder === k.hostId;
+  const acted: Mood | null =
+    act.mood && !(holdsIt && (act.mood === 'away' || act.mood === 'offline'))
+      ? act.mood
+      : null;
+  const mood: Mood = acted ?? (holdsIt && base === 'away' ? 'visiting' : base);
+  const hostName = (k.hostId ?? 'this laptop').replace(/^./, (c) => c.toUpperCase());
+  const holderName = k.soulHolder?.replace(/^./, (c) => c.toUpperCase());
+  const locationTitle = !k.connected
+    ? 'Keeper offline'
+    : k.phase === 'arriving'
+      ? `Arriving at ${hostName}`
+      : k.phase === 'leaving'
+        ? `Leaving ${hostName}`
+        : holderName
+          ? `Hermit is with ${holderName}`
+          : 'Hermit is between laptops';
+  const locationDetail = !k.connected
+    ? 'Waiting to reconnect'
+    : k.phase === 'leaving'
+      ? 'Next stop is not chosen yet'
+      : k.soulHolder === k.hostId
+        ? 'On your laptop now'
+        : holderName
+          ? `On ${holderName}’s laptop`
+          : 'Waiting for someone to claim it';
 
   return (
     <div className={`stage${faded ? ' is-faded' : ''}`}>
+      <div className="location-label" aria-live="polite">
+        <strong>{locationTitle}</strong>
+        <span>{locationDetail}</span>
+      </div>
       {line && (
         <div className="bubble" {...hover}>
           <DialogBox

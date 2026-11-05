@@ -64,6 +64,9 @@ def create_app(runtime: KeeperRuntime | None = None) -> FastAPI:
         async def stream() -> AsyncIterator[bytes]:
             if runtime is None:
                 return
+            # Send a first chunk so EventSource opens before any keeper event.
+            # Without it the desktop can stay falsely offline while idle.
+            yield b": connected\n\n"
             async for event in runtime.bus.subscribe():
                 payload = json.dumps(event.model_dump(mode="json"))
                 yield f"data: {payload}\n\n".encode()

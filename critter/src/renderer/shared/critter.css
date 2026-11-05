@@ -31,6 +31,30 @@ html.critter-root {
   opacity: 0;
 }
 
+.location-label {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  left: 12px;
+  z-index: 3;
+  display: grid;
+  gap: 3px;
+  padding: 9px 12px;
+  border: 2px solid #6b4a32;
+  border-radius: 13px;
+  background: #fff7e9;
+  color: #533822;
+  text-align: center;
+  box-shadow: 0 4px 0 #d7b89a;
+  font: 12px/1.25 var(--font-ui, sans-serif);
+}
+.location-label strong {
+  font-size: 14px;
+}
+.location-label span {
+  opacity: 0.78;
+}
+
 .creature {
   position: absolute;
   right: 18px;
@@ -51,6 +75,12 @@ html.critter-root {
 }
 .bubble .hm-dialog {
   margin: 16px 2px 6px;
+  /* Centre the line and give it room: "Hermit is with Afreen / On your laptop
+     now" was sitting hard against the left edge and clipping on the right. */
+  padding: 10px 14px;
+  text-align: center;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 /* the tail pointing down at Tilli */
 .bubble::after {

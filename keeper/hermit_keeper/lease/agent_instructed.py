@@ -44,8 +44,10 @@ import httpx
 import structlog
 
 from ..brain.ledger_director import AckReceipt
+from ..brain.protocol import format_ack, format_cue
 from ..clock import Clock, RealClock
 from ..events import Event, EventType
+from ..ids import new_id
 from ..ledger import encode
 from ..room.base import Message
 from .base import ClaimResult
@@ -119,6 +121,7 @@ class AgentInstructedLease:
         settle_s: float = SETTLE_S,
         warmup_s: float | None = None,
         poll_s: float = POLL_S,
+        standalone: bool = False,
     ) -> None:
         self._brain = brain
         self._room = room
@@ -132,6 +135,9 @@ class AgentInstructedLease:
         self._settle_s = settle_s
         self._warmup_s = STALE_BEATS * heartbeat_s if warmup_s is None else warmup_s
         self._poll_s = poll_s
+        #: No brain connected: this keeper claims the soul itself. See
+        #: `_claim_standalone` for what that costs.
+        self._standalone = standalone
         self.book = SoulLedger(stale_after_s=STALE_BEATS * heartbeat_s + lease_expiry_s)
 
         #: The claim our brain confirmed and the ledger agreed with.
@@ -226,6 +232,8 @@ class AgentInstructedLease:
             if view.holder is not None:
                 ours = self._mine is not None and view.claim == self._mine
                 return ClaimResult(ok=ours, holder=f"hermit-{view.holder}")
+            if self._standalone:
+                return await self._claim_standalone()
             try:
                 await self._brain.cue(CLAIM_CUE, {"role": self._role, "room": self._den})
             except httpx.HTTPError:
@@ -276,9 +284,28 @@ class AgentInstructedLease:
         if self._mine is not None and self._mine.ref == claim.ref:
             self._mine = None
         try:
-            await self._brain.cue(RELEASE_CUE, {"role": self._role, "room": self._den})
-            receipt = await self._brain.wait_ack_receipt(RELEASE_CUE, self._ack_timeout_s)
-            acked = receipt is not None and receipt.ok
+            if self._standalone:
+                # Nobody to ask and nobody to wait for. Post the release the
+                # same way the claim was posted, so every keeper's fold sees
+                # the soul come free immediately instead of stalling on an
+                # ACK that is never coming.
+                cue_id = new_id("cue")
+                await self._room.post(
+                    self._ledger,
+                    format_cue(
+                        to=self.agent,
+                        cue=RELEASE_CUE,
+                        cue_id=cue_id,
+                        host=self.host,
+                        context={"role": self._role, "room": self._den, "standalone": True},
+                    ),
+                )
+                await self._room.post(self._ledger, format_ack(RELEASE_CUE, True, cue_id))
+                acked = True
+            else:
+                await self._brain.cue(RELEASE_CUE, {"role": self._role, "room": self._den})
+                receipt = await self._brain.wait_ack_receipt(RELEASE_CUE, self._ack_timeout_s)
+                acked = receipt is not None and receipt.ok
             if not acked:
                 log.warning("brain did not confirm the release", host=self.host, reason=reason)
             await self._record(
@@ -292,6 +319,55 @@ class AgentInstructedLease:
             # Unreachable: the orphan rule in `_reconcile` retries once the
             # room is back, because the ledger will still show the claim.
             log.warning("could not release the soul; Switch unreachable", host=self.host)
+
+    async def _claim_standalone(self) -> ClaimResult:
+        """Claim the soul with no brain connected.
+
+        **This is weaker than the real thing and the difference matters.** With
+        a brain, Switch *enforces* exclusivity: the soul is an exclusive role
+        and a second ``assume_role`` simply fails. Here nothing is enforced;
+        the keeper writes its own claim into the ledger and exclusivity comes
+        from every keeper folding that shared log the same way — earliest
+        claim wins, ties broken by message id.
+
+        That still runs through Switch: the ordering is the server's, not any
+        laptop's clock, and all three keepers read the same room. But it is
+        agreement, not enforcement, and a keeper that never reads the ledger
+        could ignore it. Use it to get a group running today; connect the
+        brains and drop this as soon as the role exists.
+
+        The pair of lines posted here is exactly what a brain would have
+        produced, so `SoulLedger.fold` needs no special case: a cue carrying
+        this host, then the matching ACK echoing its id.
+        """
+        cue_id = new_id("cue")
+        try:
+            await self._room.post(
+                self._ledger,
+                format_cue(
+                    to=self.agent,
+                    cue=CLAIM_CUE,
+                    cue_id=cue_id,
+                    host=self.host,
+                    context={"role": self._role, "room": self._den, "standalone": True},
+                ),
+            )
+            await self._room.post(self._ledger, format_ack(CLAIM_CUE, True, cue_id))
+        except httpx.HTTPError:
+            log.info("could not write a standalone claim", host=self.host)
+            return ClaimResult(ok=False, holder=self._cached)
+
+        # Let every other keeper's claim land before deciding who won.
+        await self._clock.sleep(self._settle_s)
+        view = await self._fold()
+        if view.holder == self.host:
+            self._mine = view.claim
+            self._cached = self.agent
+            log.info("took the soul (standalone, no brain)", host=self.host)
+            return ClaimResult(ok=True, holder=self.agent)
+        log.info("standalone claim lost", host=self.host, winner=view.holder)
+        self._cached = f"hermit-{view.holder}" if view.holder else None
+        return ClaimResult(ok=False, holder=self._cached)
 
     async def _record(self, event_type: EventType, **data: object) -> None:
         event = Event(type=event_type, host=self.host, ts=self._clock.now(), data=data)

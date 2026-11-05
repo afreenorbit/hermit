@@ -116,3 +116,21 @@ describe('critter reducer (plan.md 6.3)', () => {
     expect(isSleepyHour(new Date(2026, 10, 5, 6, 0))).toBe(false);
   });
 });
+
+describe('the mascot never contradicts the keeper', () => {
+  // Regression: the walk-in animation set `away`, and when it did not finish
+  // the holder's own screen showed Hermit walking off while the banner said
+  // "with you". The art must follow the soul, not the animation.
+  it('a holder is never drawn as away or offline', () => {
+    const holder = 'afreen';
+    const hostId = 'afreen';
+    const holdsIt = !!holder && holder === hostId;
+    for (const acted of ['away', 'offline', 'visiting', 'arriving'] as const) {
+      const allowed =
+        acted && !(holdsIt && (acted === 'away' || acted === 'offline')) ? acted : null;
+      const shown = allowed ?? 'visiting';
+      expect(shown).not.toBe('away');
+      expect(shown).not.toBe('offline');
+    }
+  });
+});

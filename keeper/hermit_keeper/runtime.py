@@ -93,6 +93,7 @@ class KeeperRuntime:
             self.bus,
             favors=favors,
             context=context,
+            brain_is_live=config.switch.lease_strategy != "keeper_claimed",
             den_room=config.switch.den_room,
             ledger_room=config.switch.ledger_room,
             brain_provider=config.brain_provider,

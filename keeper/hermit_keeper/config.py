@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 BrainProvider = Literal["claude-code", "codex", "opencode", "other"]
 #: Only two exist. There is no way to assume a role from outside the
 #: holding agent's own session - see docs/switch-facts.md SP2.
-LeaseStrategy = Literal["agent_instructed", "fake"]
+LeaseStrategy = Literal["agent_instructed", "keeper_claimed", "fake"]
 
 
 class PresenceConfig(BaseModel):

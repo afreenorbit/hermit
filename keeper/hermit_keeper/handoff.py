@@ -32,6 +32,11 @@ log = structlog.get_logger(__name__)
 #: before Hermit leaves anyway. Nobody should be held hostage by a crab.
 FAVOR_WAIT_S = 90.0
 
+#: How long to wait for a favor when no brain is connected to ask on our
+#: behalf. Short on purpose: the ask still happens and a human can still
+#: answer in the den, but the departure does not stall on it.
+NO_BRAIN_FAVOR_WAIT_S = 3.0
+
 _PROVIDERS = ("claude-code", "codex", "opencode", "other")
 
 
@@ -102,6 +107,7 @@ class Handoff:
         *,
         favors: FavorStore | None = None,
         context: ContextProvider | None = None,
+        brain_is_live: bool = True,
         den_room: str = "hermit-den",
         ledger_room: str = "hermit-ledger",
         brain_provider: str | None = None,
@@ -109,6 +115,8 @@ class Handoff:
         self.host = host
         self._room = room
         self._brain = brain
+        #: False when no coding agent is connected to answer cues.
+        self._brain_is_live = brain_is_live
         self._clock = clock
         self._bus = bus or EventBus()
         self._favors = favors
@@ -188,7 +196,11 @@ class Handoff:
         favor = None
         if self._favors is not None:
             await self._brain.cue("ASK_FAVOR", {"next_host_known": False})
-            favor = await self._favors.ask_and_capture(FAVOR_WAIT_S)
+            # With no brain in the room nobody will ever answer, and a
+            # 90-second stall in DEPARTING looks exactly like a hang. Ask, but
+            # do not hold the handoff open waiting for a reply that cannot come.
+            wait_s = FAVOR_WAIT_S if self._brain_is_live else NO_BRAIN_FAVOR_WAIT_S
+            favor = await self._favors.ask_and_capture(wait_s)
             if favor is not None:
                 await self._brain.cue("FAVOR_CAPTURED", {"text": favor["text"]})
                 await self._write(EventType.FAVOR_LEFT, favor=favor)

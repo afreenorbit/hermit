@@ -89,7 +89,7 @@ def _build_runtime(
     ``env`` and ``transport`` exist for tests; production passes neither.
     """
     strategy = cfg.switch.lease_strategy
-    if strategy == "agent_instructed":
+    if strategy in ("agent_instructed", "keeper_claimed"):
         try:
             built = build_switch_keeper(cfg, env=env, transport=transport, persist=True)
         except SwitchConfigError as exc:
@@ -100,6 +100,14 @@ def _build_runtime(
             f"(brain {cfg.brain_agent})",
             fg=typer.colors.GREEN,
         )
+        if strategy == "keeper_claimed":
+            typer.secho(
+                "keeper_claimed: no brain needed - this keeper claims the soul itself "
+                "and the shared ledger settles who won. Switch orders the claims, but "
+                "it does not enforce them; switch to agent_instructed once the soul "
+                "role exists and your brain is connected.",
+                fg=typer.colors.YELLOW,
+            )
         return built.runtime, built.aclose
 
     clock = RealClock()

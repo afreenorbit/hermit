@@ -131,9 +131,9 @@ def build_switch_keeper(
     ``persist=True`` (what ``hermit-keeper run`` passes) keeps the favor
     snapshot and the journal in ``state_dir`` (default ``~/.hermit``).
     """
-    if cfg.switch.lease_strategy != "agent_instructed":
+    if cfg.switch.lease_strategy not in ("agent_instructed", "keeper_claimed"):
         raise SwitchConfigError(
-            f"build_switch_keeper needs lease_strategy = 'agent_instructed', "
+            f"build_switch_keeper needs lease_strategy = 'agent_instructed' or 'keeper_claimed', "
             f"got '{cfg.switch.lease_strategy}'"
         )
     token = check_switch_config(cfg, env)
@@ -174,6 +174,10 @@ def build_switch_keeper(
         heartbeat_s=t.heartbeat_s,
         lease_expiry_s=switch.lease_expiry_s,
         settle_s=t.settle_s,
+        # No brain connected yet: the keeper writes its own claim and the
+        # shared ledger decides who won. Weaker than the exclusive role -
+        # agreement rather than enforcement - so it is opt-in per host.
+        standalone=switch.lease_strategy == "keeper_claimed",
     )
     presence = CompositePresence(
         presence_source or for_this_platform(),
