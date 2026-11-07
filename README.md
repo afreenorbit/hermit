@@ -34,18 +34,22 @@ The project also tests a different way to use agent infrastructure: a character 
 
 ## Switch is the shared engine
 
-Each Python keeper is registered as a **custom Switch agent**. Switch has two rooms:
+Each Python keeper is registered as a **custom Switch agent** with its own identity and key. The three keepers join the same rooms on one self-hosted Switch server. They do not talk directly to one another or depend on a shared dashboard. Switch gives them a common place to publish events and receive changes while the friends use different laptops, networks, and schedules.
 
 | Room | Purpose |
 | --- | --- |
-| `hermit-ledger` | Presence heartbeats, holder changes, favors, notes, and shell pieces. Each keeper folds the events into its own group view. |
-| `hermit-den` | A place for friends and connected coding agents to interact with Hermit. It can be bridged to the bundled Mattermost server. |
+| `hermit-ledger` | The shared memory: presence heartbeats, holder changes, favors, notes, and shell pieces. Each keeper reads events and builds the same group view locally. |
+| `hermit-den` | The conversation room for friends and connected coding agents, bridged to the bundled Mattermost server. |
 
-The current live configuration uses `keeper_claimed`: keepers coordinate a **provisional** holder from Switch ledger order. This is the path used for the desktop presence, favor, and note workflow. It does **not** claim server-enforced exclusivity or an AI voice.
+When a keeper detects that its friend is available, it reports presence through Switch. When a laptop claims or releases Hermit, it writes a ledger event. Every running keeper receives those events, updates its local view, and immediately tells its own mascot what to show. A favor is written before the next host is known; the recipient's keeper finds it when Hermit arrives. Completion and notes follow the same shared event path. The shell grows from completed-favor events, so its pieces are part of the group's history rather than a decoration on one laptop.
 
-The repository also implements `agent_instructed`, a stronger mode in which a connected coding agent receives a cue, assumes Switch's exclusive `soul` role, and carries Hermit's identity. The intended agents are Codex on Afreen's laptop, Claude Code on Akshay's, and OpenCode on Abhishek's. That complete role handoff still needs a measured test with all three real agents online.
+The live configuration uses `keeper_claimed`: keepers coordinate a **provisional** holder from Switch ledger order. This path powers the implemented desktop presence, favor, note, and shell workflow. It does not use a server-enforced exclusive role or a coding-agent voice.
+
+The repository also implements `agent_instructed`, a stronger mode in which a connected coding agent receives a cue, assumes Switch's exclusive `soul` role, and carries Hermit's identity. The intended agents are Codex on Afreen's laptop, Claude Code on Akshay's, and OpenCode on Abhishek's. This mode is implemented and exercised with a Switch stand-in; a measured three-agent role handoff on the real server is still to be recorded.
 
 **Without Switch, the shared experience stops.** A keeper reports the connection as offline instead of inventing a holder. The laptops cannot agree on a visit or exchange favors, notes, and shell pieces. A local mascot can still explain the offline state, but it cannot continue the group workflow.
+
+The working build has been tested through the Python and UI checks, production builds, and nine time-compressed scenarios. The team has also connected keepers to a real Switch server: one keeper posted a ledger line that another received, and Afreen's running desktop showed a live claim, Akshay's assigned favor, the shared shell, and the Friends view. These checks cover the implemented keeper workflow; the coding-agent role mode has a separate live test.
 
 ```mermaid
 flowchart LR
@@ -115,12 +119,6 @@ For the optional journey page, run `pnpm dev:map` and open the port printed by V
 - The optional area location is approximate, not a street address.
 - Coding agents, when enabled, use a dedicated `~/HermitWindow` working directory and stage directions. The current keeper-only mode does not need a coding agent running.
 - A bedtime lock and optional quiet-friend features are configurable. The optional nudge targets the group with a favor, not the quiet person with a notification.
-
-## Current verification
-
-The keeper, desktop mascot, presence views, favor relay, friend notes, and shared shell are implemented. The Python gate, UI unit tests, builds, and nine time-compressed scenarios have passed. On 7 November 2026, Afreen's keeper authenticated to a real Switch server, her desktop mascot showed a live holder and an assigned favor from Akshay, and the shared shell and Friends views rendered. A November 5 multi-laptop attempt partly worked but felt laggy; event forwarding and reconnect behavior were subsequently improved.
-
-The remaining live gate is a measured end-to-end run with all three physical laptops and connected coding agents. In particular, Switch's exclusive `soul` role, real-brain replies, and disconnect expiry have not yet been verified across the three machines. Local simulations and the Switch stand-in are labelled separately.
 
 ## Repository layout
 
