@@ -54,6 +54,28 @@ def ledger_events(hub: FakeRoomHub) -> list[Event]:
     return [e for e in (decode(m.text) for m in hub.rooms.get(LEDGER, [])) if e]
 
 
+async def test_explicit_favor_crosses_laptops_and_grows_the_shared_shell() -> None:
+    clock = FakeClock()
+    hub = FakeRoomHub(clock=clock)
+    afreen, _, _ = make_favors(hub, clock, "afreen")
+    akshay, _, _ = make_favors(hub, clock, "akshay")
+
+    left = await afreen.leave("Share one song that helped you focus")
+    assert left is not None
+    assert await afreen.has_open_from("afreen")
+    assert await afreen.leave("A duplicate favor") is None
+    carried = await akshay.carried("akshay")
+    assert carried is not None and carried["id"] == left["id"]
+    await akshay.assign(left["id"], "akshay")
+    pending = await akshay.pending_for("akshay")
+    assert pending is not None and pending["text"] == left["text"]
+    piece = await akshay.complete(left["id"])
+    assert piece is not None
+    assert (await afreen.shell())["pieces"] == [piece]
+    assert (await akshay.shell())["pieces"] == [piece]
+    assert await akshay.pending_for("akshay") is None
+
+
 # -- who counts as a person -------------------------------------------------
 
 

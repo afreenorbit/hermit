@@ -360,6 +360,11 @@ html.panel-root body {
   font: 500 14px/1.65 var(--font-body);
   text-align: center;
 }
+.menu__quest { display: grid; gap: 12px; }
+.menu__quest form { display: grid; gap: 8px; }
+.menu__quest label { font-weight: 700; color: var(--hm-ink); }
+.menu__quest textarea { width: 100%; min-height: 68px; box-sizing: border-box; resize: vertical; padding: 10px; border: 2px solid var(--hm-line); border-radius: 12px; background: var(--hm-surface); color: var(--hm-ink); font: inherit; }
+.menu__feedback { margin: 0; color: var(--hm-ink); font-size: 13px; }
 .menu__log {
   display: flex;
   flex-direction: column;

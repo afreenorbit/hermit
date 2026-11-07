@@ -18,6 +18,9 @@ export function PanelWindow() {
   const [busy, setBusy] = useState(false);
 
   const [actionError, setActionError] = useState<string | null>(null);
+  const [favorText, setFavorText] = useState('');
+  const [favorBusy, setFavorBusy] = useState(false);
+  const [favorFeedback, setFavorFeedback] = useState<string | null>(null);
   const { start } = k;
   useEffect(() => start(), [start]);
 
@@ -97,7 +100,26 @@ export function PanelWindow() {
           ? 'I brought you a little favor!'
           : 'Cozy here. Thanks for having me.';
 
-  const favor = k.favorPending as { text?: string; left_by?: string; status?: string } | null;
+  const favor = k.favorPending as { id?: string; text?: string; left_by?: string; status?: string } | null;
+  const runFavor = async (kind: 'leave' | 'complete'): Promise<void> => {
+    if (favorBusy) return;
+    setFavorBusy(true);
+    setFavorFeedback(null);
+    try {
+      if (kind === 'leave') {
+        await k.leaveFavor(favorText.trim());
+        setFavorText('');
+        setFavorFeedback('Hermit is carrying your favor to the next friend.');
+      } else if (favor?.id) {
+        await k.completeFavor(favor.id);
+        setFavorFeedback('Favor complete! A piece was added to the shared shell.');
+      }
+    } catch (error) {
+      setFavorFeedback(error instanceof Error ? error.message : 'Please try again.');
+    } finally {
+      setFavorBusy(false);
+    }
+  };
   const reward = useMemo(
     () =>
       favor && k.hostId
@@ -192,15 +214,36 @@ export function PanelWindow() {
             id: 'quest',
             label: 'Quest',
             badge: favor ? <span className="menu__dot" aria-label="one quest" /> : undefined,
-            content: favor?.text ? (
-              <QuestCard
-                text={favor.text}
-                from={favor.left_by ? titleCase(favor.left_by) : 'Hermit'}
-                status={(favor.status as 'open' | 'assigned' | 'done' | 'expired') ?? 'assigned'}
-                reward={reward}
-              />
-            ) : (
-              <p className="menu__empty">No favor right now. Hermit is just happy to be here.</p>
+            content: (
+              <div className="menu__quest">
+                {favor?.text ? (
+                  <>
+                    <QuestCard
+                      text={favor.text}
+                      from={favor.left_by ? titleCase(favor.left_by) : 'Hermit'}
+                      status={(favor.status as 'open' | 'assigned' | 'done' | 'expired') ?? 'assigned'}
+                      reward={reward}
+                    />
+                    <PixelButton disabled={favorBusy || !mine || !favor.id} onClick={() => void runFavor('complete')}>
+                      I did it · grow the shell
+                    </PixelButton>
+                  </>
+                ) : (
+                  <p className="menu__empty">No favor right now. Leave a small task for the next friend Hermit visits.</p>
+                )}
+                {mine && !favor && (
+                  <form onSubmit={(event) => { event.preventDefault(); void runFavor('leave'); }}>
+                    <label htmlFor="favor-text">A little favor for the next friend</label>
+                    <textarea id="favor-text" maxLength={280} minLength={3} value={favorText}
+                      onChange={(event) => setFavorText(event.target.value)}
+                      placeholder="Share one song that helped you focus today" />
+                    <PixelButton disabled={favorBusy || favorText.trim().length < 3}>
+                      Leave a favor
+                    </PixelButton>
+                  </form>
+                )}
+                {favorFeedback && <p className="menu__feedback" role="status">{favorFeedback}</p>}
+              </div>
             ),
           },
           {

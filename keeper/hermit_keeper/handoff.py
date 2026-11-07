@@ -78,6 +78,8 @@ class FavorStore(Protocol):
         """Wait for the host to leave a favor. ``None`` if they don't."""
         ...
 
+    async def has_open_from(self, host: str) -> bool: ...
+
 
 class ContextProvider(Protocol):
     """Implemented by ``context/`` (Abhishek). Phase 4.3."""
@@ -194,7 +196,7 @@ class Handoff:
         machine is gone and Switch's lease expiry does the work.
         """
         favor = None
-        if self._favors is not None:
+        if self._favors is not None and not await self._favors.has_open_from(self.host):
             await self._brain.cue("ASK_FAVOR", {"next_host_known": False})
             # With no brain in the room nobody will ever answer, and a
             # 90-second stall in DEPARTING looks exactly like a hang. Ask, but

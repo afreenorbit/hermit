@@ -24,6 +24,8 @@ interface Actions {
   depart: () => Promise<void>;
   /** Take Hermit if it is free. Resolves false when somebody beat you to it. */
   claim: () => Promise<boolean>;
+  leaveFavor: (text: string) => Promise<void>;
+  completeFavor: (id: string) => Promise<void>;
   arrived: () => void;
   left: () => void;
 }
@@ -84,6 +86,7 @@ export const useKeeper = create<CritterState & Actions>()((set, get) => {
           if (after.celebrate > before.celebrate) sound.play('shell');
           // status carries Hermit's latest den line; cheap on localhost
           void refreshStatus().catch(() => undefined);
+          if (parsed.data.type === 'SHELL_PIECE_ADDED') void refreshShell().catch(() => undefined);
         };
         es.onerror = () => {
           es?.close();
@@ -112,6 +115,21 @@ export const useKeeper = create<CritterState & Actions>()((set, get) => {
       if (!response.ok) throw new Error('Claim request failed');
       const body = (await response.json()) as { ok?: boolean };
       return !!body.ok;
+    },
+
+    leaveFavor: async (text) => {
+      const response = await fetch(`${base}/v1/favors`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      if (!response.ok) throw new Error((await response.json() as { error?: string }).error ?? 'Could not leave favor');
+      await refreshStatus();
+    },
+    completeFavor: async (id) => {
+      const response = await fetch(`${base}/v1/favors/${encodeURIComponent(id)}/complete`, { method: 'POST' });
+      if (!response.ok) throw new Error((await response.json() as { error?: string }).error ?? 'Could not complete favor');
+      await Promise.all([refreshStatus(), refreshShell()]);
     },
 
     depart: async () => {

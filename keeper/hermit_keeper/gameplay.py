@@ -154,6 +154,7 @@ class LedgerFavors:
         self._max_wait_s = max_wait_s
 
         self.book = FavorBook(clock, room=den_room)
+        self.shell_pieces: dict[str, dict[str, Any]] = {}
         self._seen_events: set[str] = set()
         self._stop: _Stop | None = None
         self._watcher: asyncio.Task[None] | None = None
@@ -172,8 +173,15 @@ class LedgerFavors:
         applied = 0
         for message in messages:
             event = decode(message.text)
-            if event is not None and self.apply(event):
-                applied += 1
+            if event is not None:
+                if event.type is EventType.SHELL_PIECE_ADDED:
+                    piece = event.data.get("piece")
+                    if isinstance(piece, dict) and isinstance(piece.get("id"), str):
+                        if piece["id"] not in self.shell_pieces:
+                            self.shell_pieces[piece["id"]] = piece
+                            applied += 1
+                elif self.apply(event):
+                    applied += 1
         if applied:
             self._save_snapshot()
         return applied
@@ -224,6 +232,34 @@ class LedgerFavors:
     async def carried(self, for_host: str) -> dict[str, Any] | None:
         await self.sync()
         return await self.book.carried(for_host)
+
+    async def pending_for(self, host: str) -> dict[str, Any] | None:
+        """The favor delivered to this host, if one still needs doing."""
+        await self.sync()
+        for favor in self.book.favors.values():
+            if favor.assignee == host and favor.status == "assigned":
+                return favor.to_dict()
+        return None
+
+    async def shell(self) -> dict[str, Any]:
+        await self.sync()
+        return {"pieces": list(self.shell_pieces.values())}
+
+    async def leave(self, text: str) -> dict[str, Any] | None:
+        """Leave a favor explicitly from the desktop before Hermit departs."""
+        await self.sync()
+        if any(f.left_by == self.host and f.status == "open" for f in self.book.favors.values()):
+            return None
+        favor = await self.book.leave(self.host, text)
+        if favor is None:
+            return None
+        await self._write(EventType.FAVOR_LEFT, favor=favor.to_dict())
+        self._save_snapshot()
+        return favor.to_dict()
+
+    async def has_open_from(self, host: str) -> bool:
+        await self.sync()
+        return any(f.left_by == host and f.status == "open" for f in self.book.favors.values())
 
     async def assign(self, favor_id: str, host: str) -> None:
         """Called on arrival. Starts listening for the host doing the favor."""
@@ -345,6 +381,7 @@ class LedgerFavors:
         piece = made.to_dict()
         await self._write(EventType.FAVOR_COMPLETED, favor_id=favor_id, completed_by=self.host)
         await self._write(EventType.SHELL_PIECE_ADDED, piece=piece)
+        self.shell_pieces[piece["id"]] = piece
         self._save_snapshot()
 
         line = describe(made, local_hour=self._local_hour())
@@ -369,6 +406,7 @@ class LedgerFavors:
             await self._room.post(self._ledger, encode(event))
         except Exception:
             log.warning("could not write favor line to the ledger", type=str(event_type))
+            raise
 
     def _load_snapshot(self) -> None:
         if self._snapshot is None or not self._snapshot.exists():
@@ -381,6 +419,9 @@ class LedgerFavors:
             favor = _favor_from(item)
             if favor is not None:
                 self.book.favors[favor.id] = favor
+        for piece in raw.get("shell_pieces", []):
+            if isinstance(piece, dict) and isinstance(piece.get("id"), str):
+                self.shell_pieces[piece["id"]] = piece
         self._seen_events.update(str(e) for e in raw.get("seen_events", []))
 
     def _save_snapshot(self) -> None:
@@ -388,6 +429,7 @@ class LedgerFavors:
             return
         payload = {
             "favors": [f.to_dict() for f in self.book.favors.values()],
+            "shell_pieces": list(self.shell_pieces.values()),
             "seen_events": sorted(self._seen_events)[-5000:],
         }
         with contextlib.suppress(OSError):

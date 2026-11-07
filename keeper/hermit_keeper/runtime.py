@@ -14,7 +14,7 @@ import asyncio
 import contextlib
 from collections.abc import Callable, Coroutine, Sequence
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 import structlog
 
@@ -83,6 +83,7 @@ class KeeperRuntime:
         self.clock: Clock = clock or RealClock()
         self.bus = bus or EventBus()
         self.presence = presence
+        self.favors = favors
         self.lease = lease
 
         self.handoff = Handoff(
@@ -301,6 +302,11 @@ class KeeperRuntime:
         )
         if switch == "offline":
             holder_host, mood = None, "offline"
+        favor_pending = (
+            await self.favors.pending_for(host)
+            if self.favors is not None and holder_host == host and switch != "offline"
+            else None
+        )
         return {
             "host": host,
             "state": str(self.machine.state),
@@ -308,10 +314,41 @@ class KeeperRuntime:
             "soul_holder": holder_host,
             "since": self._since(),
             "mood": mood,
-            "favor_pending": None,
+            "favor_pending": favor_pending,
             "last_line": self._last_line,
             "switch": switch,
         }
+
+    async def shell(self) -> dict[str, Any]:
+        """Shared shell cached from Switch ledger lines and the local snapshot."""
+        if self.favors is not None:
+            return cast("dict[str, Any]", await self.favors.shell())
+        try:
+            messages = await self._room.history(self._ledger_room, limit=1000)
+        except Exception:
+            return {"pieces": []}
+        pieces: dict[str, dict[str, Any]] = {}
+        for message in messages:
+            event = decode(message.text)
+            if event is None or event.type is not EventType.SHELL_PIECE_ADDED:
+                continue
+            piece = event.data.get("piece")
+            if isinstance(piece, dict) and isinstance(piece.get("id"), str):
+                pieces[piece["id"]] = piece
+        return {"pieces": list(pieces.values())}
+
+    async def leave_favor(self, text: str) -> dict[str, Any] | None:
+        if self.favors is None or not self.machine.holding or self.switch_state() == "offline":
+            return None
+        return cast("dict[str, Any] | None", await self.favors.leave(text))
+
+    async def complete_favor(self, favor_id: str) -> dict[str, Any] | None:
+        if self.favors is None or not self.machine.holding or self.switch_state() == "offline":
+            return None
+        pending = await self.favors.pending_for(self.config.host_id)
+        if pending is None or pending["id"] != favor_id:
+            return None
+        return cast("dict[str, Any] | None", await self.favors.complete(favor_id))
 
     async def group_status(self) -> dict[str, Any]:
         """Every laptop in the group — what `/v1/group` serves.

@@ -20,6 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from . import __version__
+from .favors import check_safe
 from .runtime import KeeperRuntime
 
 #: Browsers in the critter's Electron renderer send one of these.
@@ -87,8 +88,25 @@ def create_app(runtime: KeeperRuntime | None = None) -> FastAPI:
 
     @app.get("/v1/shell")
     async def shell() -> dict[str, Any]:
-        # TODO(Abhishek): serve real pieces once shell_model.py lands (Phase 4.2).
-        return {"pieces": []}
+        return await runtime.shell() if runtime is not None else {"pieces": []}
+
+    @app.post("/v1/favors")
+    async def leave_favor(body: dict[str, str]) -> dict[str, Any]:
+        text = body.get("text", "")
+        reason = check_safe(text)
+        if reason is not None:
+            return JSONResponse({"error": reason}, status_code=400)  # type: ignore[return-value]
+        favor = await runtime.leave_favor(text) if runtime is not None else None
+        if favor is None:
+            return JSONResponse({"error": "Hermit must be with you"}, status_code=409)  # type: ignore[return-value]
+        return {"favor": favor}
+
+    @app.post("/v1/favors/{favor_id}/complete")
+    async def complete_favor(favor_id: str) -> dict[str, Any]:
+        piece = await runtime.complete_favor(favor_id) if runtime is not None else None
+        if piece is None:
+            return JSONResponse({"error": "Favor is not assigned to you"}, status_code=409)  # type: ignore[return-value]
+        return {"piece": piece}
 
     @app.post("/v1/presence/override")
     async def override(body: dict[str, str]) -> dict[str, Any]:

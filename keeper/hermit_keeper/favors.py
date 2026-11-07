@@ -210,6 +210,10 @@ class FavorBook:
         self.favors[favor.id] = favor
         return favor
 
+    async def has_open_from(self, host: str) -> bool:
+        self.expire_old()
+        return any(f.left_by == host and f.status == "open" for f in self.favors.values())
+
     # -- moving it along -----------------------------------------------------
 
     async def carried(self, for_host: str | None = None) -> dict[str, Any] | None:
