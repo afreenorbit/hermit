@@ -29,6 +29,7 @@ export const EventType = z.enum([
   'FAVOR_LEFT',
   'FAVOR_ASSIGNED',
   'FAVOR_COMPLETED',
+  'NOTE_SENT',
   'SHELL_PIECE_ADDED',
   'BEDTIME_EVICTION',
   'OVERLAP_SUGGESTED',

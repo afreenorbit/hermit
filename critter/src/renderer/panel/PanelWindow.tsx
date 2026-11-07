@@ -21,6 +21,9 @@ export function PanelWindow() {
   const [favorText, setFavorText] = useState('');
   const [favorBusy, setFavorBusy] = useState(false);
   const [favorFeedback, setFavorFeedback] = useState<string | null>(null);
+  const [noteText, setNoteText] = useState('');
+  const [noteBusy, setNoteBusy] = useState(false);
+  const [noteFeedback, setNoteFeedback] = useState<string | null>(null);
   const { start } = k;
   useEffect(() => start(), [start]);
 
@@ -118,6 +121,20 @@ export function PanelWindow() {
       setFavorFeedback(error instanceof Error ? error.message : 'Please try again.');
     } finally {
       setFavorBusy(false);
+    }
+  };
+  const runNote = async (): Promise<void> => {
+    if (noteBusy) return;
+    setNoteBusy(true);
+    setNoteFeedback(null);
+    try {
+      const to = await k.sendNote(noteText.trim());
+      setNoteText('');
+      setNoteFeedback(`Sent to ${titleCase(to)} through Switch.`);
+    } catch (error) {
+      setNoteFeedback(error instanceof Error ? error.message : 'Please try again.');
+    } finally {
+      setNoteBusy(false);
     }
   };
   const reward = useMemo(
@@ -237,7 +254,7 @@ export function PanelWindow() {
                     <textarea id="favor-text" maxLength={280} minLength={3} value={favorText}
                       onChange={(event) => setFavorText(event.target.value)}
                       placeholder="Share one song that helped you focus today" />
-                    <PixelButton disabled={favorBusy || favorText.trim().length < 3}>
+                    <PixelButton type="submit" disabled={favorBusy || favorText.trim().length < 3}>
                       Leave a favor
                     </PixelButton>
                   </form>
@@ -285,27 +302,35 @@ export function PanelWindow() {
           {
             id: 'friends',
             label: 'Friends',
-            content: friends.length ? (
-              <ul className="menu__friends">
-                {friends.map(([id, f]) => (
-                  <li key={id}>
-                    <PixelAvatar hostId={id} scale={3} name={titleCase(id)} />
-                    <span className="menu__friend">
-                      <strong>
-                        {titleCase(id)}
-                        {id === k.hostId ? ' (you)' : ''}
-                      </strong>
-                      <span>
-                        {f.pieces} piece{f.pieces === 1 ? '' : 's'} · {formatDwell(f.dwell)} hosted
-                        · last {formatDay(f.last)}
-                      </span>
-                    </span>
-                    <BrainBadge provider={f.brain} short />
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="menu__empty">Nobody has finished a favor yet.</p>
+            content: (
+              <div className="menu__quest">
+                {!mine && k.soulHolder && k.connected && (
+                  <form onSubmit={(event) => { event.preventDefault(); void runNote(); }}>
+                    <label htmlFor="friend-note">Send a little note to {titleCase(k.soulHolder)}</label>
+                    <textarea id="friend-note" maxLength={280} minLength={3} value={noteText}
+                      onChange={(event) => setNoteText(event.target.value)}
+                      placeholder="Hey, how is your day going?" />
+                    <PixelButton type="submit" disabled={noteBusy || noteText.trim().length < 3}>Send through Switch</PixelButton>
+                  </form>
+                )}
+                {noteFeedback && <p className="menu__feedback" role="status">{noteFeedback}</p>}
+                {friends.length ? (
+                  <ul className="menu__friends">
+                    {friends.map(([id, f]) => (
+                      <li key={id}>
+                        <PixelAvatar hostId={id} scale={3} name={titleCase(id)} />
+                        <span className="menu__friend">
+                          <strong>{titleCase(id)}{id === k.hostId ? ' (you)' : ''}</strong>
+                          <span>{f.pieces} piece{f.pieces === 1 ? '' : 's'} · {formatDwell(f.dwell)} hosted · last {formatDay(f.last)}</span>
+                        </span>
+                        <BrainBadge provider={f.brain} short />
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="menu__empty">The shared shell will remember each friend who completes a favor.</p>
+                )}
+              </div>
             ),
           },
         ]}

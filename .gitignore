@@ -30,6 +30,7 @@ blob-report/
 
 # --- hermit runtime data ---
 *.jsonl
+.runtime/
 map/public/data/journey.json
 !map/public/data/journey.sample.json
 !map/public/data/journey.wide.sample.json

@@ -26,6 +26,7 @@ interface Actions {
   claim: () => Promise<boolean>;
   leaveFavor: (text: string) => Promise<void>;
   completeFavor: (id: string) => Promise<void>;
+  sendNote: (text: string) => Promise<string>;
   arrived: () => void;
   left: () => void;
 }
@@ -130,6 +131,16 @@ export const useKeeper = create<CritterState & Actions>()((set, get) => {
       const response = await fetch(`${base}/v1/favors/${encodeURIComponent(id)}/complete`, { method: 'POST' });
       if (!response.ok) throw new Error((await response.json() as { error?: string }).error ?? 'Could not complete favor');
       await Promise.all([refreshStatus(), refreshShell()]);
+    },
+    sendNote: async (text) => {
+      const response = await fetch(`${base}/v1/notes`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      const body = await response.json() as { error?: string; delivery?: { to: string } };
+      if (!response.ok || !body.delivery) throw new Error(body.error ?? 'Could not send note');
+      return body.delivery.to;
     },
 
     depart: async () => {

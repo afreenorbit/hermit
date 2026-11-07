@@ -120,10 +120,11 @@ class KeeperRuntime:
         self._task: asyncio.Task[None] | None = None
         self._last_line: str | None = None
         self._room = room
+        self._den_room = config.switch.den_room
         self._ledger_room = config.switch.ledger_room
         self._last_heartbeat = 0.0
         self._last_group_read = 0.0
-        self._ledger_cursor: datetime | None = None
+        self._seen_ledger: dict[str, None] = {}
         #: Stretch S1/S2. Does nothing unless features.overlap / features.nudge.
         self.stretch = StretchRunner(
             config.host_id,
@@ -263,17 +264,27 @@ class KeeperRuntime:
             return
         self._last_group_read = now
         try:
-            messages = await self._room.history(
-                self._ledger_room, since=self._ledger_cursor, limit=300
-            )
+            messages = await self._room.history(self._ledger_room, limit=500)
         except Exception:
             log.debug("could not read the ledger", host=self.config.host_id)
             return
         for message in messages:
+            if message.id in self._seen_ledger:
+                continue
+            self._seen_ledger[message.id] = None
+            if len(self._seen_ledger) > 2000:
+                self._seen_ledger.pop(next(iter(self._seen_ledger)))
             event = decode(message.text)
             if event is not None:
                 self.group.apply(event)
-            self._ledger_cursor = message.ts
+                if (
+                    event.type is EventType.NOTE_SENT
+                    and event.data.get("to") == self.config.host_id
+                ):
+                    sender = str(event.data.get("from", "a friend"))
+                    note = str(event.data.get("text", ""))
+                    self._last_line = f"{sender}: {note}"
+                    await self.bus.publish(event)
 
     # -- what the critter and the CLI read -----------------------------------
 
@@ -349,6 +360,23 @@ class KeeperRuntime:
         if pending is None or pending["id"] != favor_id:
             return None
         return cast("dict[str, Any] | None", await self.favors.complete(favor_id))
+
+    async def send_note(self, text: str) -> dict[str, str] | None:
+        """Send a short note to whoever Switch says hosts Hermit right now."""
+        if self.switch_state() == "offline":
+            return None
+        holder = await self.lease.holder()
+        recipient = holder.removeprefix("hermit-") if holder else None
+        if recipient is None or recipient == self.config.host_id:
+            return None
+        event = Event(
+            type=EventType.NOTE_SENT,
+            host=self.config.host_id,
+            ts=self.clock.now(),
+            data={"from": self.config.host_id, "to": recipient, "text": text},
+        )
+        await self._room.post(self._ledger_room, encode(event))
+        return {"to": recipient, "id": event.id}
 
     async def group_status(self) -> dict[str, Any]:
         """Every laptop in the group — what `/v1/group` serves.

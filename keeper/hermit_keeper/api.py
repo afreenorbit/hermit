@@ -108,6 +108,19 @@ def create_app(runtime: KeeperRuntime | None = None) -> FastAPI:
             return JSONResponse({"error": "Favor is not assigned to you"}, status_code=409)  # type: ignore[return-value]
         return {"piece": piece}
 
+    @app.post("/v1/notes")
+    async def send_note(body: dict[str, str]) -> dict[str, Any]:
+        text = body.get("text", "").strip()
+        reason = check_safe(text)
+        if reason is not None:
+            return JSONResponse({"error": reason}, status_code=400)  # type: ignore[return-value]
+        delivery = await runtime.send_note(text) if runtime is not None else None
+        if delivery is None:
+            return JSONResponse(
+                {"error": "Hermit is not visiting another friend yet"}, status_code=409
+            )  # type: ignore[return-value]
+        return {"delivery": delivery}
+
     @app.post("/v1/presence/override")
     async def override(body: dict[str, str]) -> dict[str, Any]:
         mode = body.get("mode", "auto")
