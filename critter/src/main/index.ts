@@ -204,12 +204,24 @@ function startCursor(): void {
     if (!critter || critter.isDestroyed()) return;
     const p = screen.getCursorScreenPoint();
     const b = critter.getBounds();
-    critter.webContents.send('hermit:cursor', { x: p.x - b.x, y: p.y - b.y });
+    const x = p.x - b.x;
+    const y = p.y - b.y;
+    critter.webContents.send('hermit:cursor', { x, y });
+    // The window starts click-through. Forwarded pointer-enter events are not
+    // reliable on every Windows display, so use the same cursor poll to make
+    // only the small sprite rectangle interactive. Release immediately on
+    // exit, while the existing dead-man timer remains a second safety net.
+    if (!dragTimer) {
+      if (x >= CRITTER.w - 168 && x <= CRITTER.w - 8 && y >= CRITTER.h - 164 && y <= CRITTER.h - 4)
+        holdGrip();
+      else if (gripTimer) releaseGrip();
+    }
   }, 120);
 }
 function stopCursor(): void {
   if (cursorTimer) clearInterval(cursorTimer);
   cursorTimer = undefined;
+  releaseGrip();
 }
 
 // ---------------------------------------------------------------------------
@@ -342,14 +354,18 @@ function releaseGrip(): void {
   critter?.setIgnoreMouseEvents(true, { forward: true });
 }
 
+function holdGrip(): void {
+  critter?.setIgnoreMouseEvents(false, { forward: true });
+  if (gripTimer) clearTimeout(gripTimer);
+  gripTimer = setTimeout(releaseGrip, GRIP_MS);
+}
+
 ipcMain.on('hermit:mouse', (_e, over: boolean) => {
   if (!over) {
     releaseGrip();
     return;
   }
-  critter?.setIgnoreMouseEvents(false, { forward: true });
-  if (gripTimer) clearTimeout(gripTimer);
-  gripTimer = setTimeout(releaseGrip, GRIP_MS);
+  holdGrip();
 });
 
 ipcMain.on('hermit:visible', (_e, visible: boolean) => {
@@ -438,6 +454,10 @@ if (!app.requestSingleInstanceLock()) {
     const PANIC = 'CommandOrControl+Alt+H';
     if (globalShortcut.register(PANIC, togglePanic)) {
       console.log(`panic key: ${PANIC} hides or shows Hermit`);
+    }
+    const MENU = 'CommandOrControl+Alt+M';
+    if (globalShortcut.register(MENU, openPanel)) {
+      console.log(`menu key: ${MENU} opens Hermit's menu`);
     }
     app.on('will-quit', () => globalShortcut.unregisterAll());
 

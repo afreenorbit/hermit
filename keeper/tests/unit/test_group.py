@@ -80,6 +80,18 @@ def test_a_heartbeat_makes_a_laptop_visible_to_the_others() -> None:
     assert seen["afreen"]["mood"] == "offline", "a laptop that never checked in is unknown"
 
 
+def test_delayed_ledger_line_cannot_replace_a_newer_live_heartbeat() -> None:
+    group = GroupView(HOSTS)
+    recent = T0 + timedelta(minutes=10)
+    group.apply(beat("afreen", "AWAKE_WAITING", True, recent))
+    group.apply(beat("afreen", "ASLEEP", False, T0))
+
+    afreen = next(h for h in group.snapshot(recent)["hosts"] if h["host_id"] == "afreen")
+    assert afreen["state"] == "AWAKE_WAITING"
+    assert afreen["present"] is True
+    assert afreen["stale"] is False
+
+
 def test_every_expected_host_appears_even_before_it_starts() -> None:
     """A laptop you forgot to run is exactly what you want to see on a dashboard."""
     snap = GroupView(HOSTS).snapshot(T0)

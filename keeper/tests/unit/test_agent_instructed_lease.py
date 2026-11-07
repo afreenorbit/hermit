@@ -257,3 +257,30 @@ async def test_heartbeat_data_names_the_claim_we_hold() -> None:
     soul = lease.heartbeat_data()["soul"]
     assert soul["ack"] and soul["ack_ts"]
     brain.stop()
+
+
+async def test_standalone_reconnect_does_not_wait_for_a_missing_brain() -> None:
+    hub = FakeRoomHub()
+    room = hub.client("keeper-afreen")
+    room.online = True  # type: ignore[attr-defined]
+    director = LedgerBrainDirector(room, "hermit-afreen", "afreen")
+    lease = AgentInstructedLease(
+        director,
+        room,
+        "afreen",
+        standalone=True,
+        settle_s=0.01,
+        ack_timeout_s=0.01,
+    )
+    assert (await lease.claim("hermit-afreen")).ok
+    before = len(hub.rooms[LEDGER])
+
+    room.online = False  # type: ignore[attr-defined]
+    assert await lease.holder() == "hermit-afreen"
+    room.online = True  # type: ignore[attr-defined]
+    assert await lease.holder() == "hermit-afreen"
+    await asyncio.sleep(0)
+
+    assert len(hub.rooms[LEDGER]) == before
+    assert lease._background is None  # no verification task waiting for an AI ACK
+    await lease.aclose()

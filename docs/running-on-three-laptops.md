@@ -166,7 +166,9 @@ data between machines.
    `python -m hermit_keeper run` in a terminal. Start
    `pnpm --filter @hermit/critter dev` in another terminal. The mascot should
    appear on **every** screen. The resting or waiting mascot still appears when
-   somebody else holds Hermit.
+   somebody else holds Hermit. Press **Ctrl+Alt+M** to open Hermit's menu from
+   anywhere on the desktop, including when the transparent mascot is hard to
+   click. The menu shows the current holder, favors, notes, shell, and friends.
 2. Open the map if desired with `pnpm dev:map`, then visit
    `http://localhost:<printed-port>/?live=http://127.0.0.1:47800` on that same
    laptop. The “Right now” card is live; the route below it is an export or

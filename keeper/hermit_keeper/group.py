@@ -134,6 +134,11 @@ class GroupView:
         view = self._views.setdefault(event.host, HostView(host_id=event.host))
         data = event.data
         when = _iso(event.ts)
+        # A delayed Switch queue item can arrive after this keeper's current
+        # local heartbeat. Never let that older line make a live laptop look
+        # stale again. Equal timestamps still apply in room order.
+        if view.last_seen is not None and event.ts < datetime.fromisoformat(view.last_seen):
+            return
 
         if event.type is EventType.HOST_HEARTBEAT:
             view.state = _str(data.get("state")) or view.state

@@ -388,6 +388,12 @@ class AgentInstructedLease:
     def _reconcile(self, view: SoulView) -> None:
         if self._op.locked() or (self._background and not self._background.done()):
             return
+        # The provisional keeper mode wrote its own ACK. There is no coding
+        # agent to ask after an outage; waiting for one delays local actions
+        # and can leave the mascot looking stuck on a departure. The ledger
+        # fold still detects conflicts and orphaned claims below.
+        if self._standalone:
+            self._needs_verify = False
         mine = self._mine
         job: Any = None
         if mine is not None and self._needs_verify:
