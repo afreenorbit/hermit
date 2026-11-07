@@ -20,7 +20,7 @@
 
 Latency = release -> next claim, only where the next friend was already waiting; abrupt departures are excluded (nobody recorded when the lid came down). Percentiles are nearest-rank. Departures: graceful / abrupt / bedtime / manual.
 
-**Read the simulated latency with care.** The fake sim advances in 30-second ticks and the fake lease frees instantly, so its handoff latency is a count of sim ticks, not a measurement of Switch. The README's p50/p95 (plan.md 9.1 item 6) must come from a REAL export.
+**Read the simulated latency with care.** The fake sim advances in 30-second ticks and the fake lease frees instantly, so its handoff latency is a count of sim ticks, not a measurement of Switch. Real handoff measurements must come from a physical-laptop run.
 
 Regenerate with:
 

@@ -24,7 +24,7 @@
 12. [Phase 6 — UI: desktop critter](#phase-6--ui-desktop-critter)
 13. [Phase 7 — UI: journey map](#phase-7--ui-journey-map)
 14. [Phase 8 — Integration](#phase-8--integration)
-15. [Phase 9 — Docs, demo video & submission assets](#phase-9--docs-demo-video--submission-assets)
+15. [Phase 9 — Project documentation](#phase-9--project-documentation)
 16. [Phase 10 — Testing (team-run): QA, multi-laptop, chaos, pilot, rehearsal](#phase-10--testing-team-run)
 17. [Timeline](#17-timeline)
 18. [Git workflow & merge rules](#18-git-workflow--merge-rules)
@@ -389,7 +389,6 @@ hermit/
 │   ├── architecture.md
 │   ├── pilot-protocol.md
 │   ├── pilot-results.md
-│   └── demo-script.md
 ├── shared/                            # A (frozen after Phase 1; changes need 2 approvals)
 │   └── schemas/
 │       ├── event.schema.json
@@ -1413,47 +1412,11 @@ Mobile (< 768 px): Header → World (55 vh) → Impact → Shell → Quest Log (
 
 ---
 
-## Phase 9 — Docs, demo video & submission assets
+## Phase 9 — Project documentation
 
-**Goal:** judges understand in 2 minutes and can reproduce in 10. **Lead:** D, with C for visuals. **Time box:** Nov 6 evening → Nov 7.
+**Goal:** explain the problem, the running architecture, Switch and Tailscale setup, privacy boundaries, and reproducible checks. Keep simulated results clearly separate from physical laptop tests.
 
-### 9.1 README structure (mapped to judging)
-1. **One-line pitch + GIF** of the critter crawling from one screen onto another.
-2. **The problem** (3 lines, cited stats).
-3. **How Switch makes Hermit possible** *(Use of Switch, 30%)*: architecture diagram + the §3.4 table + "what breaks without Switch".
-4. **Quickstart (10 minutes, one machine)** *(Technical execution, 25%)*: prerequisites, `bootstrap_rooms.py`, live sim, expected output, troubleshooting.
-5. **Multi-laptop setup**: server hosting, Tailscale, per-host config.
-6. **Engineering**: state machine diagram, invariant + property tests, measured handoff latency (p50/p95), test commands, CI badge.
-7. **Pilot results** *(Creativity & impact, 25%)*: numbers, survey, 2 quotes, honest limitations.
-8. **Demo video** embed *(Presentation, 20%)*.
-9. **Privacy & safety**: window folder scoping, city-only location, house rules, opt-in features, bedtime rule.
-10. **Team, credits, license notes** (Switch is Apache 2.0 + Commons Clause; we don't sell it).
-
-### 9.2 Demo video (2:30 max) — `docs/demo-script.md`
-| Time | Shot | Voiceover (draft) |
-|---|---|---|
-| 0:00–0:15 | Title, then a dead group chat ("last message: 3 weeks ago") | "Friends drift apart because of distance — and because nobody starts the conversation." |
-| 0:15–0:45 | Split screen, two laptops. Afreen closes her lid. Seconds later the critter crawls onto Abhishek's screen; Discord shows Hermit greeting them in a different voice. | "Hermit has no home. It lives on one friend's laptop at a time and uses their AI as its brain." |
-| 0:45–1:15 | Hermit delivers Afreen's favor; Abhishek does it from their phone; a shell piece snaps on in the critter. | "Every host leaves a favor for the next. Doing it grows Hermit's shell." |
-| 1:15–1:50 | Under the hood: the `soul` role moving between agents; room memory carrying across Claude and Codex; favors as room Tasks; the bedtime rule as a room Rule; a handoff latency chart. | "Switch is the whole engine: one exclusive role is Hermit's soul, the room is its memory, tasks are its favors." |
-| 1:50–2:05 | **"What if we weren't in the same city?"** Cut to the simulation, watermarked `SIMULATION` in the corner, running `three_cities_day.yaml`: Bengaluru → Berlin → Toronto, the soul chasing daylight around the planet, map zoomed out to the wide fixture. | "We all live in Bengaluru. But the same code doesn't care — here's the group we built it for, simulated across three timezones." |
-| 2:05–2:12 | Back to the real critter on a real laptop. | "Everything before this was real, on our three machines." |
-| 2:12–2:22 | Pilot numbers + one quote. | "In a 2-night pilot with N friends…" |
-| 2:22–2:30 | Journey map zooming out. Tagline. | "Someone is always around. Hermit makes sure that counts." |
-
-Recording rules: 1080p, cursor highlighted, real footage from the pilot plus live-sim takes as backup; captions burned in; music low.
-
-### 9.3 Other submission assets
-- [ ] Screenshots: den conversation, critter states, map, Switch Console showing rooms/roles.
-- [ ] Architecture diagram PNG (export from the ASCII in §3.1, redrawn cleanly in the pixel style).
-- [ ] Postcard PNG from the real pilot journey (README header + social post).
-- [ ] Pixel GIFs: critter arrival, shell piece popping in, map route animation.
-- [ ] Optional side tracks: **Best Blog** post (D), **#HowISwitch** social post with the handoff GIF.
-- [ ] Submission form text: title, one-liner, description, track, repo URL, video URL.
-
-### 9.4 Acceptance criteria
-- A teammate who didn't write the README follows the quickstart on a clean machine in ≤ 15 min.
-- Video ≤ 2:30, uploaded, link works logged out.
+**Acceptance criterion:** a teammate who did not build Hermit can follow the README on a clean machine and identify what is verified and what still needs a live group run.
 
 ---
 

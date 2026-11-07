@@ -184,16 +184,16 @@ Settings → **Agent providers**: your provider must read **Installed**.
 
 | You | Provider | Fallback |
 |---|---|---|
-| Afreen | Claude Code | OpenCode, Codex |
+| Afreen | Codex | Claude Code |
 | Abhishek | OpenCode | Claude Code |
-| Akshay | Codex | Claude Code |
+| Akshay | Claude Code | Codex |
 
 Then **Your Agents → +**:
 
 | Field | Set it to | Why |
 |---|---|---|
 | Run location | this computer | the brain runs on your laptop |
-| Agent provider | yours, from the table | different brains is the demo |
+| Agent provider | yours, from the table | each friend uses their own agent |
 | Working directory | `~/HermitWindow` (create it first) | **the only folder Hermit's brain can see**, so Switch enforces our privacy promise |
 | Name | `hermit-<you>`, e.g. `hermit-abhishek` | must match `brain_agent` in your `hermit.config.toml` |
 | Description | `Hermit's brain on <you>'s laptop` | required |
@@ -271,7 +271,7 @@ Do these in the den, in order. Each one is a gate for the next.
 | D7 | Afreen's brain releases, Akshay's claims | `!roles` follows the change |
 | D8 | Kill the holder's session (close its terminal, or `!interrupt` and quit Console) and time how long until `!roles` shows no holder | **the real lease-expiry number.** Write it into `lease_expiry_s` and the README |
 
-D5 and D8 are the two numbers the judges care about. Screen-record both.
+D5 and D8 are useful checkpoints for the team to verify together.
 
 ---
 

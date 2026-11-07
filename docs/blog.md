@@ -70,7 +70,7 @@ The journey page is an optional memory of where Hermit has been. It reads an exp
 
 ## Reproduce the behavior
 
-For a code review on one machine, clone the repository, install Python 3.11+ and Node 20+ with pnpm 9, then follow the [README quickstart](../README.md#quickstart-for-judges-one-machine-about-10-minutes). `python scripts/test_gate.py --quick` runs Python quality checks, keeper tests and nine compressed scenarios. `python -m sim live --switch standin` launches three local keepers against a **stand-in** server so the handoff and outage behavior can be watched without three laptops. The journey page has a visible sample or simulation label.
+For a code review on one machine, clone the repository, install Python 3.11+ and Node 20+ with pnpm 9, then follow the [README setup](../README.md#one-machine-evaluation). `python scripts/test_gate.py --quick` runs Python quality checks, keeper tests and nine compressed scenarios. `python -m sim live --switch standin` launches three local keepers against a **stand-in** server so the handoff and outage behavior can be watched without three laptops. The journey page has a visible sample or simulation label.
 
 For a real team run, follow [Switch setup](switch-setup.md) and [the live test runbook](running-on-three-laptops.md). Each friend needs Tailscale, their own keeper credentials, the same room IDs, the keeper process, and the desktop mascot. Afreen hosts the Switch stack. The keys belong in local environment variables, never in the repository or the blog. The test is: one host leaves a favor, hands Hermit on, another host completes it, a third sends a note, and all running screens agree on the holder and shell. The coding agents' role test is a separate gate until the exclusive role is verified.
 
@@ -83,8 +83,6 @@ The browser capture above can be reproduced with `node scripts/capture-live.mjs 
 - Python strict typing and formatting checks passed. The Electron and map TypeScript checks and production builds passed. Vitest passed 104 tests across the shared UI, map and companion.
 - The nine simulation scenarios exercise bedtime, lid slam, simultaneous wake, nobody present and time zones. Their metrics are labelled **SIMULATION**. They are not pilot outcomes.
 - The real Switch check proved health and Afreen's agent-key access on 7 November. The full multi-laptop role handoff, real AI replies, and a measured disconnect delay remain open.
-
-We also have [a demo script](demo-script.md) that marks every shot REAL, SIMULATION or sample. A video must keep those labels visible. The repository does not yet contain a finished public demo video or real pilot results.
 
 ## Why we care
 

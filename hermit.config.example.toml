@@ -9,7 +9,7 @@ lon            = 77.59
 timezone       = "Asia/Kolkata"
 
 brain_agent    = "hermit-afreen"
-brain_provider = "claude-code"        # afreen=claude-code, abhishek=opencode, akshay=codex
+brain_provider = "codex"              # afreen=codex, abhishek=opencode, akshay=claude-code
 window_dir     = "~/HermitWindow"     # the only folder Hermit's brain can see
 
 [presence]
@@ -30,7 +30,8 @@ server_url     = "http://127.0.0.1:8000"   # Switch API; over Tailscale use http
 den_room       = "hermit-den"
 ledger_room    = "hermit-ledger"
 token_env      = "HERMIT_SWITCH_TOKEN"     # your keeper agent's api_key lives in this env var, not here
-lease_strategy = "fake"                    # agent_instructed | fake
+lease_strategy = "fake"                    # keeper_claimed | agent_instructed | fake
+# keeper_claimed: keepers coordinate a provisional holder through Switch ledger events.
 # agent_instructed: your brain assumes the "soul" role itself when cued.
 # fake: offline, nothing leaves this machine. Good for UI work and demos.
 lease_expiry_s = 8                         # GUESS until measured: how long Switch takes to free the soul after a lid slam

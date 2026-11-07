@@ -51,9 +51,9 @@ Record the actual Tailscale IP privately. It can change if the server machine is
 
 | Person | `host_id` | Intended brain | Responsibility |
 |---|---|---|---|
-| Afreen | `afreen` | Claude Code | Switch host, ledger, timing and logs |
+| Afreen | `afreen` | Codex | Switch host, ledger, timing and logs |
 | Abhishek | `abhishek` | OpenCode | Favor flow, independent status observations |
-| Akshay | `akshay` | Codex | Three critter screens, dashboard and recordings |
+| Akshay | `akshay` | Claude Code | Three critter screens, dashboard and recordings |
 
 1. Pull the agreed integration commit and install Python 3.11+, Node 20+, Docker only on the Switch host, and Tailscale. On Windows PowerShell, create a venv with `py -m venv .venv`, activate with `.\.venv\Scripts\Activate.ps1`, then run `pip install -e "keeper[dev]"`.
 2. Copy `hermit.config.example.toml` to ignored `hermit.config.toml`. Set your unique host ID, area-level city coordinates, timezone `Asia/Kolkata`, brain provider, Switch Tailscale URL and the verified real lease strategy. Put your own agent UUID and room UUIDs wherever Step 1's integration specifies. Set `HERMIT_SWITCH_TOKEN` in your own shell to your own agent API key.

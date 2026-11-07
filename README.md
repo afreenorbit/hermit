@@ -1,441 +1,136 @@
-<h1 align="center">Hermit</h1>
+# Hermit — a little visitor between friends
+
+Hermit is an animated desktop companion that has no permanent home. It visits one friend's laptop at a time, carries a small favor to the next person, and lets friends leave a note for whoever it is visiting. Each laptop shows the same shared destination, even when Hermit is somewhere else.
 
 <p align="center">
-  <strong>A small creature with no home of its own.</strong><br>
-  It visits one friend's laptop at a time, bringing a favor from the last friend.<br>
-  Each desktop shows where it is; a Switch powered AI voice is the next live milestone.
+  <img src="docs/assets/critter-states.png" alt="Hermit's visiting, waiting, sleeping, and offline desktop states" width="820">
 </p>
-
-<p align="center">
-  <a href="https://github.com/afreenorbit/hermit/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/afreenorbit/hermit/actions/workflows/ci.yml/badge.svg"></a>
-  ·
-  Built for <a href="https://www.wemakedevs.org/hackathons/switch">Flip the Switch</a>
-  (WeMakeDevs × DevTools Academy × Switch) · <strong>Track 02: Best Personal or Creative Workflow</strong>
-</p>
-
-<p align="center">
-  <img src="docs/assets/map-overview.png" alt="The Hermit journey page, showing the committed sample journey (labelled 'Sample data' on the page)" width="820">
-</p>
-
-<p align="center">
-  <img src="docs/assets/critter-states.png" alt="The desktop critter on every laptop: Visiting, Waiting, Sleeping, Offline, and Hermit's menu" width="820">
-</p>
-
-> **Status, in one line:** the keeper, mascot, favor relay and friend notes are implemented and
-> tested. Afreen's keeper authenticated to a real Switch server on 7 November 2026. The November 5
-> multi-laptop test was reported as partly working but laggy; a complete, measured three-laptop AI
-> role handoff has not been recorded. See [Status](#status) for what is proven and open.
-
----
 
 ## The problem
 
-We are three friends in Bengaluru, about 25 km apart, who still go weeks without seeing each other.
-Starting another group conversation can feel like a task. Hermit offers a smaller invitation: a
-friend is around, they left you something to do, and you can pass something on.
+We are three friends in Bengaluru who live roughly 25 km apart. We can reach one another instantly, yet weeks can pass without meeting or even checking in. A group chat does not solve the awkward part: someone still has to start another conversation, and a message can arrive while everyone else is busy.
 
-Hermit follows *attention*, not daylight. It waits when nobody is available and visits a friend
-when their keeper reports that they are present.
+Hermit gives us a lighter prompt. It notices when someone is available, makes that presence visible to the others, and carries one small reason to connect. A favor can be as simple as sharing a song, answering a question, or taking a photo of the sky. It is intentionally easier to respond to than arranging a call.
 
-### The useful loop
+## How it works
 
-- **Presence:** a keeper on each laptop reads keyboard idleness and publishes a heartbeat to Switch;
-  every mascot shows who Hermit is with, waiting, sleeping or offline.
-- **A favor that travels:** the current host leaves a small task in the mascot's Quest tab. The next
-  host sees it, completes it, and adds a piece to the shared shell.
-- **A note to the current host:** a non-hosting friend can send a short note from the Friends tab.
-  Switch routes it through the ledger to the laptop Hermit is visiting.
-- **A visible memory:** the optional journey map shows exported history, while its “Right now” card
-  shows live local keeper status. Sample and simulated routes are labelled.
+1. **A keeper runs on each laptop.** It reads that laptop's keyboard and mouse idleness, applies a short arrival delay, and reports presence to the group's Switch server. It does not need a chat window left open.
+2. **Switch carries the shared state.** The keepers exchange heartbeats and ordered events in `hermit-ledger`. They use those events to agree on who currently hosts Hermit. The mascot on every laptop shows the holder's name, or a waiting, sleeping, or offline state.
+3. **A favor travels with the visit.** The current host leaves a small task in Hermit's **Quest** tab. When Hermit reaches the next host, that person sees the favor and can mark it complete. Completion adds a piece to the shared shell, giving the group a visible record of small things they have done for one another.
+4. **A note reaches the current host.** A friend who is not hosting can send a short note through Switch to the laptop Hermit is visiting. The recipient sees it in the desktop log.
+5. **The journey page shows the story.** Its “Right now” card reads the local keeper's live status. The route and shell history come from an exported journey file; sample and simulated journeys are labelled as such.
 
-Read the illustrated [build story and technical walkthrough](docs/blog.md).
+The desktop mascot is the everyday interface. **Ctrl+Alt+M** opens its menu for Quest, Log, Shell, and Friends. The optional journey page is for looking back; it does not have to be open for Hermit to work.
 
-## How Switch makes Hermit possible
+<p align="center">
+  <img src="docs/assets/map-overview.png" alt="Hermit's optional journey page with a labelled sample journey" width="820">
+</p>
 
-*Judging: Use of Switch*
+## Why this matters
 
-The intended full setup has **two Switch agents per laptop**:
+Hermit turns passive online presence into a small invitation to act. A friend can see that someone is around without demanding an immediate reply; a favor gives the next visit a purpose; the shared shell makes those exchanges tangible over time. It is designed for friends whose schedules rarely overlap, including people across time zones.
 
-- **The brain**, `hermit-<you>`, is the friend's own off-the-shelf coding agent (Claude Code, OpenCode
-  or Codex), onboarded in Switch Console with its working directory set to `~/HermitWindow`.
-- **The keeper**, `keeper-<you>`, is our Python process. It is registered as a custom agent with
-  `POST /agents` and handles presence, the state machine, the ledger and the local API that the
-  critter reads.
+The project also tests a different way to use agent infrastructure: a character and its memory can move between private laptops without requiring everyone to stay in Mattermost or Discord all day. Each person runs their own local companion. The group's Switch server provides the common room and event stream that make it one shared experience.
+
+## Switch is the shared engine
+
+Each Python keeper is registered as a **custom Switch agent**. Switch has two rooms:
+
+| Room | Purpose |
+| --- | --- |
+| `hermit-ledger` | Presence heartbeats, holder changes, favors, notes, and shell pieces. Each keeper folds the events into its own group view. |
+| `hermit-den` | A place for friends and connected coding agents to interact with Hermit. It can be bridged to the bundled Mattermost server. |
+
+The current live configuration uses `keeper_claimed`: keepers coordinate a **provisional** holder from Switch ledger order. This is the path used for the desktop presence, favor, and note workflow. It does **not** claim server-enforced exclusivity or an AI voice.
+
+The repository also implements `agent_instructed`, a stronger mode in which a connected coding agent receives a cue, assumes Switch's exclusive `soul` role, and carries Hermit's identity. The intended agents are Codex on Afreen's laptop, Claude Code on Akshay's, and OpenCode on Abhishek's. That complete role handoff still needs a measured test with all three real agents online.
+
+**Without Switch, the shared experience stops.** A keeper reports the connection as offline instead of inventing a holder. The laptops cannot agree on a visit or exchange favors, notes, and shell pieces. A local mascot can still explain the offline state, but it cannot continue the group workflow.
 
 ```mermaid
 flowchart LR
-  subgraph SW["Switch server (one, self-hosted)"]
-    DEN["hermit-den room<br/>friends + Hermit talk here<br/>exclusive role: soul"]
-    LED["hermit-ledger room<br/>HERMIT/1 events, cues and ACKs"]
-  end
-  subgraph L1["Afreen's laptop"]
-    B1["brain hermit-afreen<br/>Codex"]
-    K1["keeper-afreen<br/>Python"]
-    C1["critter<br/>Electron"]
-  end
-  subgraph L2["Abhishek's laptop"]
-    B2["brain hermit-abhishek<br/>OpenCode"]
-    K2["keeper-abhishek"]
-    C2["critter"]
-  end
-  subgraph L3["Akshay's laptop"]
-    B3["brain hermit-akshay<br/>Claude Code"]
-    K3["keeper-akshay"]
-    C3["critter"]
-  end
-  B1 -->|"MCP: assume_role, release_role"| DEN
-  B2 -->|MCP| DEN
-  B3 -->|MCP| DEN
-  B1 -.->|"ACK lines"| LED
-  K1 -->|"HTTP: post, /events long-poll"| LED
-  K2 -->|HTTP| LED
-  K3 -->|HTTP| LED
-  C1 -->|"127.0.0.1 API"| K1
-  C2 --> K2
-  C3 --> K3
-  K1 -->|"journal, export_journey.py"| MAP["Journey map<br/>static web page"]
+  A["Afreen: keeper + mascot"] <-->|"room events"| S[("Switch server")]
+  K["Akshay: keeper + mascot"] <-->|"room events"| S
+  B["Abhishek: keeper + mascot"] <-->|"room events"| S
+  S --- L["hermit-ledger"]
+  S --- D["hermit-den / Mattermost"]
+  A -. "local only" .-> AP["Afreen's keyboard presence"]
+  K -. "local only" .-> KP["Akshay's keyboard presence"]
+  B -. "local only" .-> BP["Abhishek's keyboard presence"]
 ```
 
-**The current real setup uses `keeper_claimed`.** Keepers coordinate a provisional holder by Switch
-ledger order. Switch carries the ledger and heartbeat traffic, but this mode does **not** use a
-server-enforced exclusive role or a connected coding-agent brain. The intended `agent_instructed`
-mode has the brain assume Switch's exclusive `soul` role and ACK the keeper's cue. That stronger
-path is implemented but awaits a measured real-brain test. Full sequence:
-[`docs/architecture.md`](docs/architecture.md).
+## What Tailscale does
 
-| Switch feature | Hermit mechanic | Where it stands |
-|---|---|---|
-| **Exclusive role** (`define_role(..., exclusive=True)`) | **The soul.** Whichever brain holds it *is* Hermit. A second `assume_role` fails, so there can never be two Hermits. | Read in Switch source ([SP1](docs/switch-facts.md)). Not yet run with real brains (setup D5). |
-| **Role instructions** (returned by `assume_role`) | **Hermit's identity arrives as the role's instructions.** [`hermit-identity.md`](switch/rules/hermit-identity.md) is the `soul` role's text, so the personality lives in Switch and travels with the soul. | Read in source (SP2). Not yet observed live. |
-| **Session-bound lease** (auto-releases after the holder disconnects) | **Lid slam.** No goodbye is needed. The soul frees itself, the next friend claims it, and the stop is recorded `abrupt` with a cracked shell piece. | Read in source (SP3). Expiry time **not measured**: `lease_expiry_s = 8` is a guess. |
-| **Rooms + agent HTTP API** (`POST /agents/{id}/message`, `GET /agents/{id}/events`) | **The ledger is the group's only shared memory.** Holder, group view, favors and the journey are all folds over `hermit-ledger`. | **Verified on real `switch-v0.9.0`**: one keeper posted a ledger line and another received it. |
-| **`@soul` addressing and `!roles`** | Friends talk to **Hermit**, not to a laptop. `@soul hi` is answered by whichever brain holds the soul, and `!roles` shows who that is. | In the setup runbook (D4–D6). Not yet run. |
-| **Custom agents beside coding agents** | Our keeper (`connector_type: custom`) sits in the same rooms as Claude Code, OpenCode and Codex. | Keeper registration verified live. |
-| **Agent working directory** (Switch Console) | Each brain is scoped to `~/HermitWindow`, so Switch enforces the privacy promise. | Setup step B3. |
-| **Room instructions** | House rules: bedtime, consent ("mute"), privacy, one soul ([`hermit-house-rules.md`](switch/rules/hermit-house-rules.md)). | Pasted in Console (setup C1). |
-| **Self-hosted, bring your own agent** | No central server of ours and no AI bill. Messages stay on the group's server. | By design. |
+The team runs **one self-hosted Switch server** on Afreen's laptop. All three laptops join the same Tailscale network. Akshay and Abhishek reach Switch using Afreen's private Tailscale address, such as `http://100.x.y.z:8000`; they do not run separate Switch servers. Tailscale provides the private network path between the machines. **Switch**, not Tailscale, stores and distributes Hermit's shared events.
 
-**Favors are not Switch Tasks.** A Task needs a performer agent when it is created, and a favor is
-left for *whoever Hermit visits next*. That person is unknown when the favor is written. So a favor is
-**ledger lines** (`FAVOR_LEFT` → `FAVOR_ASSIGNED` → `FAVOR_COMPLETED`) plus **den messages** from the
-brain. Reasoning: [switch-facts SP5](docs/switch-facts.md).
+Every laptop runs its **own keeper** and **own Electron mascot**. The mascot talks to its keeper at `127.0.0.1:47800` on that same laptop. That local API is not exposed to the other friends. Each keeper uses its own Switch agent ID and key, and all keepers use the same room IDs. When a laptop sleeps or disconnects, the others can see that its heartbeat has gone stale.
 
-### What breaks without Switch
+No one has to stay in a voice channel or keep the Switch Console open. Afreen's server, Tailscale connection, and each participating keeper must remain running for live group presence.
 
-- **No shared ordering or presence.** The live `keeper_claimed` mode cannot agree which laptop
-  hosts Hermit when Switch is down. Keepers report offline instead of guessing.
-- **No carried favors, notes or shared shell.** Those actions write and read Switch room events.
-- **No exclusive soul or portable AI identity in the intended brain mode.** This is the next
-  unproven live gate; it is not claimed as a property of `keeper_claimed`.
-- **No shared rooms, no shared memory.** Three laptops on three networks would have nothing in common.
-  The ledger is the group's memory, and the den is where friends meet Hermit.
+## Run it
 
-The offline `lease_strategy = "fake"` exists for UI work and the simulation, and everything it
-produces is labelled SIMULATION.
+### Requirements
 
-## Quickstart for judges: one machine, about 10 minutes
+- Python 3.11+, Node.js 20+, pnpm 9, and Git.
+- For a real multi-laptop run: Switch, Tailscale, and a Switch agent ID and key for each keeper.
+- The desktop mascot is an Electron app. The optional journey page runs in a browser.
 
-*Judging: Technical execution and reproducibility*
-
-You need **Python 3.11+**, **Node 20+** with pnpm 9, and git. Docker and Switch are **not** needed for
-this.
-
-**1. Install**
+### One-machine evaluation
 
 ```bash
-git clone https://github.com/afreenorbit/hermit.git && cd hermit
-```
-
-```bash
-python3 -m venv .venv && source .venv/bin/activate && pip install -e "keeper[dev]"
-```
-
-Windows PowerShell (use `;`, not `&&`):
-
-```powershell
-py -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -e "keeper[dev]"
-```
-
-**2. Test gate** (ruff, ruff format, strict mypy, keeper tests and every sim scenario)
-
-```bash
+git clone https://github.com/afreenorbit/hermit.git
+cd hermit
+python -m venv .venv
+# Activate the environment, then:
+pip install -e "keeper[dev]"
+pnpm install
 python scripts/test_gate.py --quick
-```
-
-Expected, ending with:
-
-```text
-GATE PASSED
-  ok  ruff check         0.2s
-  ok  ruff format        0.1s
-  ok  mypy (strict)      5.5s
-  ok  keeper tests      93.8s
-  ok  sim scenarios      2.5s
-```
-
-**3. Every scenario, time-compressed (SIMULATION)**
-
-```bash
 python -m sim all
 ```
 
-Nine scenarios, each ending in `PASS`. For example:
+On Windows PowerShell, activate the environment with `.\.venv\Scripts\Activate.ps1`. If `pnpm` is unavailable, use Corepack with a supported Node release or install `pnpm@9.15.4`. The nine scenarios are **simulations**, not claims about three physical laptops.
 
-```text
-=== lid_slam ===
-  00:31  Hermit is with afreen
-  01:00  afreen slammed the lid
-  01:00  Hermit is between friends
-  01:01  Hermit is with abhishek
-  01:01  "I left in a hurry" - abhishek gets a cracked shell piece
-  PASS  2 stops, 1 shell pieces -> sim/out/lid_slam/journey.json
-```
-
-**4. The real keeper code path over HTTP, against a Switch STAND-IN**
+To exercise three local keepers over HTTP against a **Switch stand-in**:
 
 ```bash
 python -m sim live --switch standin
 ```
 
-This starts three keepers built by the same function that `hermit-keeper run` uses, plus three
-stand-in brains that follow the stage directions. They all talk over loopback HTTP to
-[`sim/switch_standin.py`](sim/switch_standin.py), which is **a stand-in for Switch, not Switch**. In a
-second terminal:
+This exercises the keeper's network path and handoff logic without a real Switch server. The stand-in is for local development; it is labelled separately from real Switch results.
 
-```bash
-curl -s http://127.0.0.1:47801/v1/status    # afreen   (47802 abhishek, 47803 akshay)
-```
+### Three physical laptops
 
-```text
-{"host":"afreen","state":"HOLDING","present":true,"soul_holder":"afreen","since":"…","mood":"arriving","favor_pending":null,"last_line":null,"switch":"online"}
-```
+1. Start the self-hosted Switch server on Afreen's laptop. Connect all three laptops to the same Tailscale network and confirm each can reach Afreen's Switch address on port `8000`.
+2. Register `keeper-afreen`, `keeper-akshay`, and `keeper-abhishek` as separate custom Switch agents. Create or reuse `hermit-ledger` and `hermit-den`, adding all three keepers. Give each friend **only their own** agent ID and API key.
+3. On each laptop, install this repository's Python and Node dependencies, then create a local `hermit.config.toml` from `hermit.config.example.toml`. Set that person's `host_id`, `brain_provider`, `switch.server_url`, `switch.agent_id`, both room IDs, and `lease_strategy = "keeper_claimed"`. Set `HERMIT_SWITCH_TOKEN` to that keeper's key in the local environment. Never commit keys or personal configuration.
+4. On each laptop, run `python -m hermit_keeper check --switch`, then `python -m hermit_keeper run`. In another terminal, run `pnpm --filter @hermit/critter dev`. The mascot should appear on every screen; **Ctrl+Alt+M** opens its menu.
+5. Compare `http://127.0.0.1:47800/v1/group/status` on each laptop. The reported holder should agree once the Switch events settle. Leave a favor on one laptop, pass Hermit on, complete the favor on another, and check that the shared shell updates. A third friend can send a note to the current host.
 
-The other two ports report `"state":"AWAKE_WAITING"`, `"soul_holder":"afreen"` and `"mood":"waiting"`.
-Which host wins the first claim varies. Now break things:
+For the optional journey page, run `pnpm dev:map` and open the port printed by Vite. Add `?live=http://127.0.0.1:47800` to show the status of **that same laptop's** keeper. The page's route is an export or labelled sample; it is not a live map of every machine.
 
-```bash
-curl -s -X POST http://127.0.0.1:47804/lid-slam/afreen   # slam the holder's lid (use whoever holds it)
-curl -s http://127.0.0.1:47804/                          # who holds what, according to the stand-in
-curl -s -X POST http://127.0.0.1:47804/switch/down       # Switch outage: every keeper says "switch":"offline", "soul_holder":null
-curl -s -X POST http://127.0.0.1:47804/switch/up         # recovers, same holder
-```
+## Privacy and boundaries
 
-What we saw: within 10 s of the lid slam (the stand-in's lease expiry is 3 s), the stand-in reported `"role_holders_in_standin":["hermit-akshay"]`
-and both other keepers agreed. During the outage nobody was `visiting`. After `/switch/up`
-everyone reported `"switch":"online"` again with the same holder. To force a normal idle handoff:
+- Keyboard and mouse activity is reduced to a local presence state; Hermit does not stream keystrokes or screen contents.
+- The keeper API binds to loopback. Switch keys stay in local environment variables and are excluded from Git.
+- The optional area location is approximate, not a street address.
+- Coding agents, when enabled, use a dedicated `~/HermitWindow` working directory and stage directions. The current keeper-only mode does not need a coding agent running.
+- A bedtime lock and optional quiet-friend features are configurable. The optional nudge targets the group with a favor, not the quiet person with a notification.
 
-```bash
-curl -s -X POST http://127.0.0.1:47803/v1/presence/override -H "content-type: application/json" -d '{"mode":"asleep"}'
-```
+## Current verification
 
-**5. The journey map**
+The keeper, desktop mascot, presence views, favor relay, friend notes, and shared shell are implemented. The Python gate, UI unit tests, builds, and nine time-compressed scenarios have passed. On 7 November 2026, Afreen's keeper authenticated to a real Switch server, her desktop mascot showed a live holder and an assigned favor from Akshay, and the shared shell and Friends views rendered. A November 5 multi-laptop attempt partly worked but felt laggy; event forwarding and reconnect behavior were subsequently improved.
 
-```bash
-corepack enable pnpm && pnpm install    # Node 25 dropped corepack: use npm i -g pnpm@9.15.4
-pnpm dev:map
-```
+The remaining live gate is a measured end-to-end run with all three physical laptops and connected coding agents. In particular, Switch's exclusive `soul` role, real-brain replies, and disconnect expiry have not yet been verified across the three machines. Local simulations and the Switch stand-in are labelled separately.
 
-Open `http://localhost:5173/?journey=three_cities`. Use the port Vite prints, because it is not always
-5173. This is the `three_cities_day` scenario, Bengaluru → Berlin → Toronto, and the page stamps it
-**SIMULATION**. Add `?live=http://127.0.0.1:47801` while step 4 is running to get the live "Right now"
-panel.
+## Repository layout
 
-<p align="center">
-  <img src="docs/assets/route-replay.gif" alt="Route replay on the map, recorded from the committed sample journey (not a real run)" width="640">
-</p>
+| Path | Purpose |
+| --- | --- |
+| `keeper/` | Local presence, state machine, Switch client, favors, notes, shell, and loopback API |
+| `critter/` and `ui-shared/` | Electron mascot, menu, animations, and shared visual components |
+| `map/` | Optional journey page |
+| `switch/` | Room rules, identity, and server setup helpers |
+| `shared/schemas/` | Event and API contracts |
+| `sim/` | Time-compressed scenarios and an HTTP Switch stand-in |
 
-**6. Numbers (SIMULATION)**
-
-```bash
-python -m sim metrics
-```
-
-This prints the table in [`docs/metrics.md`](docs/metrics.md). Every row is labelled **SIMULATION**.
-The simulated handoff latency (pooled p50 1m00s, p95 1m30s) **counts 30-second sim ticks**, because the
-fake lease frees instantly. It is not a measurement of Switch.
-
-## Three real laptops
-
-The runbook is [`docs/switch-setup.md`](docs/switch-setup.md). It covers one Switch server on Afreen's
-laptop over Tailscale, Switch Console on every laptop, onboarding each brain with
-`~/HermitWindow`, creating the rooms and the `soul` role, and the D1–D8 gates. Run the test itself with
-[`docs/actual-test.md`](docs/actual-test.md) and [`docs/live-test.md`](docs/live-test.md).
-
-| Host | `host_id` | Brain | Fallback |
-|---|---|---|---|
-| Afreen | `afreen` | Codex | Claude Code |
-| Abhishek | `abhishek` | OpenCode | Claude Code |
-| Akshay | `akshay` | Claude Code | Codex |
-
-Every brain is different on purpose: the room memory has to survive the agent changing underneath it.
-If a brain will not join a room, that host falls back to Claude Code and we will say so here.
-
-## Engineering
-
-**The state machine** ([`statemachine.py`](keeper/hermit_keeper/statemachine.py)), driven by `tick()`
-so a simulated day runs in milliseconds:
-
-```mermaid
-stateDiagram-v2
-  [*] --> ASLEEP
-  ASLEEP --> AWAKE_WAITING : present past debounce
-  ASLEEP --> BEDTIME_LOCK : present, but bedtime
-  AWAKE_WAITING --> ASLEEP : idle
-  AWAKE_WAITING --> BEDTIME_LOCK : bedtime
-  AWAKE_WAITING --> CLAIMING : soul free for claim delay + jitter
-  CLAIMING --> HOLDING : claim ok
-  CLAIMING --> AWAKE_WAITING : rejected, back off
-  HOLDING --> DEPARTING : idle after min dwell, bedtime, or manual
-  DEPARTING --> AWAKE_WAITING : released, still present
-  DEPARTING --> ASLEEP : released, idle
-  DEPARTING --> BEDTIME_LOCK : released at bedtime
-  HOLDING --> ASLEEP : lease lost, no goodbye
-  DEPARTING --> ASLEEP : lease lost
-  BEDTIME_LOCK --> AWAKE_WAITING : bedtime over, present
-  BEDTIME_LOCK --> ASLEEP : bedtime over, idle
-```
-
-When the lease is lost, the machine lands in `AWAKE_WAITING` instead of `ASLEEP` if the host is still
-present. `BEDTIME_LOCK` never claims, however awake the host is.
-
-**The one-soul invariant: at most one host in `HOLDING`, ever.**
-
-- Hypothesis property tests:
-  [`test_statemachine_properties.py`](keeper/tests/unit/test_statemachine_properties.py) runs random
-  presence timelines for three hosts over two simulated hours and asserts at most one holder after
-  every single tick. [`test_soul_invariant.py`](keeper/tests/unit/test_soul_invariant.py) runs
-  arbitrary claim, release and expire interleavings.
-- Stand-in races: [`test_switch_standin.py`](keeper/tests/integration/test_switch_standin.py) runs ten
-  three-way claim races, with and without own-message echo, against the stand-in over real HTTP.
-  A watchdog samples throughout and must record zero breaches. The same file covers idle handoff,
-  lid slam (recorded `abrupt`), Switch outage and recovery, a favor crossing laptops, and brains that
-  lie about claiming.
-
-**Test counts, observed on this branch** (Windows, Python 3.14):
-
-| Suite | Result |
-|---|---|
-| Keeper (`pytest -m "not live"`) | 266 passed, 1 skipped, 2 live tests deselected on 7 November |
-| Sim (`python -m sim all`) | 9 / 9 scenarios PASS |
-| UI (Vitest) | 104 passed: ui-shared 61, map 33, critter 10 |
-| Map e2e (Playwright) | runs in CI |
-| Live (`pytest -m live`) | needs a real Switch server; not part of the gate |
-
-CI runs ruff, `ruff format --check`, strict mypy, the keeper tests, every sim scenario, UI typecheck and
-tests, and the map e2e on every PR.
-
-## Status
-
-**Verified against a real Switch (`switch-v0.9.0`, local, one machine)**
-
-- Keeper agent registration (`POST /agents`, Bearer auth, `connector_type: custom`).
-- One registered keeper posted a ledger line to a real room, and another received it through
-  `GET /agents/{id}/events`.
-- There is no roles endpoint and no documents endpoint over HTTP. That is why the holder is folded
-  from the ledger. Details: [`docs/switch-facts.md`](docs/switch-facts.md).
-- On 7 November, Afreen's running keeper authenticated with its existing key and reported
-  `switch: online`. The [Edge capture](docs/assets/live-presence-afreen.png) shows one online host
-  and no current holder. It is not a multi-laptop result.
-- A controlled local claim settled from `CLAIMING` to `HOLDING`; Afreen left one real favor through
-  Switch and then released Hermit. The [Quest capture](docs/assets/live-quest-afreen.png) shows that
-  favor and labels the mode “Keeper only.” Nobody else was online to receive it.
-
-**Proven over real HTTP against a STAND-IN, not against real Switch**
-
-- Three keepers, built exactly as `hermit-keeper run` builds them, plus stand-in brains, against
-  [`sim/switch_standin.py`](sim/switch_standin.py). This covered one holder across 10 three-way races,
-  idle handoff, lid slam → expiry → abrupt departure, outage → `offline` → recovery, a favor crossing
-  laptops, and lying brains still converging. It proves our code behaves correctly *if* Switch and
-  the brains behave as documented.
-
-**Not verified yet**
-
-- [ ] A complete, measured three-laptop run has not been recorded. The 5 November test was
-      reported as partly working and laggy; preserve its logs before making stronger claims.
-- [ ] Real role exclusivity with real MCP-connected brains (two brains race `assume_role("soul")`, and Switch refuses the second).
-- [ ] Measured lease expiry after a disconnect. `lease_expiry_s = 8` is a guess.
-- [ ] Real brains following the stage directions, and memory carrying across Claude Code, OpenCode and Codex.
-- [ ] `@soul` addressing and `!roles` in the den.
-- [ ] Whether `/events` returns an agent's own posts, and whether senders arrive as names or uuids (the client handles both).
-- [ ] The Discord bridge. The den runs on the bundled Mattermost in the setup runbook.
-- [ ] The pilot.
-
-## Pilot results
-
-*Judging: Creativity and impact*
-
-> **Not run yet.** No pilot numbers exist. When the pilot runs, results go in
-> [`docs/pilot-results.md`](docs/pilot-results.md), following
-> [`docs/pilot-protocol.md`](docs/pilot-protocol.md), and this section links them. Simulated numbers
-> never appear here.
-
-## Demo video
-
-*Judging: Presentation*
-
-> **Video: link to be added.** Shot list: [`docs/demo-script.md`](docs/demo-script.md). Any simulated
-> shot is watermarked SIMULATION.
-
-## Privacy and safety
-
-- **One folder.** The brain's working directory is `~/HermitWindow`, set in Switch Console, so Switch
-  scopes what the brain can see. The keeper sends only the **number** of files in that folder
-  (`window_file_count`), never their names and never their contents, because cues are ledger lines the
-  whole group can read.
-- **Area-level location.** Each friend types an area centre (e.g. Indiranagar) into their own
-  git-ignored config. It is never a street or an address, there is no tracking, and the coordinates
-  never leave the group's own Switch server.
-- **The bedtime rule.** Past your bedtime, Hermit leaves, teases you gently and stays away until
-  morning (`BEDTIME_LOCK` never claims). It never rewards staying up.
-- **Opt-in extras.** The overlap finder and the quiet-friend nudge are off by default
-  (`[features] overlap = false, nudge = false`). The nudge asks the *group* to leave a favor for a
-  quiet friend. It never pings that friend.
-- **Consent.** The den's house rules tell Hermit to stop when anyone says "mute". The brain follows
-  this as a room rule, and the keeper does not enforce it. Keys live in environment variables, never
-  in config files or git.
-- **No server of ours.** The only server is the Switch server the group runs.
-
-## Team
-
-| | Role |
-|---|---|
-| **Afreen** | Switch and core: Switch integration, keeper, lease, state machine |
-| **Abhishek** | Gameplay and data: favors, shell, bedtime, journal, metrics, pilot |
-| **Akshay** | UI and story: critter, journey map, design, demo |
-
-## Credits and license
-
-- Built on [Switch](https://github.com/sandbox-quantum/switch), which is Apache 2.0 + Commons Clause.
-  We build on it, and we do not sell it.
-- Weather from [Open-Meteo](https://open-meteo.com) (free, no key). World land mask from the
-  public-domain GLOBE dataset via `global-land-mask`. Fonts: Fredoka and Nunito (Google Fonts).
-- [`plan.md`](plan.md) is the original build plan. Where it disagrees with
-  [`docs/switch-facts.md`](docs/switch-facts.md) (for example favors as Tasks, or a gateway lease),
-  switch-facts is right.
-
-**License: to be decided by the team before submission.**
-
-<details>
-<summary>Repo layout and contributor commands</summary>
-
-| Path | What's in it |
-|---|---|
-| `shared/schemas/` | The contracts (events, ledger lines, favors, shell pieces, journey, keeper API) |
-| `switch/` | Room rules, the `soul` role's identity, stage directions, `bootstrap_rooms.py` |
-| `keeper/` | The Python keeper: presence, lease, state machine, handoff, gameplay, local API |
-| `sim/` | Scenarios, the live harness and the Switch stand-in |
-| `ui-shared/`, `critter/`, `map/` | Shared UI kit, Electron desktop critter, journey map |
-| `docs/` | Switch findings, architecture, runbooks, metrics, pilot, demo script |
-
-| Command | What it does |
-|---|---|
-| `python scripts/test_gate.py` | The full gate, including UI typecheck and tests |
-| `python -m sim live` | Three keepers sharing one fake lease, on ports 47801–47803 |
-| `python -m hermit_keeper check` / `check --switch` | Check this laptop's config, then probe its Switch connection |
-| `pnpm --filter @hermit/critter dev` | The desktop critter |
-| `python scripts/export_journey.py --from-files a.jsonl b.jsonl c.jsonl` | Build `journey.json` from every keeper's journal |
-
-Branches: `feat/…`, `fix/…`, `docs/…`. Commits: conventional. The PR template asks which files are
-AI-generated. Answer it honestly.
-
-</details>
+Built on [Switch](https://github.com/sandbox-quantum/switch). Weather data comes from [Open-Meteo](https://open-meteo.com). Fonts are Fredoka and Nunito.
