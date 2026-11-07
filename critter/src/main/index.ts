@@ -25,7 +25,7 @@ import {
 
 const KEEPER_BASE_URL = process.env.HERMIT_KEEPER_URL ?? 'http://127.0.0.1:47800';
 const CRITTER = { w: 320, h: 300 };
-const PANEL = { w: 360, h: 520 };
+const PANEL = { w: 360, h: 720 };
 const EDGE = 24;
 
 let critter: BrowserWindow | null = null;
@@ -151,9 +151,18 @@ function openPanel(): void {
     panel.focus();
     return;
   }
+  // The Quest and Friends forms need room for their submit buttons. Fit the
+  // panel to the current display; the content scrolls on shorter screens.
+  const anchor = critter?.getBounds() ?? {
+    ...defaultPosition(),
+    width: CRITTER.w,
+    height: CRITTER.h,
+  };
+  const wa = screen.getDisplayMatching(anchor).workArea;
+  const panelHeight = Math.min(PANEL.h, Math.max(200, wa.height - 24));
   panel = new BrowserWindow({
     width: PANEL.w,
-    height: PANEL.h,
+    height: panelHeight,
     frame: false,
     resizable: false,
     alwaysOnTop: true,
@@ -164,16 +173,10 @@ function openPanel(): void {
     webPreferences,
   });
   // Beside the creature, kept inside the same display.
-  const anchor = critter?.getBounds() ?? {
-    ...defaultPosition(),
-    width: CRITTER.w,
-    height: CRITTER.h,
-  };
-  const wa = screen.getDisplayMatching(anchor).workArea;
   const px = Math.min(Math.max(wa.x, anchor.x - PANEL.w + 40), wa.x + wa.width - PANEL.w);
   const py = Math.min(
-    Math.max(wa.y, anchor.y + anchor.height - PANEL.h),
-    wa.y + wa.height - PANEL.h,
+    Math.max(wa.y, anchor.y + anchor.height - panelHeight),
+    wa.y + wa.height - panelHeight,
   );
   panel.setPosition(Math.round(px), Math.round(py));
   panel.once('ready-to-show', () => panel?.show());

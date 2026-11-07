@@ -63,6 +63,7 @@ async def test_explicit_favor_crosses_laptops_and_grows_the_shared_shell() -> No
     left = await afreen.leave("Share one song that helped you focus")
     assert left is not None
     assert await afreen.has_open_from("afreen")
+    assert (await afreen.open_from("afreen"))["text"] == left["text"]  # type: ignore[index]
     assert await afreen.leave("A duplicate favor") is None
     carried = await akshay.carried("akshay")
     assert carried is not None and carried["id"] == left["id"]

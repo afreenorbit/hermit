@@ -33,7 +33,10 @@ export interface CritterState {
   mood: KeeperStatusT['mood'];
   since: string | null;
   favorPending: Record<string, unknown> | null;
+  favorLeft: Record<string, unknown> | null;
   lastLine: string | null;
+  brainProvider: KeeperStatusT['brain_provider'] | null;
+  brainMode: KeeperStatusT['brain_mode'] | null;
   shell: ShellPieceT[];
   events: EventT[];
   lines: Line[];
@@ -55,7 +58,10 @@ export const initial: CritterState = {
   mood: 'away',
   since: null,
   favorPending: null,
+  favorLeft: null,
   lastLine: null,
+  brainProvider: null,
+  brainMode: null,
   shell: [],
   events: [],
   lines: [],
@@ -91,8 +97,11 @@ export function applyStatus(
     mood: st.mood,
     since: st.since ?? null,
     favorPending: (st.favor_pending as Record<string, unknown> | null | undefined) ?? null,
+    favorLeft: (st.favor_left as Record<string, unknown> | null | undefined) ?? null,
     quest: holding && !!st.favor_pending,
     lastLine: line,
+    brainProvider: st.brain_provider ?? null,
+    brainMode: st.brain_mode ?? null,
     lines,
     phase,
   };

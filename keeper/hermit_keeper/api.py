@@ -98,7 +98,10 @@ def create_app(runtime: KeeperRuntime | None = None) -> FastAPI:
             return JSONResponse({"error": reason}, status_code=400)  # type: ignore[return-value]
         favor = await runtime.leave_favor(text) if runtime is not None else None
         if favor is None:
-            return JSONResponse({"error": "Hermit must be with you"}, status_code=409)  # type: ignore[return-value]
+            return JSONResponse(
+                {"error": "Hermit must be with you, or you already left a favor"},
+                status_code=409,
+            )  # type: ignore[return-value]
         return {"favor": favor}
 
     @app.post("/v1/favors/{favor_id}/complete")

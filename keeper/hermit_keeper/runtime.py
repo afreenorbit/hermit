@@ -318,6 +318,11 @@ class KeeperRuntime:
             if self.favors is not None and holder_host == host and switch != "offline"
             else None
         )
+        favor_left = (
+            await self.favors.open_from(host)
+            if self.favors is not None and holder_host == host and switch != "offline"
+            else None
+        )
         return {
             "host": host,
             "state": str(self.machine.state),
@@ -326,8 +331,17 @@ class KeeperRuntime:
             "since": self._since(),
             "mood": mood,
             "favor_pending": favor_pending,
+            "favor_left": favor_left,
             "last_line": self._last_line,
             "switch": switch,
+            "brain_provider": self.config.brain_provider,
+            "brain_mode": (
+                "keeper"
+                if self.config.switch.lease_strategy == "keeper_claimed"
+                else "simulation"
+                if self.config.switch.lease_strategy == "fake"
+                else "agent"
+            ),
         }
 
     async def shell(self) -> dict[str, Any]:

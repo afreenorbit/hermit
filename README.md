@@ -21,10 +21,10 @@
   <img src="docs/assets/critter-states.png" alt="The desktop critter on every laptop: Visiting, Waiting, Sleeping, Offline, and Hermit's menu" width="820">
 </p>
 
-> **Status, in one line:** the code is built and tested, and its Switch client has talked to a real
-> `switch-v0.9.0` server. The full handoff has run over real HTTP against a **stand-in** Switch
-> server, but **not yet on three real laptops with real brains**. See [Status](#status) for exactly
-> what is proven and what is still open.
+> **Status, in one line:** the keeper, mascot, favor relay and friend notes are implemented and
+> tested. Afreen's keeper authenticated to a real Switch server on 7 November 2026. The November 5
+> multi-laptop test was reported as partly working but laggy; a complete, measured three-laptop AI
+> role handoff has not been recorded. See [Status](#status) for what is proven and open.
 
 ---
 
@@ -38,11 +38,24 @@ We are three friends in Bengaluru, about 25 km apart, who still go weeks without
 Hermit **creates the recurring moment itself**. It follows *attention*, not daylight: the soul goes
 to whoever is actually at their laptop, which in one city means someone is always free.
 
+### The useful loop
+
+- **Presence:** a keeper on each laptop reads keyboard idleness and publishes a heartbeat to Switch;
+  every mascot shows who Hermit is with, waiting, sleeping or offline.
+- **A favor that travels:** the current host leaves a small task in the mascot's Quest tab. The next
+  host sees it, completes it, and adds a piece to the shared shell.
+- **A note to the current host:** a non-hosting friend can send a short note from the Friends tab.
+  Switch routes it through the ledger to the laptop Hermit is visiting.
+- **A visible memory:** the optional journey map shows exported history, while its “Right now” card
+  shows live local keeper status. Sample and simulated routes are labelled.
+
+Read the illustrated [build story and technical walkthrough](docs/blog.md).
+
 ## How Switch makes Hermit possible
 
-*Judging: Use of Switch (30%)*
+*Judging: Use of Switch*
 
-Every laptop runs **two Switch agents**:
+The intended full setup has **two Switch agents per laptop**:
 
 - **The brain**, `hermit-<you>`, is the friend's own off-the-shelf coding agent (Claude Code, OpenCode
   or Codex), onboarded in Switch Console with its working directory set to `~/HermitWindow`.
@@ -57,7 +70,7 @@ flowchart LR
     LED["hermit-ledger room<br/>HERMIT/1 events, cues and ACKs"]
   end
   subgraph L1["Afreen's laptop"]
-    B1["brain hermit-afreen<br/>Claude Code"]
+    B1["brain hermit-afreen<br/>Codex"]
     K1["keeper-afreen<br/>Python"]
     C1["critter<br/>Electron"]
   end
@@ -67,7 +80,7 @@ flowchart LR
     C2["critter"]
   end
   subgraph L3["Akshay's laptop"]
-    B3["brain hermit-akshay<br/>Codex"]
+    B3["brain hermit-akshay<br/>Claude Code"]
     K3["keeper-akshay"]
     C3["critter"]
   end
@@ -84,11 +97,12 @@ flowchart LR
   K1 -->|"journal, export_journey.py"| MAP["Journey map<br/>static web page"]
 ```
 
-**The soul is held by the brain, not by our code.** Switch has no path for one agent to assume a
-role for another, and it has no HTTP endpoint for roles. So the keeper posts a cue in the ledger, the
-brain calls `assume_role("soul")` itself and ACKs, and every keeper **observes** the result by folding
-the ledger ([`lease/soul_ledger.py`](keeper/hermit_keeper/lease/soul_ledger.py)). Switch enforces
-exclusivity. The keepers only mirror it. Full sequence: [`docs/architecture.md`](docs/architecture.md).
+**The current real setup uses `keeper_claimed`.** Keepers coordinate a provisional holder by Switch
+ledger order. Switch carries the ledger and heartbeat traffic, but this mode does **not** use a
+server-enforced exclusive role or a connected coding-agent brain. The intended `agent_instructed`
+mode has the brain assume Switch's exclusive `soul` role and ACK the keeper's cue. That stronger
+path is implemented but awaits a measured real-brain test. Full sequence:
+[`docs/architecture.md`](docs/architecture.md).
 
 | Switch feature | Hermit mechanic | Where it stands |
 |---|---|---|
@@ -109,11 +123,11 @@ brain. Reasoning: [switch-facts SP5](docs/switch-facts.md).
 
 ### What breaks without Switch
 
-- **No exclusive role, no "one Hermit".** The keepers can only *observe* the holder. Without Switch
-  refusing the second `assume_role`, nothing stops two laptops from both being Hermit.
-- **No role instructions, no portable identity.** Hermit would be a prompt in our code. With them,
-  the room hands the personality to whichever brain earns the soul.
-- **No session lease, no lid-slam handoff.** A dead laptop would hold the soul forever.
+- **No shared ordering or presence.** The live `keeper_claimed` mode cannot agree which laptop
+  hosts Hermit when Switch is down. Keepers report offline instead of guessing.
+- **No carried favors, notes or shared shell.** Those actions write and read Switch room events.
+- **No exclusive soul or portable AI identity in the intended brain mode.** This is the next
+  unproven live gate; it is not claimed as a property of `keeper_claimed`.
 - **No shared rooms, no shared memory.** Three laptops on three networks would have nothing in common.
   The ledger is the group's memory, and the den is where friends meet Hermit.
 
@@ -122,7 +136,7 @@ produces is labelled SIMULATION.
 
 ## Quickstart for judges: one machine, about 10 minutes
 
-*Judging: Technical execution (25%)*
+*Judging: Technical execution and reproducibility*
 
 You need **Python 3.11+**, **Node 20+** with pnpm 9, and git. Docker and Switch are **not** needed for
 this.
@@ -250,9 +264,9 @@ laptop over Tailscale, Switch Console on every laptop, onboarding each brain wit
 
 | Host | `host_id` | Brain | Fallback |
 |---|---|---|---|
-| Afreen | `afreen` | Claude Code | OpenCode, Codex |
+| Afreen | `afreen` | Codex | Claude Code |
 | Abhishek | `abhishek` | OpenCode | Claude Code |
-| Akshay | `akshay` | Codex | Claude Code |
+| Akshay | `akshay` | Claude Code | Codex |
 
 Every brain is different on purpose: the room memory has to survive the agent changing underneath it.
 If a brain will not join a room, that host falls back to Claude Code and we will say so here.
@@ -302,9 +316,9 @@ present. `BEDTIME_LOCK` never claims, however awake the host is.
 
 | Suite | Result |
 |---|---|
-| Keeper (`pytest -m "not live"`) | 257 passed, 1 skipped (a symlink test that needs extra privileges on Windows), 2 live tests deselected |
+| Keeper (`pytest -m "not live"`) | 266 passed, 1 skipped, 2 live tests deselected on 7 November |
 | Sim (`python -m sim all`) | 9 / 9 scenarios PASS |
-| UI (`pnpm -r test`, Vitest) | 94 passed: ui-shared 52, map 33, critter 9 |
+| UI (Vitest) | 104 passed: ui-shared 61, map 33, critter 10 |
 | Map e2e (Playwright) | runs in CI |
 | Live (`pytest -m live`) | needs a real Switch server; not part of the gate |
 
@@ -320,6 +334,12 @@ tests, and the map e2e on every PR.
   `GET /agents/{id}/events`.
 - There is no roles endpoint and no documents endpoint over HTTP. That is why the holder is folded
   from the ledger. Details: [`docs/switch-facts.md`](docs/switch-facts.md).
+- On 7 November, Afreen's running keeper authenticated with its existing key and reported
+  `switch: online`. The [Edge capture](docs/assets/live-presence-afreen.png) shows one online host
+  and no current holder. It is not a multi-laptop result.
+- A controlled local claim settled from `CLAIMING` to `HOLDING`; Afreen left one real favor through
+  Switch and then released Hermit. The [Quest capture](docs/assets/live-quest-afreen.png) shows that
+  favor and labels the mode “Keeper only.” Nobody else was online to receive it.
 
 **Proven over real HTTP against a STAND-IN, not against real Switch**
 
@@ -331,7 +351,8 @@ tests, and the map e2e on every PR.
 
 **Not verified yet**
 
-- [ ] **Nothing has run on three real laptops yet.**
+- [ ] A complete, measured three-laptop run has not been recorded. The 5 November test was
+      reported as partly working and laggy; preserve its logs before making stronger claims.
 - [ ] Real role exclusivity with real MCP-connected brains (two brains race `assume_role("soul")`, and Switch refuses the second).
 - [ ] Measured lease expiry after a disconnect. `lease_expiry_s = 8` is a guess.
 - [ ] Real brains following the stage directions, and memory carrying across Claude Code, OpenCode and Codex.
@@ -342,7 +363,7 @@ tests, and the map e2e on every PR.
 
 ## Pilot results
 
-*Judging: Creativity & impact (25%)*
+*Judging: Creativity and impact*
 
 > **Not run yet.** No pilot numbers exist. When the pilot runs, results go in
 > [`docs/pilot-results.md`](docs/pilot-results.md), following
@@ -351,7 +372,7 @@ tests, and the map e2e on every PR.
 
 ## Demo video
 
-*Judging: Presentation (20%)*
+*Judging: Presentation*
 
 > **Video: link to be added.** Shot list: [`docs/demo-script.md`](docs/demo-script.md). Any simulated
 > shot is watermarked SIMULATION.

@@ -198,7 +198,10 @@ export const KeeperStatus = z.object({
     'leaving',
   ]),
   favor_pending: z.record(z.unknown()).nullable().optional(),
+  favor_left: z.record(z.unknown()).nullable().optional(),
   last_line: z.string().nullable().optional(),
+  brain_provider: BrainProvider.optional(),
+  brain_mode: z.enum(['keeper', 'agent', 'simulation']).optional(),
 });
 
 export const KeeperShell = z.object({ pieces: z.array(ShellPiece) });

@@ -148,9 +148,9 @@ Then Tailscale, which is free for our size:
 
 | | brain | fallback |
 |---|---|---|
-| Afreen | Claude Code | OpenCode, Codex |
+| Afreen | Codex | Claude Code |
 | Abhishek | OpenCode | Claude Code |
-| Akshay | Codex | Claude Code |
+| Akshay | Claude Code | Codex |
 
 Installed and logged in. One each, all different — that is the demo.
 

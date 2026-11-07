@@ -75,7 +75,7 @@ export function PanelWindow() {
     }
   };
   const myBrain: BrainProvider =
-    [...k.shell].reverse().find((p) => p.host === k.hostId)?.brain_provider ?? 'other';
+    [...k.shell].reverse().find((p) => p.host === k.hostId)?.brain_provider ?? k.brainProvider ?? 'other';
   const ticker = !k.connected
     ? 'Keeper offline · retrying'
     : mine
@@ -104,6 +104,7 @@ export function PanelWindow() {
           : 'Cozy here. Thanks for having me.';
 
   const favor = k.favorPending as { id?: string; text?: string; left_by?: string; status?: string } | null;
+  const leftFavor = k.favorLeft as { text?: string } | null;
   const runFavor = async (kind: 'leave' | 'complete'): Promise<void> => {
     if (favorBusy) return;
     setFavorBusy(true);
@@ -209,9 +210,9 @@ export function PanelWindow() {
 
       <dl className="menu__facts">
         <div>
-          <dt>Brain</dt>
+          <dt>{k.brainMode === 'keeper' ? 'Mode' : 'Brain'}</dt>
           <dd>
-            <BrainBadge provider={myBrain} short />
+            {k.brainMode === 'keeper' ? 'Keeper only' : <BrainBadge provider={myBrain} short />}
           </dd>
         </div>
         <div>
@@ -245,10 +246,12 @@ export function PanelWindow() {
                       I did it · grow the shell
                     </PixelButton>
                   </>
+                ) : leftFavor?.text ? (
+                  <p className="menu__empty">Hermit is carrying your favor: “{leftFavor.text}”</p>
                 ) : (
                   <p className="menu__empty">No favor right now. Leave a small task for the next friend Hermit visits.</p>
                 )}
-                {mine && !favor && (
+                {mine && !favor && !leftFavor && (
                   <form onSubmit={(event) => { event.preventDefault(); void runFavor('leave'); }}>
                     <label htmlFor="favor-text">A little favor for the next friend</label>
                     <textarea id="favor-text" maxLength={280} minLength={3} value={favorText}

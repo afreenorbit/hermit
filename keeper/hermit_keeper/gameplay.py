@@ -261,6 +261,13 @@ class LedgerFavors:
         await self.sync()
         return any(f.left_by == host and f.status == "open" for f in self.book.favors.values())
 
+    async def open_from(self, host: str) -> dict[str, Any] | None:
+        await self.sync()
+        for favor in self.book.favors.values():
+            if favor.left_by == host and favor.status == "open":
+                return favor.to_dict()
+        return None
+
     async def assign(self, favor_id: str, host: str) -> None:
         """Called on arrival. Starts listening for the host doing the favor."""
         await self.book.assign(favor_id, host)
