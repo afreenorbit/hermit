@@ -124,6 +124,7 @@ class KeeperRuntime:
         self._ledger_room = config.switch.ledger_room
         self._last_heartbeat = 0.0
         self._last_group_read = 0.0
+        self._has_group_snapshot = False
         self._seen_ledger: dict[str, None] = {}
         #: Stretch S1/S2. Does nothing unless features.overlap / features.nudge.
         self.stretch = StretchRunner(
@@ -285,6 +286,26 @@ class KeeperRuntime:
                     note = str(event.data.get("text", ""))
                     self._last_line = f"{sender}: {note}"
                     await self.bus.publish(event)
+                elif (
+                    self._has_group_snapshot
+                    and event.host != self.config.host_id
+                    and event.type
+                    in {
+                        EventType.SOUL_FREE,
+                        EventType.SOUL_CLAIMED,
+                        EventType.DEPARTURE_STARTED,
+                        EventType.SOUL_RELEASED,
+                        EventType.FAVOR_ASSIGNED,
+                        EventType.FAVOR_COMPLETED,
+                        EventType.SHELL_PIECE_ADDED,
+                    }
+                ):
+                    # Remote Switch events must reach the local desktop stream.
+                    # Otherwise other laptops learn a handoff only from the
+                    # slower status safety poll. Ignore the first ledger load
+                    # so old room history cannot replay arrival animations.
+                    await self.bus.publish(event)
+        self._has_group_snapshot = True
 
     # -- what the critter and the CLI read -----------------------------------
 

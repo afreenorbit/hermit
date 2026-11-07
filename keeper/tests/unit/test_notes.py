@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock
+
 import httpx
 
 from hermit_keeper.api import create_app
 from hermit_keeper.brain.fake import FakeBrain
 from hermit_keeper.clock import FakeClock
 from hermit_keeper.config import HostConfig
-from hermit_keeper.events import EventType
+from hermit_keeper.events import Event, EventType
 from hermit_keeper.lease.fake import FakeSoulLease
-from hermit_keeper.ledger import decode
+from hermit_keeper.ledger import decode, encode
 from hermit_keeper.presence.composite import CompositePresence
 from hermit_keeper.presence.fake import ScriptedPresence
 from hermit_keeper.room.fake import FakeRoomHub
@@ -79,3 +81,33 @@ async def test_local_note_api_refuses_invalid_text_and_missing_holder() -> None:
         assert bad.status_code == 400
         missing = await client.post("/v1/notes", json={"text": "Are you there?"})
         assert missing.status_code == 409
+
+
+async def test_remote_switch_changes_reach_desktop_stream_without_replaying_initial_history() -> (
+    None
+):
+    clock = FakeClock()
+    hub = FakeRoomHub(clock)
+    lease = FakeSoulLease(clock)
+    afreen = runtime("afreen", hub, lease, clock)
+    publish = AsyncMock()
+    afreen.bus.publish = publish
+
+    old = Event(
+        type=EventType.SOUL_CLAIMED, host="akshay", ts=clock.now(), data={"holder": "akshay"}
+    )
+    await hub.client("keeper-akshay").post("hermit-ledger", encode(old))
+    await afreen.refresh_group()
+    publish.assert_not_called()
+
+    new = Event(
+        type=EventType.SHELL_PIECE_ADDED,
+        host="akshay",
+        ts=clock.now(),
+        data={"piece": {"id": "piece-1"}},
+    )
+    await hub.client("keeper-akshay").post("hermit-ledger", encode(new))
+    await afreen.refresh_group()
+    publish.assert_awaited_once_with(new)
+    await afreen.refresh_group()
+    publish.assert_awaited_once_with(new)

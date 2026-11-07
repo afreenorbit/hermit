@@ -2,8 +2,8 @@
 
 <p align="center">
   <strong>A small creature with no home of its own.</strong><br>
-  It lives on one friend's laptop at a time and uses that friend's own AI agent as its brain.<br>
-  When they go quiet, it moves to whoever is still around and brings a favor from the last friend.
+  It visits one friend's laptop at a time, bringing a favor from the last friend.<br>
+  Each desktop shows where it is; a Switch powered AI voice is the next live milestone.
 </p>
 
 <p align="center">
@@ -30,13 +30,12 @@
 
 ## The problem
 
-- Distance is the top reason friendships fade: 50% of respondents named it in a 2025 Talker Research poll of 2,000 Americans.
-- Young adults often have plenty of friends but lack **continuity and routine** (Hall et al., *PLOS ONE*, Nov 2025).
-- Async tools such as Marco Polo, Waffle, Cave and Locket still need someone to start every exchange. Group chats die because nobody starts them.
-
 We are three friends in Bengaluru, about 25 km apart, who still go weeks without seeing each other.
-Hermit **creates the recurring moment itself**. It follows *attention*, not daylight: the soul goes
-to whoever is actually at their laptop, which in one city means someone is always free.
+Starting another group conversation can feel like a task. Hermit offers a smaller invitation: a
+friend is around, they left you something to do, and you can pass something on.
+
+Hermit follows *attention*, not daylight. It waits when nobody is available and visits a friend
+when their keeper reports that they are present.
 
 ### The useful loop
 

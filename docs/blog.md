@@ -46,6 +46,8 @@ The first integration did not follow our original plan. On the tested `switch-v0
 
 One subtle bug followed from that: timestamp-only polling can miss two events carrying the same timestamp. The keeper now tracks message IDs while folding the recent ledger, so a second note at the same instant is still delivered. A focused test sends two notes without advancing the fake clock and checks that the recipient sees both in order.
 
+During the November 5 group run the movement felt laggy. One cause was local: a keeper could already have learned a remote claim from Switch while its mascot still waited for the next 30-second status refresh. The keeper now forwards newly received remote claim, release, favor and shell events to its local desktop stream. The initial ledger load is deliberately quiet, so restarting a laptop does not replay old arrival animations. We have a focused event-delivery test; the improvement still needs to be timed with the other laptops online.
+
 The shell also needed a real data path. Its UI existed before the API did: `/v1/shell` returned an empty list, and status always returned `favor_pending: null`. The keeper now serves the assigned favor and reconstructs shell pieces from Switch ledger lines, with a local snapshot to preserve pieces it already observed across its own restart. A fresh laptop cannot recover events that have already fallen out of the server's drain-only queue; a future version should store a durable shared snapshot in Switch. This is a real current limit, especially for a long pilot.
 
 ## What is running today
